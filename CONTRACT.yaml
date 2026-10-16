@@ -28,8 +28,8 @@ tasks:
   - id: H-01
     title: Fill in every FILL IN line in SPEC.md
     points: "15 - Tool Design: scope matches a prompt (5), clear user and use case (5), minimal inputs (5)"
-    status: in_progress
-    owner: "Claude (agent) + Nidhi Baderiya"
+    status: done
+    owner: "Claude (agent) + Nidhi Baderiya + Zeba Haq + Dhruv Bhandari"
     started_at: "2026-10-16 17:53"
     owns: ["SPEC.md"]
     notes: >
@@ -40,7 +40,7 @@ tasks:
       grep -c "FILL IN[.,]" SPEC.md prints 0 (it counts only the blanks,
       not the instructions at the top), and every teammate can say the
       method sentence in SPEC section 4 without reading it.
-    result: "grep prints 0; Nidhi approved SPEC.md and docs/plan.md on 2026-10-16. Still open: Zeba and Dhruv read section 4 and can say the method sentence."
+    result: "grep prints 0; SPEC.md approved by Nidhi on 2026-10-16; Nidhi, Zeba and Dhruv can each say the SPEC section 4 method sentence without reading it."
 
   - id: H-02
     title: Two or three test datasets plus a codebook
