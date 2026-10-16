@@ -1,151 +1,444 @@
-![](docs/images/banner_thin.png)
+# Response Watch
 
-# 🎯 Cornell Six Sigma Hackathon
+**A control-chart dashboard for a city 911 EMS dispatch center.**
+Team ERG (Nidhi Baderiya, Zeba Haq, Dhruv Bhandari) | Prompt: Health Systems, Emergency Response
 
-*Tackle real-world quality control problems drawn from industrial engineering,
-healthcare systems, and energy systems!*
+> **About the hackathon:** this is our entry in the Cornell Six Sigma Hackathon. The event pages are in [`docs/README.md`](docs/README.md), and the submission is on [Devpost](https://six-sigma-hackathon.devpost.com).
+
+**Contents:**
+[1. What it is](#1-what-it-is) |
+[2. Live app](#2-live-app) |
+[3. Quick start](#3-quick-start) |
+[4. What you see](#4-what-you-see) |
+[5. Inputs](#5-inputs) |
+[6. The statistics](#6-the-statistics) |
+[7. How the pieces fit](#7-how-the-pieces-fit) |
+[8. Verification](#8-verification) |
+[9. Demo](#9-demo) |
+[10. Deploy](#10-deploy) |
+[11. Repo map](#11-repo-map) |
+[12. Limits and safety](#12-limits-and-safety) |
+[13. Team and credits](#13-team-and-credits)
 
 ---
 
-Your team picks a prompt, creates the data, and ships a working quality-control
-tool. **👉 [Register on Devpost](https://six-sigma-hackathon.devpost.com/)**
-(required, even if you don't have a team yet).
+## 1. What it is
 
-### 📍 When & where
+Response Watch logs every 911 call's five timestamps, splits each response into three stages, and shows **which zone** is slow, **which stage** is slow, and **since when**. It flags zones that need action. It suggests a fix, with the evidence. Later it checks whether the fix worked, and warns if the zone slips back.
 
-| | 🏫 On-campus (24 hours) | 🌐 Virtual DL Challenge (7 days) |
+The prompt we chose: *"Ambulance dispatch to on-scene times are varying wildly across city zones, but the 911 center only looks at monthly averages, missing fatal outliers, not where or why these failures occur."*
+
+**Why we built it this way:**
+
+1. Monthly averages hide slow outliers. So we use percentiles (90th, 95th) and control charts on log response times.
+2. The stage split tells you *why* a call was slow: dispatcher processing, crew turnout, or travel.
+3. The zone charts tell you *where* (zones A to F) and *since when* (one point per day).
+4. A before/after check tells you whether a fix worked. Slip-back alerts tell you when it stops working.
+
+**Who it is for:**
+
+| User | When they use it | What they decide |
 |---|---|---|
-| **Who** | on-campus students (required unless excused) | distance-learning students, and anyone who can't attend in person |
-| **Runs** | Fri Oct 16, 3 PM → Sat Oct 17, 3 PM ET | Fri Oct 16, 3 PM → Fri Oct 23, 3 PM ET |
-| **Where** | Upson Hall 116 | online |
-| **Submissions due** | Sat Oct 17, **1 PM ET** sharp | Fri Oct 23, **3 PM ET** |
-| **Showcase** | Sat Oct 17, 2-3 PM (must attend) | — |
+| **EMS operations supervisor** (primary) | At the start of each shift, and whenever a flag fires | Which zone needs attention, which stage causes it, which fix to try, and later whether the fix worked |
+| **Dispatcher on shift** (secondary) | In real time | Which open call is running late right now and needs escalating |
 
-Submit on **[Devpost](https://six-sigma-hackathon.devpost.com/)**: your repo
-link plus a demo. Full run of show: [🗓️ Schedule](docs/schedule.md).
+The tool decides nothing on its own. It flags and suggests. Qualified staff decide.
+
+The Define and Measure work (problem statement, goal, SIPOC, process map, data-quality plan) is in [`docs/six_sigma.md`](docs/six_sigma.md). This README does not repeat it.
 
 ---
 
-### Quick Links
+## 2. Live app
 
-- [🗓️ Schedule of Events](docs/schedule.md)
-- [💬 Prompts](docs/prompts.md) — *revealed at the start of the event*
-- [🔢 Evaluation Criteria](docs/criteria.md)
-- [📚 Resources for Building Your Tool](docs/resources.md)
-- [🧰 Starter Templates](demos/README.md)
-- [🤖 Agent Start Tutorial](docs/start.md) — type `/superagent` and your agent reads it for you
-- [⁉️ FAQ](#️-frequently-asked-questions)
+LIVE URL: (added after deploy)
+
+No login is needed. The data is synthetic. Each browser tab has its own live board.
 
 ---
 
-> ### 📘🤖 New here? Read the [step-by-step start tutorial](docs/start.md) first
-> Ten minutes, for the whole team: set up your agent, **plan with `/superagent` on your
-> strongest model**, then **switch to a cheaper model** that builds and checks each task with
-> helper agents. **[→ docs/start.md](docs/start.md)**
+## 3. Quick start
 
+You need **Python 3.12** (the version pinned in `app/.python-version`).
 
-### 💡 The Challenge
+**First time on a fresh clone** (run from the repo root):
 
-Your team tackles one real-world quality control and reliability problem.
+```bash
+git clone https://github.com/nidhibaderiya23/sixsigma.git
+cd sixsigma
+python3.12 -m venv .venv
+.venv/bin/pip install -r app/requirements.txt
+```
 
-- 🧩 Prompts are released **at kickoff** — each tied to a dataset you design and
-  build yourself
-- 📊 **The statistics are the graded core.** Statistical process control,
-  process capability, reliability modeling, failure analysis. The app is the
-  delivery vehicle for the analysis, not the point
-- 🧱 Ship a a dashboard / web app (React or Shiny), plus **one** of: an R package or Python library AND/OR a public REST API
-  (FastAPI or plumber).
-- 🚀 Deploy it live to the course **Posit Connect** server
-- 🔢 Every project is scored 0-100 by the event staff.
-  [Read the criteria](docs/criteria.md)
+**Run the app (one command):**
 
----
+```bash
+cd app && ./testme.sh
+```
 
-### 🤖 Build with AI — bring your own agent
+Then open <http://localhost:8000>. Stop it with Ctrl+C.
 
-AI-assisted development is **expected and encouraged**. Use whatever you already
-have. The skill being tested is steering a capable assistant toward
-statistically correct work — which is exactly the skill this course is about.
+**Run the tests** (from the repo root):
 
-- [🧠 AI coding agents](docs/agents.md) — the popular ones, and how to pick
-- [🎙️ Tools](docs/tools.md) — Wispr Flow (talk to your agent) and Open Design
-- [`CLAUDE.md`](CLAUDE.md) / [`AGENTS.md`](AGENTS.md) — what the event is, the
-  repo map, the deploy target, the four-script contract
-- [`.claude/skills/superagent/`](.claude/skills/superagent/SKILL.md) — the one
-  skill you need: type `/superagent` and it routes to every other skill and
-  template for you. They all live in [`.claude/skills/`](.claude/skills/) if you
-  want to read them
+```bash
+.venv/bin/python -m pytest tests -q
+```
 
-Two rules: everything you ship is **public and reproducible**, and you must be
-able to **explain every number your tool prints**.
+How `testme.sh` finds Python:
 
----
+- It looks for `.venv/bin/python` at the repo root, one level above `app/`. If that file exists, it uses it.
+- If not, it uses whatever `python` is on your PATH. That Python must already have the requirements installed.
+- It then runs `python -m shiny run app.py --port 8000`. It works from any folder, because it changes into `app/` first.
+- On Windows, run the `.sh` scripts in Git Bash or WSL.
 
-### ⁉️ Frequently Asked Questions
+The requirements are pinned with `==`, so a fresh install matches ours:
 
-- **Who can participate?** Cornell students who are (a) in the Systems
-  Engineering MEng/MS program, OR (b) enrolled in SYSEN 5300 / MAE 5390, OR
-  (c) enrolled in SYSEN 5900. Teams of **2 to 5**.
+| Package | Version | Used for |
+|---|---|---|
+| `shiny` | 1.8.0 | The dashboard (Shiny for Python) |
+| `pandas` | 3.0.6 | Tables |
+| `numpy` | 2.5.4 | Numbers |
+| `scipy` | 1.18.1 | ANOVA, Welch, Shapiro-Wilk, F and t distributions |
+| `matplotlib` | 3.11.2 | Charts |
+| `pytest` | 9.1.1 | Tests |
 
-- **On-campus or virtual?** On-campus students do the 24-hour event in Upson
-  Hall 116 (required unless excused). Distance-learning students, and anyone
-  who can't attend in person, do the 7-day Virtual DL Challenge.
-  [Dates above](#-when--where).
-
-- **What are the deadlines?** On-campus: submissions due Sat Oct 17, 1 PM ET
-  sharp; showcase Sat Oct 17, 2-3 PM (must attend). DL: submissions due
-  Fri Oct 23, 3 PM ET.
-
-- **What do we win?** On-campus winners: dinner for the team at the Statler
-  Dining Room. DL winners: bragging rights — infamy for all time.
-
-- **Do I need Six Sigma experience?** No. Trainings are provided during the
-  event, and many of the analyses can be learned in a few minutes. The
-  [course textbook](https://timothyfraser.com/sigma/) is open to everyone.
-
-- **Do I have to be a coding wizard?** No. Some prior experience in R or Python
-  is enough, and AI assistants close a lot of the gap. A winning project is a
-  smart, correct solution to a quality-control problem — not fancy code.
-
-- **What if I can't find team members?** Register on
-  [Devpost](https://six-sigma-hackathon.devpost.com/) anyway; we will match
-  you with a team.
-
-- **Do I have to be there the whole 24 hours?** A successful team works most of
-  it. Step out, sleep, stagger breaks — just keep someone on the team present.
-
-- **Can a teammate join the on-campus event remotely?** No. Anyone who can't
-  attend in person does the Virtual DL Challenge instead.
-
-- **What do we submit?** On Devpost: a link to your public GitHub repository
-  and a demo of a working prototype, deployed live to Posit Connect. At least
-  one team member needs a working (non-Cornell) GitHub account.
-
-- **What software do I need?** Install R or Python and at least one coding
-  interface (RStudio, VSCode, Cursor, Positron, ...) **before** the event
-  starts. If you plan to use an AI assistant, set it up beforehand too.
-
-- **What language should I use?** R, Python, or both. Code must be fully
-  reproducible and public.
-
-- **How are products evaluated?** Scored 0-100 by event staff on
-  [the criteria](docs/criteria.md): tool implementation (50), tool design
-  (25), documentation (25).
+The test data is committed in `data/`. To rebuild it, run `.venv/bin/python data/make_data.py`. It uses seed 42, so a rerun gives identical files.
 
 ---
 
-### 👥 How to Join
+## 4. What you see
 
-[Register on Devpost](https://six-sigma-hackathon.devpost.com/) — registration
-is required. Form a team of 2 to 5, or register solo and we'll match you.
+The start page has two buttons: **I'm a dispatcher** and **I'm a supervisor**. Each role gets its own screens. A **Switch role** link in the header takes you back. A banner on every screen reminds you that the data is synthetic.
+
+### 4.1 Dispatcher (secondary user)
+
+The dispatcher has two tabs: **Live board** and **History**.
+
+| Screen | What it shows | How to read it |
+|---|---|---|
+| **Live board: counts** | Calls waiting, dispatched, en route and on scene, and units available | A quick view of the workload |
+| **Live board: call tables** | Five tables: Incoming, Dispatched, En route, On scene, Resolved. Each open call has a running clock. | The clock is green until 80% of its target, amber above that, and **red past the target** |
+| **Poka-yoke** (mistake-proofing) | The buttons Dispatch, En route, On scene and Clear | See the list below. The wrong entry is hard to make. |
+| **Simulate a shift** | Replays one day of the demo data on a fast clock (30x, 60x or 120x). You pick the day and the start time. | Calls move through the tables at the times in the file. Replayed calls are read-only. |
+| **Log a call** | Add a call by zone and priority. The received time comes from the clock. | Then work it with the buttons, like a real call |
+| **Fleet** | The 12 ambulances: available, dispatched, en route, on scene, or out of service | "Out of service" flags that unit's open calls as a breakdown |
+| **Live alerts** | Newest first: a call waiting too long, a slow turnout, a response past target, a unit out of service | Red or amber is active. Grey is resolved. |
+| **Live map** | A schematic grid of the 6 zones (A B C on top, D E F below). Each tile shows open calls and free units. | The tile takes the worst clock colour in the zone |
+| **History** | Last 7 days (weekly) or last 30 days (monthly), by priority. A table per zone: calls, average, median, 90th and 95th percentile, % on time. Then the 20 latest resolved calls. | The average is shown for comparison only. The percentiles show the slow tail. |
+
+**Poka-yoke rules on the live board:**
+
+- Only the next step works: Dispatch, then En route, then On scene, then Clear. Any other press is refused with a message.
+- Dispatch needs a free unit. The picker lists only available units, with the call's home-zone units first.
+- When a stage ran past its target, a dialog asks for a delay reason (one of 6 codes) before the press is accepted. The time you pressed is kept.
+- Clear asks "Clear call ...?" first.
+- If you mark a unit out of service, its open calls are flagged. The reason "ambulance breakdown" is recorded for you when the call reaches the scene.
+
+### 4.2 Supervisor (primary user)
+
+A **settings card** at the top of every supervisor screen sets what you are looking at (the parameters are listed in [section 5.3](#53-supervisor-settings-the-parameters)). Under it are three tabs.
+
+| Tab | What it shows | How to read it |
+|---|---|---|
+| **Overview** ("Is everything okay?") | Six tiles for the last 7 days: average, median, 90th and 95th percentile, % on time, zones flagged. A **zone health** list: green, amber or red, with the reason in plain words. A history map of the 6 zones. A list of calls left out of the statistics. | **Red means act. Amber means worth a look. Green means on track.** The average sits next to the 90th and 95th percentiles on purpose: the gap is the slow tail that a monthly average hides. |
+| **Charts** ("What is happening, and why?") | For the zone you pick: the daily average-and-spread chart (X̄ and S), every call in order (I-MR, log scale), the stage breakdown, a capability table, and the tests (ANOVA and a normal probability plot). | **A red dot above the dashed line is a day when this zone was slower than its own normal range. Open the stage breakdown to see which stage caused it.** Dashed grey lines are control limits from the zone's own baseline. The solid amber line is the target. They are different lines. |
+| **Actions** ("How do we fix it, and did it work?") | Slip-back alerts. Suggestions with evidence and an impact estimate. An action log. A before/after check with a verdict. The zone's daily chart around the action. | Every suggestion shows its evidence and says "for review by qualified staff". The verdict is *Improved*, *Got worse*, *No clear change yet* or *Not enough data*. |
 
 ---
 
-### 📚 Sign Up to Mentor
+## 5. Inputs
 
-Faculty, postdocs, PhD students, and developers are welcome as mentors.
-[Details here](docs/mentors.md).
+Only what the user can actually measure or already knows. The city's computer-aided dispatch system (CAD) records one row per call. **Nobody types a timestamp.** CAD stamps the call when it arrives. The dispatcher and the crew stamp the rest by pressing a button. The caller's address stays in CAD. The tool only uses the zone.
+
+The full codebook (every file, every column, units, and what real collection would take) is in [`data/README.md`](data/README.md).
+
+### 5.1 Columns of a calls file
+
+| Input | Type and units | Where the user gets it |
+|---|---|---|
+| `call_id` | text | CAD, automatic |
+| `zone` | category, A to F | CAD, from the caller's address |
+| `priority` | 1 (life-threatening), 2, 3 | The call-taker's medical code in CAD |
+| `call_received`, `dispatched`, `en_route`, `on_scene`, `cleared` | timestamps, to the second | CAD stamps the first. The dispatcher's and crew's buttons stamp the rest. |
+| `unit_id`, `unit_home_zone` | text; A to F | CAD fleet list |
+| `distance_km` | number, km | CAD's GPS routing |
+| `dispatcher_id` | text | CAD login. Stored, never shown per person. |
+| `weather` | clear, rain or snow | CAD weather feed |
+| `delay_reason` | one of 6 codes, blank unless late | The crew taps it only when a stage runs past its target |
+| Targets (settings) | seconds or minutes, per priority | NFPA 1710 defaults. The supervisor can edit them. |
+
+The 6 delay reason codes (as written in the CSV): `traffic_or_road_closure`, `ambulance_breakdown`, `unit_from_another_zone`, `unclear_address`, `weather`, `crew_not_ready`.
+
+### 5.2 Targets and where they come from
+
+Each target should be met by **at least 90% of calls**. Response (dispatched to on scene) is the prompt's metric.
+
+| Measure | P1 | P2 | P3 | Source |
+|---|---|---|---|---|
+| Processing (`call_received` to `dispatched`) | 64 s | 64 s | 64 s | NFPA 1710 |
+| Turnout (`dispatched` to `en_route`) | 60 s | 60 s | 60 s | NFPA 1710 |
+| Travel (`en_route` to `on_scene`) | 480 s | 840 s | 1140 s | P1: NFPA 1710 (advanced life support unit). P2, P3: response target minus the 60 s turnout target. |
+| **Response** (`dispatched` to `on_scene`) | **540 s (9 min)** | 900 s (15 min) | 1200 s (20 min) | P1: NFPA 1710. **P2 and P3 are our own assumptions**, because NFPA does not set them. |
+
+### 5.3 Supervisor settings (the parameters)
+
+| Setting | Choices | Default | What it does |
+|---|---|---|---|
+| Dataset | Demo city (42 days, planted problems), Baseline city (28 days, stable), Messy file (3 days, planted data errors) | Demo | Which file to analyze |
+| Priority | 1, 2, 3 | 1 | Which calls to analyze. Each priority has its own target. |
+| As of | a date in the file | 2026-10-12 (the last day of the demo file) | The "today" for every screen. Later calls are ignored. |
+| Chart period | 14, 28 or 42 days | 28 | How much history the Charts tab shows |
+| Priority 1, 2, 3 target (min) | 1 to 60, 1 to 90, 1 to 120 | 9, 15, 20 | The response targets |
+| Processing target (s) | 10 to 600 | 64 | The processing target |
+| Turnout target (s) | 10 to 600 | 60 | The turnout target |
+| Baseline start | a date in the file | 2026-09-01 | First day of the calm period that sets the control limits |
+| Baseline days | 5 to 28 | 14 | Length of that period |
+| Jump buttons | "Jump to Sep 28 (before the fix)", "Jump to the latest day" | | Sets **As of** for the demo |
+
+The dispatcher's controls are: simulation day (default 2026-09-20), speed (30x, **60x**, 120x), start time (**midnight**, 06:00, 14:00, 22:00), and zone and priority for a new call. The History tab has a dataset, a period (7 or 30 days) and a priority.
 
 ---
 
-![](docs/images/banner_icons.png)
+## 6. The statistics
+
+Every number on screen comes from **one plain, tested function** in [`app/qc.py`](app/qc.py). The screens only call these functions and draw the results. There is no statistics code in the UI files. Inputs, outputs and degenerate cases for each function are in the [function reference](app/README.md).
+
+Response times are skewed: most are fast, and a few are very slow. So control charts, capability and the tests all work on the **natural log** of response minutes. A "log" is just a way to make the slow tail behave. Results are shown back in minutes.
+
+| # | Statistic | Formula | Function in `qc.py` | Why |
+|---|---|---|---|---|
+| 1 | **Stage times** | processing = dispatched - call_received. turnout = en_route - dispatched. travel = on_scene - en_route. **response = on_scene - dispatched.** A call is flagged and left out if a needed timestamp is missing or out of order, its call ID is a duplicate, its response is zero, or its zone or priority is unknown. | `stage_times`, `data_issues` | Splits a delay into its stages, so we can say *why*. Bad rows never enter a statistic. |
+| 2 | **Summary numbers** | mean (comparison only), median, 90th and 95th percentile, % on time (value <= target). Percentiles use linear interpolation, "type 7": position h = (n - 1) x p on the sorted values, then x[floor h] + (h - floor h)(next - this). Same as R's default and Excel's PERCENTILE.INC. | `summary`, `percentile`, `zone_summary` | The danger is in the slow tail. The average hides it. |
+| 3 | **I-MR chart** (individuals and moving range), per zone, on **ln minutes** in call order | center = mean of the logs. sigma_short = MR-bar / 1.128. limits = center +/- 3 sigma_short. MR upper limit = 3.267 x MR-bar; lower = 0. Limits come from the baseline calls. | `imr_limits`, `imr_chart` | Catches a single extreme delay (the "fatal outlier"). |
+| 4 | **Daily X̄-S chart**, per zone (a subgroup is one zone-day), on **ln minutes** | x̄̄ = mean of the daily means. sigma_short = sqrt(mean of the daily variances). X̄ limits = x̄̄ +/- 3 sigma_short / sqrt(n_i), so they **widen on quiet days**. S chart: center c4(n_i) sigma_short, limits (c4 +/- 3 sqrt(1 - c4^2)) sigma_short, lower never below 0. **Limits come from a 14-day baseline**, not from the whole series. | `xbar_s_limits`, `daily_xbar_s`, `c4` | Shows *where* and *since when*. Limits from calm days stay put, so a new slowdown shows up as a flag instead of stretching the limits. |
+| 5 | **Flag rules R1 to R5** on the daily X̄ points (table below). A point on the **slow side is an alarm**. A point on the fast side only says "check the data". | z = (X̄_i - x̄̄) / (sigma_short / sqrt(n_i)), so "1 sigma" is one standard error of that day's point. | `flag_rules` (daily points). `imr_chart` column `beyond` (single extreme calls). | One rule alone is slow or noisy. Stacking several catches both jumps and drifts. |
+| 6 | **Zone health** (green, amber, red, unknown) over the last 7 days up to the as-of date | A **chart signal** = rule R1 fired, or 2 or more different slow-side rules fired. **red** = a chart signal AND the 90th percentile is over target. **amber** = exactly one of the two. **green** = neither. **unknown** = not enough data for limits. One weaker rule alone is still drawn on the chart and noted in the reasons ("one weak signal ... keep watching"), but it does not change the status. A zone that slips back after a logged action is at least amber. | `zone_health`, `chart_signal` | One traffic light per zone, with the reason in plain words. Requiring a stronger signal keeps chance alarms rare. Red means act. |
+| 7 | **Capability**, upper side only, on **ln minutes** | Ppk = (ln USL - mean of ln x) / (3 x sd of ln x), using sigma_total. Cpk is the same with sigma_short. USL is the target in minutes. Expected on time = Phi(3 x Ppk). **Shown only when the zone's daily chart has no slow-side flag AND the zone has at least 30 calls in the period.** Otherwise: "not stable: capability is not meaningful" or "too few calls for capability (n = X; need 30)". | `capability`, `zone_capability`, `ppk_to_pct` | Asks "can this zone meet the target at all?". Needs a stable process, and enough calls, to mean anything. |
+| 8 | **Tests**, on ln minutes, alpha = 0.05 | One-way **ANOVA** across zones: F = (SSB / (k - 1)) / (SSW / (N - k)). **Welch's t-test**, one-sided, before vs. after an action: t = (mean_b - mean_a) / sqrt(s_b^2 / n_b + s_a^2 / n_a), with Welch-Satterthwaite df and p = P(T > t). | `anova_zones`, `zone_anova`, `welch_before_after` | Do zones really differ? Did response time really drop after the fix? |
+| 9 | **Normality check** | Shapiro-Wilk W and p on ln minutes, plus a normal probability plot. | `normality` | Checks the assumption behind rows 3 to 8. |
+| 10 | **Stage breakdown** | stage excess = max(0, stage time - stage target), summed over calls. A stage's share = its excess / the zone's total excess. Also the median seconds per stage. | `stage_breakdown` | Shows which stage causes the minutes over target. |
+| 11 | **Impact estimate** | Recount % on time with the flagged stage capped at the citywide median for that stage and priority. Example: turnout [3, 1, 4, 1] min and travel [7, 7, 6, 9] min with a 9-minute target and a 1-minute city median: on time goes from 1/4 = 25% to 3/4 = 75%. | `impact_estimate` | Puts a number on "if this stage were typical". It is an estimate, not a promise. |
+| 12 | **Suggestion rules S1 to S6** (table below) | Fixed if-then rules on stage shares, delay-reason codes and counts. Each shows its evidence and says "for review by qualified staff". | `suggest` | Turns a flag into something to try. |
+| 13 | **Before/after and slip-back** | Before/after: the 14 days before an action vs. the days from it on (up to 14), Welch one-sided on ln minutes. Verdict: *improved* if p < 0.05, *got worse* if p > 0.95, else *no clear change yet*. Slip-back: rebuild limits from the first 7 days after the action. Any later slow-side flag raises an alert. | `before_after`, `slip_back` | Did the fix work, and does it hold? |
+
+**The five flag rules** (R1 to R4 are the Western Electric rules; R5 is a trend rule). The ids carry a `+` on the slow side and a `-` on the fast side, for example `R2+`.
+
+| Rule | Fires when |
+|---|---|
+| R1 | 1 point is beyond 3 sigma |
+| R2 | 2 of the last 3 points are beyond 2 sigma, on the same side |
+| R3 | 4 of the last 5 points are beyond 1 sigma, on the same side |
+| R4 | 8 points in a row on the same side of the center line |
+| R5 | 6 points in a row steadily rising (or falling) |
+
+Two more flags: **rule 1 on single calls** in the I chart (an extreme delay), and a **spec flag** when a zone's 90th percentile over the last 7 days is above its target. The spec flag is the second half of the red test in row 6.
+
+**The six suggestion rules.** A stage's *share* is its excess divided by the zone's total excess. The window is the 14 days up to the as-of date. S1 to S3 apply only to zones that are amber or red.
+
+| Rule | If | Then suggest |
+|---|---|---|
+| S1 | Turnout share is 50% or more | Review crew readiness at that zone's station (names a shift when that shift holds 40% or more of the zone's turnout excess **and** at least 1.5 times its share of the calls) |
+| S2 | Travel share is 50% or more, 30% or more of late calls are coded "unit from another zone", and the zone borrows units at least 1.5 times the city rate | Consider posting an extra ambulance in the zone during the busiest 3 hours |
+| S3 | Travel share is 50% or more, and "traffic or road closure" is the top code (at least 3 calls and 30% of late calls) | Check road works and alternative routes |
+| S4 | Citywide: in an hour with above-median calls, the processing 90th percentile is over 64 s | Add dispatcher cover in that window |
+| S5 | One ambulance has 2 or more breakdowns in the window | Schedule preventive maintenance for that ambulance |
+| S6 | A zone has at least 5 late calls and 20% or more of them have an "unclear address" | Use an address-verification script |
+
+**Which methods come from the course, and which go beyond it.**
+
+| From the course ([textbook](https://timothyfraser.com/sigma/)) | Beyond the course (our additions) |
+|---|---|
+| X̄-S chart, I-MR chart, Cpk and Ppk, one-way ANOVA | Western Electric run rules (R1 to R4), the trend rule (R5), the Shapiro-Wilk normality test, Welch's t-test, type 7 percentiles, and the log transform |
+
+**References:**
+
+- Course textbook for X̄-S, I-MR, Cpk/Ppk and ANOVA: <https://timothyfraser.com/sigma/>.
+- Montgomery, D. C., *Introduction to Statistical Quality Control* (Wiley): control charts, the constants c4, d2 (1.128) and D4 (3.267), and capability.
+- Western Electric Company (1956), *Statistical Quality Control Handbook*: the run rules.
+- Nelson, L. S. (1984), "The Shewhart control chart: tests for special causes," *Journal of Quality Technology* 16(4): the trend rule.
+- Shapiro, S. S. and Wilk, M. B. (1965), "An analysis of variance test for normality," *Biometrika* 52: the normality test.
+- Welch, B. L. (1947), "The generalization of 'Student's' problem when several different population variances are involved," *Biometrika* 34: the unequal-variance t-test.
+- Hyndman, R. J. and Fan, Y. (1996), "Sample quantiles in statistical packages," *The American Statistician* 50(4): the "type 7" percentile.
+- NFPA 1710 benchmarks, as quoted by agency reports: see the references in [`docs/six_sigma.md`](docs/six_sigma.md).
+
+**Try it in Python** (from the repo root):
+
+```python
+from app import qc
+
+calls = qc.load_calls("data/calls_demo.csv")            # read the CSV, parse the timestamps
+stages = qc.stage_times(calls)                          # add stage times and the data checks
+print(qc.zone_summary(stages, priority=1))              # median, 90th, 95th percentile, % on time per zone
+health = qc.zone_health(stages, priority=1, as_of="2026-09-28")
+print(health[["zone", "status", "reasons"]])            # Zone D is red, with the reason
+```
+
+---
+
+## 7. How the pieces fit
+
+```mermaid
+flowchart TD
+    csv["Calls CSV in data/<br>(or a live-board export,<br>same 14 columns)"]
+    st["<b>qc.stage_times</b><br>stage times + data checks"]
+    csv --> st
+
+    st --> summ["summary / zone_summary<br>percentiles, % on time"]
+    st --> chart["daily_xbar_s / imr_chart<br>control limits from the baseline"]
+    chart --> rules["flag_rules<br>R1 to R5, slow side = alarm"]
+    rules --> cap["zone_capability<br>only when stable"]
+    st --> tests["zone_anova<br>welch_before_after"]
+    st --> bd["stage_breakdown"]
+
+    summ --> zh["<b>zone_health</b><br>green / amber / red"]
+    rules --> sig["chart_signal<br>R1, or 2+ different rules"]
+    sig --> zh
+    bd --> zh
+    zh --> sug["<b>suggest</b> (S1 to S6)<br>+ impact_estimate"]
+    sug --> log["Action log<br>(Log this action)"]
+    log --> ba["<b>before_after</b><br>slip_back"]
+    tests --> ba
+
+    zh --> screens["Screens<br>Overview, Charts, Actions"]
+    cap --> screens
+    sug --> screens
+    ba --> screens
+
+    live["Live board<br>simulator.Board<br>clocks, alerts, fleet"] -.->|"export: Download calls (CSV)"| csv
+```
+
+Read it left to right. Calls come in as a CSV. `qc.stage_times` is the front door: nothing else touches raw rows. Every other function reads its output. Health combines the chart signal (from the rules) and the 90th percentile. Suggestions come from health plus the stage shares. A logged action feeds the before/after check and the slip-back watch. The screens only draw the results. The live board has its own logic in `app/simulator.py` and reads only the targets and reason codes from `qc`.
+
+---
+
+## 8. Verification
+
+Every statistic has a **known-answer test** (worked by hand in [`SPEC.md`](SPEC.md) section 4) and a **degenerate-case test**. The tests live in [`tests/`](tests).
+
+**Known answers the tests reproduce:**
+
+| Statistic | Input | Answer |
+|---|---|---|
+| Summary | response minutes [4, 5, 6, 7, 8, 9, 10, 11, 12, 20], target 9 | mean 9.2, median 8.5, 90th percentile 12.8, 95th percentile 16.4, on time 6/10 = 60% |
+| I-MR | [10, 12, 11, 15, 12] | MR-bar 2.5, center 12, sigma_short 2.2163, limits 5.351 to 18.649, MR upper limit 8.1675 |
+| X̄-S | subgroups [2, 4, 6], [3, 5, 7], [4, 6, 8] | x̄̄ = 5, sigma_short = 2, X̄ limits 1.536 to 8.464, c4(3) = 0.8862, S center 1.7725, S upper 4.552, S lower 0 |
+| Ppk | [6, 7, 8, 9, 10], USL 12 | sd 1.5811, Ppk = 0.8433 |
+| ANOVA | A = [1, 2, 3], B = [4, 5, 6] | SSB 13.5, SSW 4, F = 13.5 (df 1 and 4) |
+| Welch | before [10, 12, 14], after [6, 8, 10] | t = 2.449, df = 4 |
+| Impact | turnout [3, 1, 4, 1] min, travel [7, 7, 6, 9] min, target 9, city median turnout 1 min | on time 25% to 75% |
+| Flag rules | center 0, sigma 1 | [0.5, 2.5, 0.3, 2.4] fires R2 at the 4th point. Eight points of 0.1 fire R4 at the 8th. [1, 2, 3, 4, 5, 6] fires R5 at the 6th. |
+
+**Degenerate cases the tests cover:**
+
+- **Constant data** has no spread, so the limits, Ppk, ANOVA and Welch return `None` with the message "no variation". This includes values that differ only in the last floating-point bit.
+- **One call:** the percentiles equal that value. The I-MR refuses (it needs at least 2).
+- **A day with one call** gets an X̄ point but no S point.
+- **Missing or out-of-order timestamps, duplicate IDs, zero response, unknown zone or priority:** the call is excluded and listed. An excluded call can never move a window.
+- **A group with one value** is dropped from ANOVA. Welch needs 2 or more values on each side.
+
+An independent fresh-context review (a reviewer with no memory of the build) checked every statistic against `SPEC.md` and passed it. It led to two fixes that now have their own tests: constant data with floating-point noise, and invalid calls moving the windows. The task ledger is [`CONTRACT.yaml`](CONTRACT.yaml).
+
+**Run the tests yourself** (from the repo root):
+
+```bash
+.venv/bin/python -m pytest tests -q
+```
+
+Output on our machine (Python 3.12.15):
+
+```text
+............................................................             [100%]
+60 passed in 0.83s
+```
+
+That is 36 tests of `qc.py` (`tests/test_qc.py`) and 24 tests of the live-board logic (`tests/test_simulator.py`).
+
+**The messy file.** `data/calls_messy.csv` (61 rows) is built with missing en-route stamps, out-of-order times, a duplicate call ID and a zone with almost no calls. In the app, pick **Messy file** in the supervisor's Dataset menu. The Overview data-quality card lists the 7 planted defects, each with its reason, and zones with too few calls show "Not enough data". Nothing crashes. You can also check it from Python:
+
+```python
+from app import qc
+
+stages = qc.stage_times(qc.load_calls("data/calls_messy.csv"))
+print(qc.data_issues(stages))                  # every excluded call, with the reason
+print(qc.zone_summary(stages, priority=1))     # statistics on the calls that passed
+```
+
+---
+
+## 9. Demo
+
+The full walkthrough, with exact clicks, numbers and "how to read this" for each dataset, is in [`demo/README.md`](demo/README.md).
+
+The five-step story on the demo city (Zone D's night-shift turnout gets slower from Sep 15; a fix is logged on Sep 29):
+
+1. **Supervisor, as of Sep 28.** Pick **I'm a supervisor**, keep the Demo dataset and Priority 1, and click **Jump to Sep 28 (before the fix)**. On Overview, **Zone D is red** and its reason names **turnout**. The other zones are green.
+2. **Charts.** Zone D's daily chart shows flagged (red) days from about Sep 16. The stage breakdown shows turnout, not travel or processing, causing the minutes over target.
+3. **Actions.** The suggestion **"Review crew readiness at Zone D's station, especially the night shift"** appears with its evidence and an impact estimate (on time rises from about 78% to about 97% if turnout were typical). Log it. (The demo's fix is already in the log as A1, dated Sep 29.)
+4. **Jump to the latest day** (Oct 12). The before/after check for that action says **Improved**, and the zone's chart after the action shows no flags: a stable new level.
+5. **Dispatcher.** Click **Switch role**, then **I'm a dispatcher**. Press **Simulate a shift** and watch calls move through the tables, clocks turn red, and alerts and the live map update.
+
+---
+
+## 10. Deploy
+
+The app follows the course's **four-script contract**. All four files are in [`app/`](app):
+
+| File | Job |
+|---|---|
+| `testme.sh` | Run the app locally on port 8000 |
+| `manifestme.sh` | Copy `data/*.csv` into `app/data/` and write `manifest.json` for Posit Connect |
+| `deployme.sh` | Publish to Posit Connect from your own machine |
+| `README.md` | The [function reference](app/README.md) |
+
+**Deploy with GitHub Actions** ([`.github/workflows/deploy-shiny-py.yml`](.github/workflows/deploy-shiny-py.yml), with `APP_DIR: app`):
+
+1. On your own machine, run `cd app && ./manifestme.sh`. It copies `data/*.csv` into `app/data/` and writes `app/manifest.json`.
+2. Commit `app/manifest.json` and `app/data/`, then push to `main`. A push to `main` that changes Python files, `requirements.txt`, the manifest or `.python-version` starts the workflow. You can also start it by hand (`workflow_dispatch`).
+3. The workflow checks the committed manifest (it never regenerates it), sets up Python from `app/.python-version` (3.12), installs the requirements and imports the app as a smoke test, checks that both secrets exist, publishes the bundle to Posit Connect, and then checks that the front page answers HTTP 200.
+
+**Secrets:** add `CONNECT_SERVER` and `CONNECT_API_KEY` as **GitHub repo secrets** (Settings, Secrets and variables, Actions). **Never put them in a file.** `deployme.sh` reads them from your shell, or from an untracked `app/.env`, which `.gitignore` excludes.
+
+**Two things to remember:**
+
+- Re-run `manifestme.sh` and commit the result after you change app code, requirements or data. The workflow ships exactly the files the manifest lists.
+- A change to `app/data/` alone does not start the workflow (only code, requirements, manifest and `.python-version` changes do). Start it by hand from the Actions tab.
+- Once `app/data/` exists, the app reads it first and the repo's `data/` second. If you rebuild `data/`, re-run `manifestme.sh` so the copy matches.
+
+---
+
+## 11. Repo map
+
+| Path | What is in it |
+|---|---|
+| [`README.md`](README.md) | This file |
+| [`SPEC.md`](SPEC.md) | What the tool is, the formulas and the hand-worked known answers. If the code and the spec disagree, the code is the bug. |
+| [`CONTRACT.yaml`](CONTRACT.yaml) | The task ledger (H-01 to H-08) |
+| [`app/`](app) | The tool. `qc.py` holds every statistic. `charts.py`, `simulator.py`, `ui_dispatcher.py`, `ui_supervisor.py` and `app.py` draw and wire it. The four scripts and the [function reference](app/README.md) are here. |
+| [`data/`](data) | Synthetic CSVs (`calls_baseline`, `calls_demo`, `calls_messy`, `actions_demo`, `units`), the seeded generator `make_data.py`, and the codebook [`data/README.md`](data/README.md) |
+| [`tests/`](tests) | `test_qc.py` (statistics) and `test_simulator.py` (live board) |
+| [`demo/`](demo) | The demo walkthrough, [`demo/README.md`](demo/README.md) |
+| [`docs/`](docs) | [`plan.md`](docs/plan.md) (tasks and suggestion rules), [`six_sigma.md`](docs/six_sigma.md) (Define and Measure), [`criteria.md`](docs/criteria.md) (the rubric), and the event pages |
+| [`.github/`](.github) | The deploy workflow and its publish script |
+| `demos/` | The instructor's starter templates, including the README guide we followed |
+
+---
+
+## 12. Limits and safety
+
+- **Synthetic data.** Every CSV is invented by a seeded script. There is no real patient data, address or name.
+- **Flags are for qualified staff.** The tool flags and suggests. It never dispatches or changes staffing. Every suggestion says "for review by qualified staff".
+- **Amber means "worth a look". Red means "act".** Several rules plus a 90th-percentile check will sometimes fire by chance. We count a chart signal only when rule R1 fires or 2 or more different rules fire in the last 7 days. On a pure-noise simulation, a stable zone-week then shows amber by chance about 2.5% of the time, versus 7.7% if any single rule counted. Red needs a chart signal *and* a 90th percentile over target, so it is rarer still.
+- **P2 and P3 targets are our assumptions.** NFPA 1710 does not set them. The NFPA numbers are quoted from agency reports, not read from the standard. All targets are editable.
+- **Assumptions behind the statistics:** log response times are roughly normal (the Charts tab shows a Shapiro-Wilk p-value and a probability plot per zone). Calls in time order are roughly independent (stated, not tested). The baseline period is stable (the baseline is shown, and you can move it). Capability needs stability, so it is hidden for flagged zones.
+- **A better time after a fix does not prove the fix caused it.** The check shows an apparent change. Staff judge the cause.
+- **Button-press timing is not validated.** A crew may press "on scene" a little after arriving. The times are only as good as the pressing habit.
+- **Out of scope:** logins, a database, real maps or GPS, forecasting, AI-written suggestions, per-person dispatcher rankings, and a board shared across browsers (each browser session has its own).
+
+More on assumptions and limits: [`docs/six_sigma.md`](docs/six_sigma.md), section 8.
+
+---
+
+## 13. Team and credits
+
+- **Team ERG:** Nidhi Baderiya, Zeba Haq and Dhruv Bhandari. Cornell Six Sigma Hackathon, Oct 16 to 17, 2026, in the course SYSEN 5300.
+- **Built with an AI coding agent** (Claude Code), as the event encourages. The team reviewed the work and can explain every number the tool prints.
+- **Starter repo and course:** the event, the templates and the textbook are by Timothy Fraser, [timothyfraser/sixsigmahackathon](https://github.com/timothyfraser/sixsigmahackathon) (MIT license, see [`LICENSE`](LICENSE)). The deploy workflow pattern is adapted from his `fastapi-connect-demo`.

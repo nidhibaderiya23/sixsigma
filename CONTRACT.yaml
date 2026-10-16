@@ -28,9 +28,9 @@ tasks:
   - id: H-01
     title: Fill in every FILL IN line in SPEC.md
     points: "15 - Tool Design: scope matches a prompt (5), clear user and use case (5), minimal inputs (5)"
-    status: todo
-    owner: ""
-    started_at: ""
+    status: in_progress
+    owner: "Claude (agent) + Nidhi Baderiya"
+    started_at: "2026-10-16 17:53"
     owns: ["SPEC.md"]
     notes: >
       Do this together, out loud, right after kickoff. The prompts are in
@@ -40,27 +40,27 @@ tasks:
       grep -c "FILL IN[.,]" SPEC.md prints 0 (it counts only the blanks,
       not the instructions at the top), and every teammate can say the
       method sentence in SPEC section 4 without reading it.
-    result: ""
+    result: "grep prints 0; Nidhi approved SPEC.md and docs/plan.md on 2026-10-16. Still open: Zeba and Dhruv read section 4 and can say the method sentence."
 
   - id: H-02
     title: Two or three test datasets plus a codebook
     points: "10 - Tool Documentation: 2-3 working test datasets (5), codebook and README for the data (5)"
-    status: todo
-    owner: ""
-    started_at: ""
+    status: done
+    owner: "Claude helper (data) + Nidhi Baderiya"
+    started_at: "2026-10-16 18:19"
     owns: ["data/"]
     definition_of_done: >
       ls data/*.csv lists 2 or 3 files (e.g. in control, planted shift, edge
       case), and data/README.md names every one of them and describes every
       column with units and how the data would be collected for real.
-    result: ""
+    result: "data/make_data.py (seed 42, byte-identical reruns) writes 3 test datasets (calls_baseline, calls_demo with planted D-turnout/C-travel/peak-processing/M-B2 signals, calls_messy with 7 planted defects) plus units.csv and actions_demo.csv; data/README.md documents every file and column."
 
   - id: H-03
     title: Core QC statistic as one plain, tested function
     points: "25 - Tool Implementation: valid analyses relevant to quality control in R or Python"
-    status: todo
-    owner: ""
-    started_at: ""
+    status: done
+    owner: "Claude (agent) + Nidhi Baderiya"
+    started_at: "2026-10-16 18:19"
     owns: ["app/qc.py", "app/qc.R", "app/requirements.txt", "tests/"]
     notes: >
       Load the stats-first-steering skill before writing any statistics. Plain
@@ -69,14 +69,14 @@ tasks:
       pytest tests (Python) or Rscript -e "testthat::test_dir('tests')" (R)
       passes, including one test that reproduces the SPEC section 4
       known-answer check and one degenerate case (constant data or n = 1).
-    result: ""
+    result: "app/qc.py: 33 pytest tests pass (all SPEC section 4 known answers + degenerate cases); fresh-context stats review OVERALL PASS after 2 fixes (float-noise constants, invalid-call windows)."
 
   - id: H-04
     title: Working tool - one demo copied to app/ and wired to the H-03 function
     points: "25 - Tool Implementation: an effective, working tool (does it run?)"
-    status: todo
-    owner: ""
-    started_at: ""
+    status: done
+    owner: "Claude helper (UI) + Claude (agent) + Nidhi Baderiya"
+    started_at: "2026-10-16 18:19"
     owns: ["app/"]
     notes: >
       Copy ONE folder from demos/ (the one named in SPEC section 5) to app/.
@@ -86,28 +86,28 @@ tasks:
       The testme script in app/ starts the tool with one command, and a call
       on one data/ file (endpoint, function call or app upload) returns the
       same numbers as the H-03 known-answer test.
-    result: ""
+    result: "app/testme.sh starts the Shiny app with one command (HTTP 200, also from a fresh copy); every number on screen comes from qc.py and was checked in the browser against qc output on all 3 datasets."
 
   - id: H-05
     title: Demonstration of the tool on every test dataset
     points: "10 - Tool Design: a clear demonstration of the tool, using test datasets"
-    status: todo
-    owner: ""
-    started_at: ""
+    status: in_progress
+    owner: "Claude (agent) + Nidhi Baderiya"
+    started_at: "2026-10-16 19:08"
     owns: ["demo/", "app/frontend/"]
     definition_of_done: >
       demo/README.md walks through each data/ CSV with the exact command or
       URL to run, the numbers or chart the tool shows, and a one-line "how to
       read this"; a teammate who did not write it follows it and gets the same
       numbers.
-    result: ""
+    result: "demo/README.md walks through all 3 CSVs plus the dispatcher board; every quoted number was re-read from the running app. Still open: a teammate follows it and gets the same numbers."
 
   - id: H-06
     title: Deploy to the course Posit Connect server
     points: "protects the 25 working-tool points - judges must be able to open it"
-    status: todo
-    owner: ""
-    started_at: ""
+    status: in_progress
+    owner: "Claude (agent) + Nidhi Baderiya"
+    started_at: "2026-10-16 19:08"
     owns: [".github/workflows/", ".github/scripts/", "app/manifest.json", "app/.python-version"]
     notes: >
       Load the connect-publish skill. Copy ONE workflow for your stack from
@@ -120,15 +120,15 @@ tasks:
     definition_of_done: >
       The workflow run is green, and the public URL answers HTTP 200 from a
       logged-out browser and returns the H-03 numbers for one test dataset.
-    result: ""
+    result: "Workflow in .github/workflows/deploy-shiny-py.yml (APP_DIR app) and app/manifest.json (python-shiny, 3.12.15) are ready. Still open: the team adds CONNECT_SERVER and CONNECT_API_KEY as GitHub repo secrets, then push; check the URL logged out."
 
   - id: H-07
     title: README and function documentation
     points: "10 - Tool Documentation: excellent, easy-to-follow documentation"
-    status: todo
-    owner: ""
-    started_at: ""
-    owns: ["README.md", "app/README.md"]
+    status: in_progress
+    owner: "Claude helper (docs) + Nidhi Baderiya"
+    started_at: "2026-10-16 18:19"
+    owns: ["README.md", "app/README.md", "docs/six_sigma.md"]
     notes: >
       Replace the hackathon README.md with your tool's README; the event
       pages stay in docs/. See demos/making_readmes/.
@@ -137,14 +137,14 @@ tasks:
       how each function or endpoint works, how to run it in one command, the
       live URL, and links demo/README.md. A teammate who did not write the
       code follows it from a fresh clone and it works.
-    result: ""
+    result: "README.md (tool README) and app/README.md (all 31 qc functions) written; quick-start steps worked from a fresh copy. Still open: a teammate follows it from a fresh clone; live URL to add after deploy."
 
   - id: H-08
     title: Reproducible public repo, submitted on Devpost
     points: "5 - Tool Documentation: fully reproducible code, posted publicly to GitHub"
-    status: todo
-    owner: ""
-    started_at: ""
+    status: in_progress
+    owner: "Claude (agent) + Nidhi Baderiya"
+    started_at: "2026-10-16 19:08"
     owns: [".gitignore"]
     notes: >
       Make this clone your own public repo early (a new GitHub repo, then
@@ -154,4 +154,4 @@ tasks:
       git clone of the public repo into an empty folder, then the app/
       testme script and the H-03 tests both pass with no extra steps; git
       grep -i "api_key" finds no real key; the Devpost entry links the repo.
-    result: ""
+    result: "Simulated fresh clone (only the files git would commit): new 3.12 venv from app/requirements.txt, 60 tests pass, testme serves HTTP 200; no real key found. Still open: commit and push, real clone check, Devpost entry links the repo."
