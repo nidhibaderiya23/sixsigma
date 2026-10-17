@@ -23,7 +23,7 @@
     if (!window.L) return null;
     var geo = JSON.parse(el.dataset.geo);
     var center = JSON.parse(el.dataset.center || "[42.444,-76.499]");
-    var map = L.map(el, { scrollWheelZoom: false, zoomSnap: 0.25 }).setView(center, Number(el.dataset.zoom || 13));
+    var map = L.map(el, { scrollWheelZoom: false, zoomSnap: 0.25, trackResize: false }).setView(center, Number(el.dataset.zoom || 13));
     // Esri's grey canvas tiles (no key needed): a base layer plus a street-name layer.
     var theme = el.dataset.tiles || cssVar("--map-tiles") || "dark";
     var shade = theme === "light" ? "Light" : "Dark";
