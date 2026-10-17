@@ -1,6 +1,6 @@
 # Presenting ERGent (showcase, Sat Oct 17, 2-3 PM)
 
-Four ready-made formats. Pick one for the professor and the class, and keep a second as a backup.
+Five ready-made formats. Pick one for the professor and the class, and keep a second as a backup.
 Every number in them comes from the demo data and `demo/README.md`.
 
 | # | Format | Length | Best when | What is ready |
@@ -9,6 +9,7 @@ Every number in them comes from the demo data and `demo/README.md`.
 | 2 | **DMAIC walkthrough**: one slide per phase | 8 min + 3 min demo | The professor and judges; you want to show the course methods | [Deck 2](https://claude.ai/artifact/LP2r4ZFPgszrQWypgpr8gg) (13 slides, speaker notes), [demo cue card](demo-cue-card.md) |
 | 3 | **Live role-play**, no slides | 6 min | A small room or a demo table; you want energy | [Role-play script](role-play.md) |
 | 4 | **60-second lightning talk** | 1 min | If ERG wins and is asked for a lightning talk at the closing | [Lightning talk](lightning-talk.md) |
+| 5 | **Captioned walkthrough** of the demo, in any design | 3 min, self-running | Backup if the live app or Wi-Fi fails; or screen-record it with QuickTime for the Devpost video | [Demo walkthrough](https://claude.ai/artifact/TjuXo1wR6W5AP3v3r8yvvA) (18 steps; pick the version; Play, or arrow keys) |
 
 Also ready: [Q&A preparation](qa-prep.md) with the questions a Six Sigma professor is likely to ask.
 
@@ -35,3 +36,7 @@ Change the split to match who built what. Everyone should be able to answer any 
 - [ ] The decks are shared with your teammates (each deck's Share menu); they are private until shared.
 - [ ] To present a deck: open it and use **Present**. It also downloads as PowerPoint or PDF (Share, Export).
 - [ ] Screenshots in `docs/deliverables/screenshots/` in case the Wi-Fi fails.
+
+## Pick the version first
+
+The [version gallery](https://claude.ai/artifact/UZRYdpo4fagMH7NqsnjwbK) shows all seven designs side by side, screen by screen. These links (gallery, walkthrough, decks) are private until you share them from each page's Share menu.
