@@ -259,7 +259,7 @@ def normal_plot(norm: dict, zone: str):
     ax.scatter(t, o, color=LINE, s=8)
     slope, intercept = np.polyfit(t, o, 1)
     ax.plot(t, slope * t + intercept, color=MUTED, linewidth=1)
-    _style(ax, f"Zone {zone}: normal probability plot of ln(minutes)  "
+    _style(ax, f"Zone {zone}: normal probability plot of ln(minutes)\n"
                f"(Shapiro-Wilk p = {norm['p']:.3f})", "ln(minutes)")
     ax.set_title(ax.get_title(loc="left"), color=FG, fontsize=10, loc="left", pad=22)   # a long title, small figure
     ax.set_xlabel("normal quantile", color=MUTED, fontsize=9)
