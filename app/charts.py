@@ -12,7 +12,10 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import matplotlib.dates as mdates  # noqa: E402
+import html  # noqa: E402
+import io  # noqa: E402
 import math  # noqa: E402
+import re  # noqa: E402
 
 import numpy as np  # noqa: E402
 
@@ -41,15 +44,16 @@ def _style(ax, title=None, ylabel=None):
 
 
 def _fig(rows=1, height=3.2, sharex=False):
+    # constrained layout re-fits titles, legends and labels at whatever size Shiny draws the figure
     fig, axes = plt.subplots(rows, 1, figsize=(9, height), sharex=sharex, facecolor=BG,
-                             squeeze=False)
+                             squeeze=False, layout="constrained")
     return fig, [a[0] for a in axes]
 
 
-def _legend(ax):
-    """A one-line legend between the title and the plot, so it never covers data."""
+def _legend(ax, ncol=6):
+    """A legend between the title and the plot, so it never covers data."""
     leg = ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), fontsize=8, frameon=False,
-                    ncol=6, borderaxespad=0.2, handlelength=1.6, columnspacing=1.2)
+                    ncol=ncol, borderaxespad=0.2, handlelength=1.6, columnspacing=1.2)
     for text in leg.get_texts():
         text.set_color(MUTED)
 
@@ -65,15 +69,16 @@ def empty(message: str):
     return fig
 
 
-def daily_chart(chart, zone: str, action_dates=()):
-    """X-bar chart (top) and S chart (bottom) from qc.daily_xbar_s()."""
+def daily_chart(chart, zone: str, action_dates=(), target_min: float | None = None):
+    """X-bar chart (top) and S chart (bottom) from qc.daily_xbar_s(), with the
+    target (a spec limit for single calls) drawn as an amber line for reference."""
     if chart is None or not len(chart):
         msg = chart.attrs.get("message", "no data") if chart is not None else "no data"
         return empty(f"Zone {zone}: {msg}")
     fig, (ax1, ax2) = _fig(rows=2, height=5.2, sharex=True)
     d = chart["date"]
     base = chart[chart["baseline"]]
-    if len(base):
+    if 0 < len(base) < len(chart):          # shade only a separate baseline, not the whole chart
         for ax in (ax1, ax2):
             ax.axvspan(base["date"].min(), base["date"].max(), color="#ffffff", alpha=0.04,
                        label="baseline" if ax is ax1 else None)
@@ -89,13 +94,15 @@ def daily_chart(chart, zone: str, action_dates=()):
     check = chart[chart["check"]]
     ax1.scatter(check["date"], np.exp(check["mean_log"]), facecolors="none",
                 edgecolors=AMBER, s=40, zorder=5, label="check the data")
+    if target_min is not None:
+        ax1.axhline(target_min, color=AMBER, linewidth=1.4, label=f"{target_min:.0f}-min target (spec)")
     for when in action_dates:
         for ax in (ax1, ax2):
             ax.axvline(when, color=GREEN, linewidth=1.2)
         ax1.text(when, ax1.get_ylim()[1], " action", color=GREEN, fontsize=8, va="top")
-    _style(ax1, f"Zone {zone}: daily average response, limits from the baseline days",
-           "minutes")
-    _legend(ax1)
+    _style(ax1, f"Zone {zone}: daily average response", "minutes")
+    _legend(ax1, ncol=4)
+    ax1.set_title(ax1.get_title(loc="left"), color=FG, fontsize=11, loc="left", pad=36)
     s = chart.dropna(subset=["sd_log"])
     ax2.step(s["date"], s["s_ucl"], where="mid", color=MUTED, linestyle="--", linewidth=1)
     ax2.plot(s["date"], s["s_center"], color=MUTED, linewidth=1)
@@ -106,43 +113,37 @@ def daily_chart(chart, zone: str, action_dates=()):
     ax2.xaxis.set_major_locator(mdates.DayLocator(interval=5))     # a date label every 5 days
     ax2.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
     fig.autofmt_xdate()
-    fig.tight_layout()
     return fig
 
 
-def imr_chart(imr, zone: str, target_min: float):
-    """Individuals chart (log scale, minutes) and moving-range chart from qc.imr_chart()."""
+def individuals_chart(imr, zone: str, target_min: float):
+    """A plain control chart of every call (from qc.imr_chart()): each call's
+    response time in order, the center line, the upper and lower control limits
+    (UCL, LCL) and the target as the spec limit. Log scale, labelled in minutes."""
     if imr is None or not len(imr) or imr["ucl"].isna().all():
         msg = imr.attrs.get("message", "no data") if imr is not None else "no data"
         return empty(f"Zone {zone}: {msg}")
-    fig, (ax1, ax2) = _fig(rows=2, height=5.2, sharex=True)
+    fig, (ax1,) = _fig(height=3.8)
     x = np.arange(len(imr))
     ax1.plot(x, imr["response_min"], color=LINE, linewidth=0.8, marker="o", markersize=2,
              label="each call")
     ax1.axhline(imr["center_min"].iloc[0], color=MUTED, linewidth=1, label="center")
-    ax1.axhline(imr["ucl_min"].iloc[0], color=MUTED, linestyle="--", linewidth=1,
-                label="control limits (3σ)")
+    ax1.axhline(imr["ucl_min"].iloc[0], color=MUTED, linestyle="--", linewidth=1, label="UCL / LCL (3σ)")
     ax1.axhline(imr["lcl_min"].iloc[0], color=MUTED, linestyle="--", linewidth=1)
-    ax1.axhline(target_min, color=AMBER, linewidth=1.4,
-                label=f"{target_min:.0f}-min target (spec, not a control limit)")
+    ax1.axhline(target_min, color=AMBER, linewidth=1.4, label=f"{target_min:.0f}-min target (spec)")
     bad = imr[imr["beyond"]]
     ax1.scatter(np.flatnonzero(imr["beyond"]), bad["response_min"], color=RED, s=30,
-                zorder=5, label="extreme delay")
+                zorder=5, label="beyond UCL")
     ax1.set_yscale("log")
     lo, hi = ax1.get_ylim()
     ticks = [t for t in (1, 2, 3, 5, 8, 10, 15, 20, 30, 45, 60) if lo <= t <= hi]
     ax1.set_yticks(ticks)
     ax1.yaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter("%g"))
     ax1.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
-    _style(ax1, f"Zone {zone}: every call in order (log scale)", "minutes")
-    _legend(ax1)
-    ax2.plot(x, imr["mr"], color=LINE, linewidth=0.8)
-    if imr.attrs.get("mr_ucl") is not None:
-        ax2.axhline(imr.attrs["mr_ucl"], color=MUTED, linestyle="--", linewidth=1)
-        ax2.axhline(imr.attrs["mr_bar"], color=MUTED, linewidth=1)
-    _style(ax2, "Moving range (jump between consecutive calls, log minutes)", "MR")
-    ax2.set_xlabel("call number", color=MUTED, fontsize=9)
-    fig.tight_layout()
+    _style(ax1, f"Zone {zone}: every call", "minutes (log scale)")
+    ax1.set_xlabel("call number, in order", color=MUTED, fontsize=9)
+    _legend(ax1, ncol=3)
+    ax1.set_title(ax1.get_title(loc="left"), color=FG, fontsize=11, loc="left", pad=36)
     return fig
 
 
@@ -161,28 +162,74 @@ def stage_breakdown(bd):
     _style(ax, "Median minutes in each stage, by zone", None)
     ax.set_xlabel("minutes", color=MUTED, fontsize=9)
     _legend(ax)
-    fig.tight_layout()
     return fig
+
+
+STAGE_LABEL = {"processing": "dispatch processing", "turnout": "crew turnout", "travel": "travel"}
+
+
+def _secs(s) -> str:
+    if s is None or (isinstance(s, float) and np.isnan(s)):
+        return "–"
+    s = int(round(s))
+    return f"{s // 60}:{s % 60:02d}"
+
+
+def _stage_share_fig(bd):
+    fig, (ax,) = _fig(height=3.4)
+    zones = list(bd["zone"])
+    labels = ["City" if z == "All" else z for z in zones]
+    left = np.zeros(len(zones))
+    tips = {}
+    for stage in ("processing", "turnout", "travel"):
+        vals = bd[f"{stage}_share"].fillna(0).to_numpy() * 100
+        bars = ax.barh(labels, vals, left=left, color=STAGE_COLORS[stage], label=stage, height=0.6)
+        for z, bar, v, over, med in zip(zones, bars, vals, bd[f"{stage}_excess_min"],
+                                        bd[f"{stage}_median_s"]):
+            gid = f"bar-{z}-{stage}"
+            bar.set_gid(gid)
+            who = "City" if z == "All" else f"Zone {z}"
+            tips[gid] = (f"{who} · {STAGE_LABEL[stage]}: {v:.0f}% of the minutes over target "
+                         f"({over:.1f} min over in total; median {_secs(med)})")
+        left += vals
+    ax.set_xlim(0, 100)
+    ax.invert_yaxis()
+    _style(ax, "Share of minutes over target, by stage", None)
+    ax.set_xlabel("% of minutes over target", color=MUTED, fontsize=9)
+    _legend(ax)
+    return fig, tips
 
 
 def stage_share(bd):
     """Each stage's share of minutes over target, by zone."""
     if bd is None or not len(bd):
         return empty("no data")
-    fig, (ax,) = _fig(height=3.4)
-    zones = list(bd["zone"])
-    left = np.zeros(len(zones))
-    for stage in ("processing", "turnout", "travel"):
-        vals = bd[f"{stage}_share"].fillna(0).to_numpy() * 100
-        ax.barh(zones, vals, left=left, color=STAGE_COLORS[stage], label=stage, height=0.6)
-        left += vals
-    ax.set_xlim(0, 100)
-    ax.invert_yaxis()
-    _style(ax, "Which stage causes the minutes over target (% of each zone's total)", None)
-    ax.set_xlabel("% of minutes over target", color=MUTED, fontsize=9)
-    _legend(ax)
-    fig.tight_layout()
-    return fig
+    return _stage_share_fig(bd)[0]
+
+
+def to_svg(fig, tips: dict | None = None) -> str:
+    """The figure as inline SVG markup that fills its container's width. Each
+    artist whose gid is a key of `tips` gets a <title>, which the browser shows
+    as a tooltip when the user hovers over it."""
+    buf = io.StringIO()
+    fig.savefig(buf, format="svg", facecolor=fig.get_facecolor())
+    plt.close(fig)
+    svg = buf.getvalue()
+    svg = svg[svg.index("<svg"):]
+    svg = re.sub(r'<svg([^>]*?) width="[^"]+" height="[^"]+"',
+                 r'<svg\1 width="100%" style="height:auto;display:block"', svg, count=1)
+    for gid, text in (tips or {}).items():
+        svg = svg.replace(f'<g id="{gid}">',
+                          f'<g id="{gid}" class="rw-tip"><title>{html.escape(text)}</title>', 1)
+    return svg
+
+
+def stage_share_svg(bd) -> str:
+    """stage_share() as SVG; hover a bar to see its share, minutes over target and median."""
+    if bd is None or not len(bd):
+        return to_svg(empty("no data"))
+    fig, tips = _stage_share_fig(bd)
+    return to_svg(fig, tips)
 
 
 def normal_plot(norm: dict, zone: str):
@@ -197,21 +244,32 @@ def normal_plot(norm: dict, zone: str):
     _style(ax, f"Zone {zone}: normal probability plot of ln(minutes)  "
                f"(Shapiro-Wilk p = {norm['p']:.3f})", "ln(minutes)")
     ax.set_xlabel("normal quantile", color=MUTED, fontsize=9)
-    fig.tight_layout()
     return fig
 
 
-def before_after_chart(chart_full, zone: str, action_date):
-    """Daily averages before and after an action, the after part with its own limits."""
-    return daily_chart(chart_full, zone, action_dates=[action_date])
+def before_after_chart(chart_full, zone: str, action_date, target_min: float | None = None):
+    """The zone's daily chart with the action marked, and the target line."""
+    return daily_chart(chart_full, zone, action_dates=[action_date], target_min=target_min)
 
 
-def zone_box_chart(sub, priority: int, target_min: float):
+def _priority_title(priority: int) -> str:
+    try:
+        import qc
+        return f"Priority {priority}: {qc.PRIORITY_NAME[int(priority)]}"
+    except Exception:  # charts.py must still draw if qc is not importable
+        return f"Priority {priority}"
+
+
+def zone_box_chart(sub, priority: int, target_min: float, reasons: dict | None = None,
+                   _tips: dict | None = None):
     """Zones as subgroups, from qc.zone_subgroup_chart(): a box plot of each zone's
     log response minutes, the zone mean (diamond), and the city's center line and
-    control limits (each zone's limits depend on its number of calls)."""
+    control limits (each zone's limits depend on its number of calls). The title
+    is the priority's name, in bold. With `_tips` (a dict), each zone mean gets an
+    id and a hover text: the reason from `reasons` for red points (slower than the
+    city), else its typical time."""
     if sub is None or not len(sub) or int(sub["n"].sum()) == 0:
-        return empty(f"Priority {priority}: no completed calls in these two shifts yet")
+        return empty(f"{_priority_title(priority)}: no completed calls in these two shifts yet")
     fig, (ax,) = _fig(height=3.6)
     zones = list(sub["zone"])
     have = [i for i, v in enumerate(sub["values_log"]) if len(v)]
@@ -233,12 +291,22 @@ def zone_box_chart(sub, priority: int, target_min: float):
             first = False
         if r.mean_log is not None and not (isinstance(r.mean_log, float) and np.isnan(r.mean_log)):
             if r.flag == "above":
-                ax.scatter(i, r.mean_log, marker="D", s=40, color=RED, zorder=5)
+                pt = ax.scatter(i, r.mean_log, marker="D", s=40, color=RED, zorder=5)
             elif r.flag == "below":
-                ax.scatter(i, r.mean_log, marker="D", s=40, facecolors="none", edgecolors=AMBER,
-                           zorder=5)
+                pt = ax.scatter(i, r.mean_log, marker="D", s=40, facecolors="none", edgecolors=AMBER,
+                                zorder=5)
             else:
-                ax.scatter(i, r.mean_log, marker="D", s=34, color=LINE, zorder=5)
+                pt = ax.scatter(i, r.mean_log, marker="D", s=34, color=LINE, zorder=5)
+            if _tips is not None:
+                gid = f"box-{priority}-{r.zone}"
+                pt.set_gid(gid)
+                typical = math.exp(r.mean_log)
+                _tips[gid] = ((reasons or {}).get(r.zone) if r.flag == "above" and reasons
+                              and r.zone in reasons else
+                              f"Zone {r.zone}: {typical:.1f} min typical ({r.n} call{'s' if r.n != 1 else ''})"
+                              + (", slower than the city" if r.flag == "above" else
+                                 ", faster than the city: check the data" if r.flag == "below" else
+                                 ", within the city's limits"))
     ax.scatter([], [], marker="D", s=34, color=LINE, label="zone mean")
     ax.scatter([], [], marker="D", s=40, color=RED, label="slower than city")
     ax.axhline(math.log(target_min), color=AMBER, linewidth=1.4,
@@ -250,12 +318,18 @@ def zone_box_chart(sub, priority: int, target_min: float):
     ax.set_xticks(range(len(zones)))
     ax.set_xticklabels([f"{z}\nn={n}" for z, n in zip(zones, sub["n"])])
     ax.set_xlim(-0.6, len(zones) - 0.4)
-    _style(ax, f"Priority {priority}: each zone's calls against the city's control limits",
-           "minutes (log scale)")
-    ax.set_title(ax.get_title(loc="left"), color=FG, fontsize=11, loc="left", pad=36)
+    _style(ax, _priority_title(priority), "minutes (log scale)")
+    ax.set_title(_priority_title(priority), color=FG, fontsize=12, loc="left", pad=36,
+                 fontweight="bold")
     leg = ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), fontsize=8, frameon=False, ncol=3,
                     borderaxespad=0.2, handlelength=1.6, columnspacing=1.2)
     for text in leg.get_texts():
         text.set_color(MUTED)
-    fig.tight_layout()
     return fig
+
+
+def zone_box_svg(sub, priority: int, target_min: float, reasons: dict | None = None) -> str:
+    """zone_box_chart() as SVG: hover a zone's diamond to see why it is red, or its typical time."""
+    tips: dict = {}
+    fig = zone_box_chart(sub, priority, target_min, reasons, _tips=tips)
+    return to_svg(fig, tips)

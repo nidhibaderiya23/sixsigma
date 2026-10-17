@@ -9,7 +9,7 @@ Most of this page is already decided by the event and the [rubric](docs/criteria
 The examples after each `FILL IN` show the shape of an answer. They are not hints about the prompts.
 
 ## 1. Team and prompt
-- **Team name:** Team ERG (Nidhi Baderiya, Zeba Haq, Dhruv Bhandari). Tool name: **Response Watch**.
+- **Team name:** Team ERG (Nidhi Baderiya, Zeba Haq, Dhruv Bhandari). Tool name: **ERGent**.
 - **Track:** on-campus (24 hours). Devpost submission due Sat Oct 17, 1 PM ET; showcase 2-3 PM.
 - **Prompt we chose:** On-campus prompt, Health Systems: **Emergency Response**. "Ambulance dispatch
   to on-scene times are varying wildly across city zones, but the 911 center only looks at monthly
@@ -73,18 +73,17 @@ Say the method in words before any code exists. Load the `stats-first-steering` 
      call order. Center = mean of the logs; σ_short = MR̄ / 1.128 (d₂ for pairs); limits = center ± 3σ_short.
      Moving-range upper limit = 3.267 × MR̄ (D₄), lower = 0. Limits are shown back in minutes.
   4. **Daily zone X̄-S chart** (average and standard deviation; the course's recommended pair), with
-     **constant limits** (the team chose this on Oct 16). A subgroup = one zone-day's calls, as log
-     response times.
-     - X̄ chart: the center x̄̄ = the mean of the baseline days' daily means. σ_x̄ = MR̄/1.128 of
-       those daily means (consecutive baseline days). The limits x̄̄ ± 3σ_x̄ are the same for every day.
-     - S chart: the center s̄ = the mean of the baseline daily standard deviations. The limits are
-       B₄s̄ and B₃s̄ (lower ≥ 0), with B₃/B₄ = 1 ∓ 3√(1 - c₄²)/c₄ for n̄ = the average calls per
-       baseline day. For n̄ = 3, B₄ = 2.568 (the table value).
-     - Limits come from the baseline (default: the first 14 days), not from the days being judged.
-       Measured on the demo city, limits taken from the chart period itself hid Zone D's problem
-       (0 flagged days instead of 11).
-     - σ_short = √(mean of the daily variances) (the course formula) is still used for Cpk and for
-       the zones-as-subgroups chart.
+     **constant limits from the selected chart period**. The team decided this on Oct 17, after seeing
+     that a long problem inside the period widens the limits and can hide itself.
+     - A subgroup = one zone-day's calls, as log response times.
+     - X̄ chart: center = the mean of the daily means in the period; σ_x̄ = the standard deviation of
+       those daily means; limits = center ± 3σ_x̄. The amber target line (the spec limit) is drawn too.
+     - S chart: center s̄ = the mean of the daily standard deviations in the period; limits B₄s̄ and B₃s̄
+       (B₃/B₄ = 1 ∓ 3√(1 - c₄²)/c₄ for n̄; B₄ = 2.568 at n̄ = 3).
+     - The zone map, the suggested actions and capability use the same period limits, so they always
+       agree with the chart.
+     - The "every call" chart is an individuals chart (center, UCL/LCL = ± 3 MR̄/1.128 from the period's
+       calls, and the spec limit), without the moving-range panel.
   5. **Flag rules** on the daily X̄ points. A point on the slow side is an alarm; a point on the fast side
      only says "check the data". Rules: (1) 1 point beyond 3σ; (2) 2 of 3 beyond 2σ, same side; (3) 4 of
      5 beyond 1σ; (4) 8 in a row above the center line; (5) 6 in a row rising. Rules 1-4 are the
@@ -182,17 +181,16 @@ Fixed for every team:
       confirmation before Clear.
     - History tab: the current and previous shift, following the board clock. It shows real-time
       dispatcher suggestions and a zones-as-subgroups control chart for each priority.
-  - **Supervisor:** a settings card above the tabs sets the dataset, the priority (default 1), the as-of
-    date, the baseline start and the targets.
-    - **Overview:** a zone health list (green, amber or red, with the reason in plain words). It covers
-      the last 7 days. A chart signal is rule 1, or 2 or more different slow-side rules. Red means a
-      chart signal and the 90th percentile is over target; amber means one of the two; green means
-      neither (the team chose this stricter rule on Oct 16 to cut chance alarms). Then KPI tiles
-      (average next to the 90th and 95th percentiles, and % on time); a history tile map.
-    - **Charts:** a control bar (a toggle between the X̄-S and I-MR charts, zone, as-of date kept in sync
-      with Settings, chart period, one "Jump to" menu). Then one chart at a time with flagged points in
-      red, the stage breakdown, capability as plain-language verdicts, and a plain answer to "do the
-      zones really differ?".
+  - **Supervisor:** two tabs, Charts and Actions.
+    - The zone map colors each zone over the last 7 days. A chart signal is rule 1, or 2 or more
+      different slow-side rules. Red = a chart signal and the 90th percentile over target; amber = one
+      of the two; green = neither (the team chose this stricter rule on Oct 16 to cut chance alarms).
+    - **Charts** (Overview merged in, Oct 17): a control bar (chart, zone, priority, dataset, as of,
+      chart period, targets).
+      - The control chart sits on the left, with statistics (average, standard deviation, % on time,
+        zones flagged) and the zone map on the right.
+      - Below: delay by stage (hover a bar for its values) next to the zone comparison; then
+        capability as plain verdicts.
     - Every explanation for a supervisor who is new to Six Sigma sits behind a "More info…" toggle
       with short questions and answers. The F statistic, p-values, Ppk/Cpk numbers and the normal plot
       are only in there.

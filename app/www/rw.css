@@ -1,4 +1,4 @@
-/* Response Watch: a dark "command center" look.
+/* ERGent: a dark "command center" look.
    Colours: green / amber / red are used for status only. */
 
 :root {
@@ -116,13 +116,13 @@ h1, h2, h3, h4, h5 { color: var(--text); font-family: var(--font); letter-spacin
   padding: 20px; min-width: 0;
 }
 .rw-eyebrow { font-size: 10.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
-.rw-title { font-size: 18px; font-weight: 700; margin: 2px 0 0; color: var(--text); display: flex; align-items: center; gap: 9px; }
+.rw-title { font-size: 18px; font-weight: 700; margin: 0; color: var(--text); display: flex; align-items: center; gap: 9px; }
 .rw-step {
   flex: none; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center;
   justify-content: center; font-size: 12px; font-weight: 700; line-height: 1; color: var(--text);
   border: 1px solid var(--border-strong); background: var(--raised);
 }
-.rw-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.rw-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .rw-count {
   min-width: 28px; text-align: center; padding: 2px 9px; border-radius: 999px;
   border: 1px solid var(--border-strong); font-size: 12px; font-weight: 600; color: var(--text);
@@ -134,7 +134,7 @@ h1, h2, h3, h4, h5 { color: var(--text); font-family: var(--font); letter-spacin
 .rw-stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .rw-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px; align-items: start; margin-top: 16px; }
 .rw-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
-.rw-hist-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; align-items: start; margin-top: 16px; }
+.rw-hist-grid { display: grid; grid-template-columns: minmax(0, 72fr) minmax(0, 28fr); gap: 16px; align-items: start; margin-top: 16px; }
 .rw-hist-grid > .shiny-html-output { min-width: 0; }
 .rw-two > .shiny-html-output { display: flex; min-width: 0; }
 .rw-two > .shiny-html-output > .rw-card { flex: 1 1 auto; }
@@ -190,6 +190,12 @@ h1, h2, h3, h4, h5 { color: var(--text); font-family: var(--font); letter-spacin
 .rw-tip-text { margin-left: 8px; }
 .rw-shiftline { font-size: 14px; font-weight: 600; color: var(--text); }
 .shiny-plot-output img { max-width: 100%; height: auto; border-radius: 8px; }
+/* the inline SVG chart: fills the card, scales with it, never scrolls sideways */
+.rw-svg { width: 100%; max-width: 100%; overflow: hidden; }
+.rw-svg > .shiny-html-output { display: block; width: 100%; }
+.rw-svg svg { display: block; width: 100%; max-width: 100%; height: auto; }
+.rw-tip { cursor: help; }
+.rw-tip:hover { opacity: 0.8; }
 .rw-empty { color: var(--muted); font-size: 13px; padding: 14px; text-align: center; border: 1px dashed var(--border-strong); border-radius: 10px; }
 .rw-scroll { max-height: 360px; overflow-y: auto; padding-right: 6px; scrollbar-width: thin; scrollbar-color: #3a3f48 transparent; }
 .rw-scroll::-webkit-scrollbar { width: 8px; }

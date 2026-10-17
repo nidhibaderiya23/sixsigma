@@ -26,13 +26,13 @@
       "checksum": "61939823fbcc7e8de3b61ab105331baf"
     },
     "README.md": {
-      "checksum": "b918b7f772a448a75367e50a9ad10498"
+      "checksum": "52d4bc033cbf9ce2643cbf5747c72598"
     },
     "app.py": {
-      "checksum": "ed02114a6741e3be2eafbdbbd7dc679b"
+      "checksum": "b7e516e55672bade3fa2afad7ff7554c"
     },
     "charts.py": {
-      "checksum": "df1a877fcdbfed0c789b7bdde9d90eb3"
+      "checksum": "1b74636fcdaa4538381cd296bc7b02a6"
     },
     "data/actions_demo.csv": {
       "checksum": "bcfa33f71f65c7990137ef7c800ee15f"
@@ -50,31 +50,31 @@
       "checksum": "a7546853f57d216c9dcb7229b1a8b442"
     },
     "deployme.sh": {
-      "checksum": "157e287aa53427208c1e75c8fb736711"
+      "checksum": "6eb7ad57483e39779cf436cb095c16df"
     },
     "manifestme.sh": {
       "checksum": "014e4528353180ede3db3e3fb1bf464e"
     },
     "qc.py": {
-      "checksum": "d6f1e1e749a68d469f94b405aac83173"
+      "checksum": "57e2e34db797063a959fd19648ed22fc"
     },
     "simulator.py": {
-      "checksum": "41f2686d988ed6ae36fd9fad8dbb02c2"
+      "checksum": "2fb6fbc0afa0b919c5bd1984ccbf148a"
     },
     "testme.sh": {
-      "checksum": "4baff5dca2b66fb1428db643e07cd02c"
+      "checksum": "a579c10a4ebde3d3d56e3493f43eb243"
     },
     "ui_dispatcher.py": {
-      "checksum": "ea7ab1c67f6e5d1792d0b04a831d0328"
+      "checksum": "24e5380bdc98198028a81b7da0e6fb8c"
     },
     "ui_supervisor.py": {
-      "checksum": "db16ac4a85e7ac1d31dc7351d3e340a0"
+      "checksum": "d410c379b7ae1206aef79bd240140482"
     },
     "www/rw.css": {
-      "checksum": "aef51c9a52bbf3664034406007e02699"
+      "checksum": "9b922f768d4559eab64d83c9090fe730"
     },
     "www/rw.js": {
-      "checksum": "50e633d40a78f59209e25854f6a3b412"
+      "checksum": "f54c236b1314198f478e5dedf9b133e5"
     }
   }
 }

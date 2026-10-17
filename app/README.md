@@ -1,6 +1,6 @@
-# Response Watch: function reference
+# ERGent: function reference
 
-This folder holds the Response Watch tool: a Shiny for Python dashboard for a city 911 EMS dispatch center (Team ERG). This page explains **how each function works, what goes in, what comes out, and what happens when the data is bad**. For what the tool is and how to run it, start with the [main README](../README.md). For the formulas and the hand-worked known answers, see [`SPEC.md`](../SPEC.md) section 4.
+This folder holds ERGent (version 1): a Shiny for Python dashboard for a city 911 EMS dispatch center, by Team ERG. This page explains **how each function works, what goes in, what comes out, and what happens when the data is bad**. For what the tool is and how to run it, start with the [main README](../README.md). For the formulas and the hand-worked known answers, see [`SPEC.md`](../SPEC.md) section 4.
 
 **Contents:**
 [1. What is in this folder](#1-what-is-in-this-folder) |
@@ -22,7 +22,7 @@ This folder holds the Response Watch tool: a Shiny for Python dashboard for a ci
 | [`charts.py`](charts.py) | Matplotlib figures for the supervisor screens and the dispatcher's History tab. Draws what `qc.py` computed. Computes nothing. |
 | [`simulator.py`](simulator.py) | The live board's rules: the call model, the fleet, the clocks, and the shift replay. Pure Python, unit-tested. |
 | [`ui_dispatcher.py`](ui_dispatcher.py) | Dispatcher screens (live board, History tab), the simulation controls for the page header, and the building blocks both roles share. |
-| [`ui_supervisor.py`](ui_supervisor.py) | Supervisor screens: settings card, Overview, Charts, Actions, with plain-language "More info…" toggles. |
+| [`ui_supervisor.py`](ui_supervisor.py) | Supervisor screens: the Charts and Actions tabs, with short "More info" toggles. |
 | [`app.py`](app.py) | The Shiny app: start page, role picker, header. Wires the two roles together. |
 | `www/rw.css`, `www/rw.js` | The dark look, and a small script that repaints the running clocks once a second. |
 | `requirements.txt` | Pinned dependencies (`==`). |
@@ -87,7 +87,7 @@ The script never contains a key. **Keys go in your shell, in an untracked `.env`
 - **Zones and priorities.** `zone` is `"A"` to `"F"`, or `"All"` where a function accepts it. `priority` is `1`, `2` or `3` (an `int`).
 - **The `targets` dict.** Seconds. `{"processing": 64, "turnout": 60, "response": {1: 540, 2: 900, 3: 1200}}`. The default is `qc.TARGETS`. The supervisor's settings build one of these.
 - **Results.** Single statistics return a **dict** with an `ok` flag and a `message`. When `ok` is `False`, the number fields are `None` and `message` says why. Table results are **DataFrames**. Nothing here raises an error on bad data, except where a function below says so.
-- **Baseline.** Control limits come from a baseline period: `baseline_days` days (default 14) starting at `baseline_start` (default: the first day with a valid call). They are applied to every day.
+- **Limit window.** Control limits come from a window of `baseline_days` days (default 14) starting at `baseline_start` (default: the first day with a valid call), and apply to every day. In the app the window is the **chart period** the user picks (14, 28 or 42 days). That is simple and keeps the map, the suggestions and the chart in agreement. It has a cost: a problem that lasts most of the period widens the limits and can hide itself.
 
 A typical session, from the repo root:
 
@@ -104,7 +104,7 @@ fixes = qc.suggest(qc.until(stages, "2026-09-28"), priority=1)   # list of sugge
 
 ## 4. `qc.py`: the statistics
 
-`qc.py` has **36 public functions** and a few public constants, listed in the order they appear in the file. Functions starting with `_` are helpers ([4.9](#49-private-helpers)).
+`qc.py` has **37 public functions** and a few public constants, listed in the order they appear in the file. Functions starting with `_` are helpers ([4.9](#49-private-helpers)).
 
 ### 4.1 Constants
 
@@ -119,6 +119,7 @@ fixes = qc.suggest(qc.until(stages, "2026-09-28"), priority=1)   # list of sugge
 | `SHIFTS` | day 06-14, evening 14-22, night 22-06 | Shift boundaries by hour |
 | `CALL_COLUMNS` | 14 names | The columns of every calls CSV (see [`data/README.md`](../data/README.md)) |
 | `D2`, `D4` | 1.128, 3.267 | Control-chart constants for moving ranges of span 2 |
+| `PRIORITY_NAME` | `{1: "Life-threatening", 2: "Urgent", 3: "Non-urgent"}` | Plain names of the call priorities |
 | `RULE_TEXT` | R1 to R5 | Plain-words names for the flag rules, shown to the supervisor |
 | `NEIGHBORS` | zone to a tuple of zones | Which zones share an edge on the city grid. Used by the dispatcher tips ([4.8](#48-live-shift-tools-dispatcher)). |
 
@@ -191,14 +192,14 @@ The front door for the statistics. Adds stage durations, lateness and data-quali
 #### `summary(values_min, target_min) -> dict`
 
 - **Inputs:** `values_min`, response times in **minutes** (NaN is ignored); `target_min`, the response target in minutes.
-- **Returns:** `{"n", "mean", "median", "p90", "p95", "pct_on_time"}`. `pct_on_time` is 0 to 100. On time means value **at or under** the target.
-- **Formula:** `median`, `p90`, `p95` are `percentile` at 0.5, 0.9, 0.95. The mean is shown for comparison only. Known answer: [4, 5, 6, 7, 8, 9, 10, 11, 12, 20] with target 9 gives mean 9.2, median 8.5, p90 12.8, p95 16.4, on time 60%.
-- **Degenerate:** no values gives `n = 0` and every other field `None`. One value makes the median, p90 and p95 equal to it.
+- **Returns:** `{"n", "mean", "sd", "median", "p90", "p95", "pct_on_time"}`. `sd` is the sample standard deviation (divides by n - 1). `pct_on_time` is 0 to 100. On time means value **at or under** the target.
+- **Formula:** `median`, `p90`, `p95` are `percentile` at 0.5, 0.9, 0.95. Known answer: [4, 5, 6, 7, 8, 9, 10, 11, 12, 20] with target 9 gives mean 9.2, median 8.5, p90 12.8, p95 16.4, on time 60%.
+- **Degenerate:** no values gives `n = 0` and every other field `None`. One value makes the median, p90 and p95 equal to it, and `sd` is `None`.
 
 #### `zone_summary(stages, priority=1, targets=TARGETS) -> DataFrame`
 
 - **Inputs:** a `stages` table; `priority`; `targets`.
-- **Returns:** one row per zone A to F, plus a citywide `"All"` row. Columns: `zone, n, mean, median, p90, p95, pct_on_time` (minutes, and %). It uses valid calls of that priority, with the target `targets["response"][priority] / 60`.
+- **Returns:** one row per zone A to F, plus a citywide `"All"` row. Columns: `zone, n, mean, sd, median, p90, p95, pct_on_time` (minutes, and %). It uses valid calls of that priority, with the target `targets["response"][priority] / 60`.
 - **Degenerate:** a zone with no calls has `n = 0` and blank numbers.
 
 ### 4.4 Period helpers
@@ -271,9 +272,9 @@ Run rules on standardized points.
 
 #### `daily_xbar_s(stages, zone, priority=1, baseline_days=14, baseline_start=None) -> DataFrame`
 
-One row per day for a zone: the X̄-S chart of log response minutes, with flags. **The limits are constant**: the same for every day, set once from the baseline days.
+One row per day for a zone: the X̄-S chart of log response minutes, with flags. **The limits are constant**: one set for the whole chart, taken from a limit window.
 
-- **Inputs:** `stages`; `zone` (`"A"` to `"F"` or `"All"`); `priority`; `baseline_days` (days); `baseline_start` (a date, or `None` for the first day with a valid call).
+- **Inputs:** `stages`; `zone` (`"A"` to `"F"` or `"All"`); `priority`; `baseline_days` (the limit window length, in days); `baseline_start` (the window's first day, or `None` for the first day with a valid call). In the app the window is the **chart period**.
 - **Returns:** a DataFrame with one row for each day that has valid calls of that priority:
 
 | Column | Meaning |
@@ -288,31 +289,30 @@ One row per day for a zone: the X̄-S chart of log response minutes, with flags.
 | `rules` | List of rule ids that fired that day (from `flag_rules`) |
 | `alarm` | Any slow-side (`+`) rule fired |
 | `check` | Only fast-side (`-`) rules fired: "check the data" |
-| `baseline` | The day is inside the baseline period |
+| `baseline` | The day is inside the limit window |
 
-  `df.attrs` holds `xbbar` (the center, ln minutes), `sigma_xbar`, `mr_bar`, `sigma_short` (the within-day spread of the baseline days), `s_bar`, `n_bar`, `message`, and `baseline_note`.
-- **Formula:** the baseline is the days from `baseline_start` up to `baseline_days` later. Each day's point is the mean of that day's ln minutes.
+  `df.attrs` holds `xbbar` (the center, ln minutes), `sigma_xbar`, `mr_bar` (now `None`), `sigma_short` (the window's within-day spread, for reference), `s_bar`, `n_bar`, `message`, and `baseline_note`.
+- **Formula:** each day's point is the mean of that day's ln minutes. The limit window is the days from `baseline_start` up to `baseline_days` later.
 
 | Piece | Formula |
 |---|---|
-| X̄ center | mean of the **baseline days' daily means** |
-| sigma_xbar | MR-bar / 1.128, where MR-bar is the average absolute difference between consecutive baseline daily means (an individuals chart on the daily means, `imr_limits`) |
-| X̄ limits | center +/- 3 sigma_xbar. Constant, whatever the number of calls that day. Ordinary day-to-day swings count as normal. |
+| X̄ center | the mean of the daily means in the limit window |
+| sigma_xbar | the standard deviation of those daily means (n - 1) |
+| X̄ limits | center +/- 3 sigma_xbar. Constant, whatever the number of calls that day. |
 | z | (daily mean - center) / sigma_xbar. `flag_rules` runs on these z-scores, with the daily means as the trend. |
-| S center | s-bar = mean of the baseline days' standard deviations (days with 2 or more calls) |
-| S limits | s-bar x (1 +/- 3 sqrt(1 - c4^2) / c4), the B4 and B3 constants, with c4 = `c4(n-bar)` and n-bar = the average calls per baseline day (rounded, at least 2). The lower limit is never below 0. Constant. |
-| sigma_short | sqrt(mean of the baseline days' variances) |
+| S center | s-bar = the mean of the window's daily standard deviations (days with 2 or more calls) |
+| S limits | s-bar x (1 +/- 3 sqrt(1 - c4^2) / c4), the B4 and B3 constants, with c4 = `c4(n-bar)` and n-bar = the average calls per day in the window (rounded, at least 2). The lower limit is never below 0. |
 
-  **Why baseline-day limits.** The team chose limits from the baseline days over limits from the chart period (Oct 16). Measured on the demo city, period limits hid Zone D: 0 flagged days, against 11 as of Sep 28.
-- **Degenerate:** if the baseline has fewer than 2 days, or its daily means are all the same, the result is an **empty DataFrame** (the columns are still there) and `attrs["message"]` starts with "baseline:". If no baseline day has 2 or more calls, the S chart limits are blank and `s_flag` is `False`, but the X̄ chart still works. `baseline_note` warns when baseline days are themselves flagged, or when all the data is baseline.
+  **A trade-off the team chose** (Oct 16 and 17): when the window is the chart period itself, the limits are simple and the map, suggestions and chart all agree. But a problem that lasts most of the period widens the limits and can hide itself. On the demo city, as of Sep 28 with a 28-day period, Zone D's daily chart shows **no red dots**, because its slowdown is inside the window. The zone map still shows D as amber, from its 90th percentile, and the capability card says D is below the standard. Limits taken from the first 14 days (the function's default) do flag D on 11 days.
+- **Degenerate:** if the window has fewer than 2 days, or its daily means are all the same, the result is an **empty DataFrame** (the columns are still there) and `attrs["message"]` starts with "baseline:". If no day in the window has 2 or more calls, the S chart limits are blank and `s_flag` is `False`, but the X̄ chart still works. `baseline_note` warns when window days are themselves flagged, or when all the data is in the window.
 
 #### `imr_chart(stages, zone, priority=1, baseline_days=14, baseline_start=None) -> DataFrame`
 
-One row per call, in the order calls were received: the I-MR chart of log response minutes.
+One row per call, in the order calls were received: the individuals chart of log response minutes (with the moving range kept in the `mr` column). The app draws it with `charts.individuals_chart`.
 
 - **Inputs:** the same as `daily_xbar_s`.
 - **Returns:** a DataFrame with `call_id, dispatched, date, response_min, log_min, mr` (the moving range, in ln minutes), `center, ucl, lcl` (ln minutes), `center_min, ucl_min, lcl_min` (minutes), `beyond` (above the upper limit: an **extreme delay**), and `below` (under the lower limit: check the data). `df.attrs` holds `mr_bar`, `mr_ucl`, `sigma`, `message`.
-- **Formula:** `imr_limits` on the baseline calls' ln minutes (calls dated inside the baseline period). Those limits are applied to every call.
+- **Formula:** `imr_limits` on the baseline calls' ln minutes (calls dated inside the baseline period). Those limits are applied to every call. (In the app the baseline is the chart period.)
 - **Degenerate:** fewer than 2 baseline calls, or constant baseline calls, give blank limit columns, `beyond` and `below` all `False`, and `attrs["message"]` starting with "baseline:".
 
 ### 4.6 Capability and tests
@@ -334,20 +334,20 @@ Upper-side Ppk, and Cpk when `sigma_short` is given. The target is an upper limi
 
 #### `capability_verdict(row, target_min) -> dict`
 
-A plain-language reading of one `zone_capability` row, for someone new to Six Sigma. The Charts screen shows this instead of the numbers.
+A short plain-language reading of one `zone_capability` row, for someone new to Six Sigma. The Charts screen shows this instead of the numbers.
 
 - **Inputs:** `row`, one row of the `zone_capability` table (a dict, or a pandas row, with `shown`, `message`, `n` and `ppk`); `target_min`, the response target in minutes (used in the text).
 - **Returns:** `{"label", "tone", "text"}`. `tone` is `"green"`, `"amber"`, `"red"` or `"grey"`.
-- **Formula:** when the row is `shown`, the expected share of calls on time is `ppk_to_pct(Ppk)` = Phi(3 x Ppk) x 100, compared with the 90% standard:
+- **Formula:** when the row is `shown`, the expected share of calls on time is `ppk_to_pct(Ppk)` = Phi(3 x Ppk) x 100. It is **rounded first**, and the verdict is judged on that rounded number, so the label always agrees with the number in the text:
 
-| Expected on time | Label | Tone | Text starts |
+| Rounded % on time | Label | Tone | Text |
 |---|---|---|---|
-| 99% or more | Very reliable | green | "About 99 in 100 calls should arrive within 9 min." (or "Almost every one of 100" at 99.5% or more) |
-| 95% to 99% | Reliable | green | "About 98 in 100 calls should arrive within 9 min, comfortably above the 90% standard." |
-| 90% to 95% | Just meets the standard | amber | "...it meets the 90% standard with little room to spare." |
-| under 90% | Below the standard | red | "Only about 85 in 100 calls should arrive within 9 min, below the 90% standard..." |
+| 99 or more | Very reliable | green | "About 99 in 100 calls within 9 min." ("Almost every one of 100" at 100) |
+| 95 to 98 | Reliable | green | "About 96 in 100 calls within 9 min." |
+| 90 to 94 | Just meets the standard | amber | "About 94 in 100 calls within 9 min: little margin." |
+| under 90 | Below the standard | red | "Only about 89 in 100 calls within 9 min." |
 
-  When the row is not `shown`, the label comes from `message`: "too few calls..." gives **Not enough calls** (grey, "Only n calls in this period: at least 30 are needed to judge."); "not stable..." gives **Can't judge yet** (amber, "This zone's times changed during the period (see its control chart), so a reliability score would mislead. Fix the cause first."); anything else gives **Can't judge** (grey, the message, or "No data.").
+  When the row is not `shown`, the label comes from `message`: "too few calls..." gives **Not enough calls** (grey, "Only 7 calls; 30 are needed."); "not stable..." gives **Can't judge yet** (amber, "Times changed in this period, so no score yet."); anything else gives **Can't judge** (grey, the message, or "No data.").
 - **Degenerate:** every non-`shown` row gets a label and text instead of a number, so nothing meaningless is printed.
 
 #### `normality(values) -> dict`
@@ -386,9 +386,9 @@ Welch's t-test, one-sided: is the "after" mean lower than "before"?
 
 Capability per zone, shown only for stable zones with enough calls.
 
-- **Inputs:** `stages`; `priority`; `targets`; the baseline arguments; `min_n`, the fewest calls a zone needs (default 30); `period_days`, the period to judge (e.g. 28). Pass ALL calls up to the as-of date: the control chart is built with its real baseline, then only the last `period_days` days are checked for flags and used for the indices. (The Charts screen does exactly this.)
+- **Inputs:** `stages`; `priority`; `targets`; the baseline arguments; `min_n`, the fewest calls a zone needs (default 30); `period_days`, the period to judge (for example 28). Pass all calls up to the as-of date. With `period_days`, the indices use only that period, and the control chart's limits come from the **same period**, as on the Charts screen (the baseline arguments are then ignored).
 - **Returns:** one row per zone: `zone, n, ppk, cpk, stable, shapiro_p, shown, message`. `ppk` and `cpk` are filled only when `shown` is `True`.
-- **Formula:** USL = ln(target minutes). Ppk uses the zone's ln minutes in the period (sigma_total). The period is the last `period_days` days, or the whole table if `period_days` is `None`. Cpk uses sigma_short = sqrt(mean of the daily variances) from the zone's daily subgroups in that period. `stable` means the zone's `daily_xbar_s` chart (built on all the calls, with its real baseline) has days in the period and **no slow-side flag on any of them**. `shown = capability is computable and stable and n >= min_n`. With few calls the indices are too uncertain to mean anything.
+- **Formula:** USL = ln(target minutes). Ppk uses the zone's ln minutes in the period (sigma_total). The period is the last `period_days` days, or the whole table if `period_days` is `None`. Cpk uses sigma_short = sqrt(mean of the daily variances) from the zone's daily subgroups in that period. `stable` means the zone's `daily_xbar_s` chart (limits from the period) has days in the period and **no slow-side flag on any of them**. `shown = capability is computable and stable and n >= min_n`. With few calls the indices are too uncertain to mean anything.
 - **Degenerate:** an unstable zone has `shown = False` and the message "not stable: capability is not meaningful". A stable zone with fewer than `min_n` calls has `shown = False` and the message "too few calls for capability (n = X; need 30)". Constant data gives the "no variation" message. `shapiro_p` is blank when there are fewer than 3 values.
 
 ### 4.7 Stage breakdown, health, suggestions, before/after
@@ -420,20 +420,20 @@ Is a zone's chart signal strong enough to count in zone health?
 - **Formula:** rule 1 alone (a point beyond 3 sigma) counts. Any two different rules count. **One weaker rule alone does not count.** On a pure-noise simulation this keeps the chance amber rate of a stable zone-week near 2.5%, instead of 7.7% when any single rule counts.
 - **Degenerate:** an empty list gives `False`.
 
-#### `zone_health(stages, priority=1, targets=TARGETS, baseline_days=14, recent_days=7, as_of=None, actions=None, baseline_start=None) -> DataFrame`
+#### `zone_health(stages, priority=1, targets=TARGETS, baseline_days=14, recent_days=7, as_of=None, actions=None, baseline_start=None, period_days=None) -> DataFrame`
 
 The traffic light for each zone.
 
-- **Inputs:** `stages`; `priority`; `targets`; the baseline arguments; `recent_days` (default 7); `as_of` (a date or `None`); `actions`, an optional table of logged actions (columns `date`, `zone`, optional `action_id`).
+- **Inputs:** `stages`; `priority`; `targets`; the baseline arguments; `recent_days` (default 7); `as_of` (a date or `None`); `actions`, an optional table of logged actions (columns `date`, `zone`, optional `action_id`); `period_days`, the chart period. With `period_days`, the control limits come from the last `period_days` days up to `as_of` (the baseline arguments are then ignored), so the map agrees with the daily chart.
 - **Returns:** one row per zone: `zone, status, p90_recent, rules, top_stage, top_share, reasons`. `status` is `"green"`, `"amber"`, `"red"` or `"unknown"`. `p90_recent` is in minutes. `rules` lists every slow-side rule that fired in the window (`"R1"` to `"R5"`), even when the signal is too weak to count. `top_stage` and `top_share` name the stage with the largest share of minutes over target (blank for green). `reasons` is a list of plain-words sentences.
-- **Formula:** the window is the last `recent_days` days up to `as_of`. A **chart signal** is `chart_signal(rules)`: rule R1 fired, or 2 or more different slow-side rules fired. **Red** = a chart signal AND the window's 90th percentile is over the target. **Amber** = exactly one of those. **Green** = neither. One weaker rule alone does not change the status. It stays in `rules` and adds the reason "one weak signal (...): not enough on its own, keep watching" to a green zone. A zone that is slipping back after a logged action (see `slip_back`) is at least amber. Amber means "worth a look"; red means "act".
+- **Formula:** the window is the last `recent_days` days up to `as_of`. The rules are read from the daily chart's flags inside that window. A **chart signal** is `chart_signal(rules)`: rule R1 fired, or 2 or more different slow-side rules fired. **Red** = a chart signal AND the window's 90th percentile is over the target. **Amber** = exactly one of those. **Green** = neither. One weaker rule alone does not change the status. It stays in `rules` and adds the reason "one weak signal (...): not enough on its own, keep watching" to a green zone. A zone that is slipping back after a logged action (see `slip_back`) is at least amber. Amber means "worth a look"; red means "act".
 - **Degenerate:** a zone whose chart has no limits, or that has no calls in the window, is `"unknown"` with the reason "not enough data for limits yet".
 
-#### `suggest(stages, actions=None, priority=1, targets=TARGETS, window_days=14, as_of=None, baseline_days=14, baseline_start=None) -> list`
+#### `suggest(stages, actions=None, priority=1, targets=TARGETS, window_days=14, as_of=None, baseline_days=14, baseline_start=None, period_days=None) -> list`
 
 Fixed if-then suggestions, with evidence. The rules are in [`docs/plan.md`](../docs/plan.md).
 
-- **Inputs:** `stages`; `actions` (logged actions, columns `date`, `zone`, `stage`); `priority`; `targets`; `window_days` (default 14); `as_of`; the baseline arguments.
+- **Inputs:** `stages`; `actions` (logged actions, columns `date`, `zone`, `stage`); `priority`; `targets`; `window_days` (default 14); `as_of`; the baseline arguments; `period_days`, passed to `zone_health` so the suggestions use the same period limits as the map.
 - **Returns:** a list of dicts, each with `rule` (`"S1"` to `"S6"`), `zone` (`"A"` to `"F"` or `"All"`), `stage`, `text`, `evidence`, `impact` (an `impact_estimate` dict, or `None`), `status`, and `note` ("For review by qualified staff."). `status` is `"new"`, or `"action logged on <date>"` when an action for the same zone and stage is dated inside the window or later.
 - **Formula:** the window is the last `window_days` days up to `as_of`. A stage's *share* is its excess divided by the zone's total excess. The citywide median of each stage in the window is the cap for `impact_estimate`.
 
@@ -511,6 +511,15 @@ Each zone as one subgroup of log response minutes, compared with the city's limi
 - **Formula:** this is `xbar_s_limits` on the six zones. Center x̄̄ = mean of the zone means. sigma_short = sqrt(mean of the zone variances), over zones with 2 or more calls. A zone's limits are x̄̄ +/- 3 sigma_short / sqrt(n_zone), so a zone with few calls gets wide limits. z = (zone mean - x̄̄) / (sigma_short / sqrt(n_zone)). `flag` is `"above"` when z > 3 and `"below"` when z < -3. Zones have no time order, so only this beyond-the-limit rule applies (like an analysis of means).
 - **Degenerate:** no valid calls of that priority gives every `n = 0`, no limits, and `attrs["message"]` = "no completed calls yet in these two shifts". If no zone has 2 or more calls, or all calls are the same, there are no limits or flags and `message` says why. A zone with no calls has blank numbers. A zone with one call has limits and a z-score but no `sd_log`.
 
+#### `zone_delay_reason(stages, zone, priority, targets=TARGETS) -> str`
+
+One plain sentence on why a zone is slow. It is the hover text on a red zone in the History chart.
+
+- **Inputs:** a `stages` table (the shift window); `zone`; `priority`; `targets`.
+- **Returns:** text such as "Zone D is slower than the city: 9.3 min typical vs. 6.3 min. Main cause: crew turnout (100% of minutes over target). Top reason: crew not ready (2 of 2 late calls)."
+- **Formula:** "typical" is the geometric mean (exp of the mean of ln minutes) of the zone's calls, against the same for all zones. The main cause is the stage with the largest share of minutes over target (only named when that share is above 0). The top reason is the most common delay code among the zone's late calls (late response, turnout or travel), and is left out when no late call has a code.
+- **Degenerate:** a zone with no calls gives "Zone X: no completed calls."
+
 #### `dispatcher_tips(window, board_calls, fleet, now, targets=TARGETS) -> list`
 
 Real-time suggestions for the dispatcher, from the live board and the last two shifts. The tool decides nothing: these are for the dispatcher's judgment.
@@ -553,18 +562,21 @@ These start with `_`. They are not part of the interface.
 
 ## 5. `charts.py`: the figures
 
-Drawing only. There are 8 public figure functions. Each function takes a result from `qc.py` and returns a matplotlib `Figure` in the app's dark style. The backend is `Agg`, so no window opens. **Control limits (from the process) are dashed grey. The target (a specification limit) is a solid amber line.** They are never confused.
+Drawing only. There are 11 public functions. Each takes a result from `qc.py` and returns a matplotlib `Figure` in the app's dark style (constrained layout, backend `Agg`, so no window opens), or SVG text. **Control limits (from the process) are dashed grey. The target (a specification limit) is a solid amber line.** They are never confused.
 
 | Function | Takes | Shows |
 |---|---|---|
-| `daily_chart(chart, zone, action_dates=())` | `qc.daily_xbar_s` output | **Top:** the daily average in minutes (geometric mean), with the constant center line and dashed control limits. The title says "limits from the baseline days". Date labels appear every 5 days. Red dots are flagged days. Hollow amber rings are "check the data" days. The baseline period is lightly shaded. Green vertical lines mark logged actions. **Bottom:** the daily standard deviation of ln minutes with the S chart's center and upper limit. Red dots are days above it. |
-| `imr_chart(imr, zone, target_min)` | `qc.imr_chart` output and the target | **Top:** every call in order on a log axis (in minutes) with the center line, dashed control limits and the solid amber target. Red dots are extreme delays. **Bottom:** the moving range with its center and upper limit. |
+| `daily_chart(chart, zone, action_dates=(), target_min=None)` | `qc.daily_xbar_s` output | **Top** ("Zone D: daily average response"): the daily average in minutes (geometric mean), with the constant center line and dashed control limits. Red dots are flagged days. Hollow amber rings are "check the data" days. With `target_min`, a solid amber line draws the target (spec). Green vertical lines mark logged actions. **Bottom:** the daily standard deviation of ln minutes with the S chart's center and upper limit. Date labels appear every 5 days. |
+| `individuals_chart(imr, zone, target_min)` | `qc.imr_chart` output and the target | Every call in order on a log axis (labelled in minutes), with the center line, the UCL and LCL (dashed), and the target as the amber spec line. Red dots are calls beyond the UCL. There is no moving-range panel. |
 | `stage_breakdown(bd)` | `qc.stage_breakdown` output | Stacked horizontal bars: the median minutes in processing, turnout and travel, per zone |
-| `stage_share(bd)` | `qc.stage_breakdown` output | Stacked horizontal bars: each stage's share of the zone's minutes over target (0 to 100%) |
+| `stage_share(bd)` | `qc.stage_breakdown` output | Stacked horizontal bars: each stage's share of the zone's minutes over target (0 to 100%). The last bar, "City", is all zones. |
+| `stage_share_svg(bd)` | `qc.stage_breakdown` output | The same chart as inline SVG. **Hover a bar** to see its share, the minutes over target in total, and the median time of that stage. |
+| `to_svg(fig, tips=None)` | a figure, and a dict `{gid: text}` | The figure as inline SVG that fills its container's width. Each artist whose `gid` is a key of `tips` gets an SVG `<title>`, which the browser shows as a hover tooltip. |
 | `normal_plot(norm, zone)` | `qc.normality` output | The normal probability plot of ln minutes, with a fit line and the Shapiro-Wilk p in the title |
-| `before_after_chart(chart_full, zone, action_date)` | `qc.daily_xbar_s` output | The `daily_chart` with the action marked |
-| `zone_box_chart(sub, priority, target_min)` | `qc.zone_subgroup_chart` output, the priority, and the target in minutes | One **box plot per zone** of ln response minutes (axis labels in minutes, log scale). A diamond marks each zone's mean: blue normally, red when the zone is slower than the city, a hollow amber ring when faster (check the data). A solid grey line is the city center. Short dashed grey lines are each zone's control limits (they depend on its number of calls). A solid amber line is the target. The axis labels show `n` per zone. |
-| `empty(message)` | text | A blank figure with a short message. Every function above falls back to it when there is no data or no limits. |
+| `before_after_chart(chart_full, zone, action_date, target_min=None)` | `qc.daily_xbar_s` output | The `daily_chart` with the action marked and the target line |
+| `zone_box_chart(sub, priority, target_min, reasons=None)` | `qc.zone_subgroup_chart` output, the priority, the target in minutes, and optional `{zone: text}` | One **box plot per zone** of ln response minutes (axis labels in minutes, log scale). The title is the bold priority name, such as "Priority 2: Urgent". A diamond marks each zone's mean: blue normally, red when the zone is slower than the city, a hollow amber ring when faster (check the data). A solid grey line is the city center. Short dashed grey lines are each zone's control limits. A solid amber line is the target. The axis labels show `n` per zone. |
+| `zone_box_svg(sub, priority, target_min, reasons=None)` | the same | `zone_box_chart` as inline SVG. **Hover a diamond:** a red one shows its text from `reasons` (made by `qc.zone_delay_reason`); any other shows the zone's typical time and call count. |
+| `empty(message)` | text | A blank figure with a short message. The figure functions fall back to it when there is no data or no limits. |
 
 ---
 
@@ -603,9 +615,9 @@ Each call's state at a simulated time. This is what the "Simulate a shift" repla
 
 | File | Role |
 |---|---|
-| [`app.py`](app.py) | Builds the start page (two role buttons) and the header: the logo, a chip with the role, a chip with the clock mode, and a **Switch role** link. On the dispatcher screen only, the header also holds the simulation controls (`sim_controls_ui`). A hidden navset switches between the start page, the dispatcher view and the supervisor view. The live board's state lives inside `server()`, so each browser session has its own. |
-| [`ui_dispatcher.py`](ui_dispatcher.py) | The dispatcher view and the building blocks both roles share (`icon`, `chip`, `tag`, `card_head`, `eyebrow`, and `get_calls`, which reads and caches a calls CSV). Details in [7.1](#71-the-dispatcher-view). |
-| [`ui_supervisor.py`](ui_supervisor.py) | The supervisor view: a settings card and three tab modules (Overview, Charts, Actions) listed in `TABS`. Details in [7.2](#72-the-supervisor-view). |
+| [`app.py`](app.py) | Builds the start page (two role buttons) and the header: the logo, the brand "ERGent" with the subtitle "Team ERG · City EMS dispatch · v1", a chip with the role, a chip with the clock mode, and a **Switch role** link. On the dispatcher screen only, the header also holds the simulation controls (`sim_controls_ui`). A hidden navset switches between the start page, the dispatcher view and the supervisor view. The live board's state lives inside `server()`, so each browser session has its own. |
+| [`ui_dispatcher.py`](ui_dispatcher.py) | The dispatcher view and the building blocks both roles share (`icon`, `chip`, `tag`, `card_head`, and `get_calls`, which reads and caches a calls CSV). Details in [7.1](#71-the-dispatcher-view). |
+| [`ui_supervisor.py`](ui_supervisor.py) | The supervisor view: two tabs, Charts and Actions. Details in [7.2](#72-the-supervisor-view). |
 
 ### 7.1 The dispatcher view
 
@@ -618,38 +630,40 @@ Each call's state at a simulated time. This is what the "Simulate a shift" repla
 | `history_ui()`, `history_server(visible, board, now)` | The History tab. `visible` is true only while the tab is shown. `board` and `now` are the live board and its clock. |
 | `RESOLVED_SHOWN`, `HISTORY_REFRESH_S`, `TIP_NAMES`, `chart_note_text(sub)` | The Resolved list length (60), the History refresh interval (5 s), the display names for the tips, and the one-line note under the zone chart. |
 
-**Live board, top to bottom:**
+**Live board** (title "Live board"), top to bottom:
 
 1. A KPI row: Waiting, Dispatched, En route, On scene, Units available.
-2. The call process as **numbered steps** in a 2 x 2 grid: **1 Log a call** (zone, priority, **Clock speed** 1x, 10x, 30x or 60x, **Add call**) next to **2 Incoming calls**; then **3 Dispatched** next to **4 En route**.
-3. **Ambulances** next to the **Live zone map**. The ambulances sit in four status columns, each with a count: **Available**, **Responding** (dispatched or en route, and the chip says which), **On scene** and **Out of service**. Each chip shows the unit ID, its home zone and one button (**Out of service** or **Back in service**).
+2. Numbered cards in a 2 x 2 grid: **1 Log a call** (zone, priority as "1: Life-threatening", **Clock speed** 1x, 10x, 30x or 60x, **Add call**) next to **2 Incoming calls**; then **3 Dispatched** next to **4 En route**.
+3. **Ambulances** next to the **Zone map**. The ambulances sit in four status columns, each with a count: **Available**, **Responding** (dispatched or en route, and the chip says which), **On scene** and **Out of service**. Each chip shows the unit ID, its home zone and one button (**Out of service** or **Back in service**).
 4. **5 Resolved**, full width. A call counts as resolved once it is on scene. The list scrolls (at most 360 px tall) and shows the latest 60. A call you logged by hand and that is still at the scene has a small **Clear** button (with a confirmation); a cleared call shows **Cleared**. Replay rows show **At the scene** and **Replay** tags.
 
-There is no alerts panel and no separate On scene list. The page head holds a date and time chip and **Download calls (CSV)** (`Board.to_frame`).
+The page head holds a date and time chip and **Download calls (CSV)** (`Board.to_frame`, saved as `ergent_calls_<date>_<time>.csv`).
 
 **Clocks.** With no simulation running, the board uses `ManualClock`: real time at the chosen Clock speed. Changing the speed continues from the current board time. While a simulation runs, the board uses the replay clock. **Reset** calls `Board.reset_all` and `ManualClock.reset`: no calls, all 12 ambulances available, Resolved empty, and the clock back to wall time at the chosen manual speed.
 
 **Ordered buttons (poka-yoke).** Only the next valid button is shown for a call. A press that ends a late stage opens a dialog that asks for one of the 6 delay reasons, and the time of the press is kept. Clear asks for confirmation. All of this is `Board.check`, `Board.needs_reason` and `Board.apply`.
 
-**History tab** (about every 5 seconds while visible). It shows the **current shift and the previous one**, following the board clock (the simulated time during a simulation). Its data is the demo file's calls that had reached the scene by the board time, plus the calls logged by hand (`Board.calls_frame(now, manual_only=True)`), cut by `qc.shift_calls`. Top to bottom:
+**History** (title "History"; refreshed about every 5 seconds while visible). It shows the **current shift and the previous one**, following the board clock (the simulated time during a simulation). Its data is the demo file's calls that had reached the scene by the board time, plus the calls logged by hand (`Board.calls_frame(now, manual_only=True)`), cut by `qc.shift_calls`. Top to bottom:
 
-1. The shift label from `qc.shift_window`, for example `Current: evening shift 14:00-22:00, Sep 20 · Previous: day shift 06:00-14:00, Sep 20`.
-2. A KPI row: calls, median, 90th percentile and % on time. All priorities, and each call's own target.
-3. Two blocks side by side (the chart about 60% wide on the left, the suggestions about 40% on the right; they stack on a narrow screen):
-   - **Response time by zone**, one chart with a **Priority 1 / 2 / 3** dropdown (default 1), from `qc.zone_subgroup_chart` and `charts.zone_box_chart`. A note under it says "No zone is slower than the city as a whole.", or which zones are.
-   - **Suggestions** from `qc.dispatcher_tips`, condensed: each is one compact row with its rule's display name (T1 Dispatch now, T2 Rebalance, T3 Cover, T4 Route, T5 Station alert, T6 Dispatcher load), a zone tag, a short text, and the evidence in muted type. The note reads "For the dispatcher's judgment; the tool decides nothing on its own."
+1. The shift label from `qc.shift_window`, for example `Current: day shift 06:00-14:00, Sep 16 · Previous: night shift 22:00-06:00, Sep 15`.
+2. A KPI row: **Calls**, **Mean (min)**, **Standard deviation (min)** and **On time** (all priorities; each call's own target), from `qc.summary`.
+3. Two cards side by side (the chart about 72% wide, the suggestions about 28%; they stack on a narrow screen):
+   - **Response time by zone**: one chart with a **Priority** dropdown ("Priority 1: Life-threatening", "Priority 2: Urgent", "Priority 3: Non-urgent"), drawn by `charts.zone_box_svg` from `qc.zone_subgroup_chart`. **Hover a red diamond** to see why the zone is slow (`qc.zone_delay_reason`). A note under it names the zones that are slower than the city.
+   - **Suggested actions** from `qc.dispatcher_tips`: one compact row each with the rule's display name (T1 Dispatch now, T2 Rebalance, T3 Cover, T4 Route, T5 Station alert, T6 Dispatcher load), a zone tag, a short text and the evidence in muted type. The note reads "For the dispatcher's judgment; the tool decides nothing on its own."
 
 ### 7.2 The supervisor view
 
-`ui_supervisor.py` draws it. Every number is a `qc` call and every chart a `charts` call.
+`ui_supervisor.py` draws it. Every number is a `qc` call and every chart a `charts` call. There are **two tabs, Charts and Actions**. There is no Overview tab and no settings card. Every card has one plain title, and every **More info** toggle (`_more`) holds 2 or 3 sentences.
 
-- **Settings card** (above the tabs): **Dataset** (demo, baseline or messy), **Priority**, **As of**, and a **Targets and baseline** accordion (the three response targets, the processing and turnout targets, baseline start, baseline days). The jump menu and the chart period are on the Charts tab.
-- **"More info…" toggles.** Screens show results only. Every explanation sits behind a native `<details>` toggle (`_more`), with short plain-language questions and answers (`_faq`). There is no instruction text on screen.
-- **Overview:** six KPI tiles (the story sentence and the "what is a percentile" answers are in More info), the zone health list, the history map, and a data-quality card that appears only when calls were left out.
-- **Charts:** a control bar with a **radio toggle** between the **Daily chart (X̄-S)** and **Every call (I-MR)** (one chart is shown at a time), **Zone** (default D), **As of** (kept in step with the settings card), **Chart period** (14, 28 or 42 days; default 28) and one **Jump** menu ("Sep 28 (before the fix)", "The latest day"). Below: the chosen control chart, the two stage-breakdown charts, the **Capability** card and the **Tests** card.
-  - Capability shows one plain verdict per zone from `qc.capability_verdict` ("Reliable: about 98 in 100 calls...", "Can't judge yet", "Not enough calls"). The numbers (Ppk, Cpk, expected on time, Shapiro p) are only in More info.
-  - Tests shows a plain answer ("Yes. Zone D is typically 6.0 min against 4.9 min in Zone A..."). F, df, p and the normal probability plot are only in More info.
-- **Actions:** slip-back alerts (the card appears only when a zone is slipping back), suggestions with evidence, impact and **Log this action**, the action log, the before/after check (a verdict chip and four tiles; the explanation is in More info), and the zone's daily chart around the action.
+**Control bar** (top of Charts; it sets what both tabs show): **Chart** (Daily chart or Every call), **Zone** (default D), **Priority** (1: Life-threatening, 2: Urgent, 3: Non-urgent), **Dataset** (Demo city, Baseline city, Messy file), **As of**, **Chart period** (14, 28 or 42 days; default 28) and a **Targets** button that opens a dialog (the three response targets, the processing target, the turnout target). There is no jump menu. The **chart period is also the limit window**: control limits, the zone map, suggestions and capability all use it, so they agree.
+
+**Charts tab**, top to bottom:
+
+1. **Control chart** (left, about two thirds): `charts.daily_chart` or `charts.individuals_chart`, one at a time. On the right: **Statistics** (Average, Standard deviation, On time, Zones flagged, for the chart period and all zones; from `qc.summary` and `qc.zone_health`) and **Zone map** (six tiles; hover a tile for its reasons). A **Data quality** card appears below them only when calls were left out.
+2. **Delay by stage** (with the date range, and hover bars from `charts.stage_share_svg`) next to **Zone comparison** (a plain answer from `qc.zone_anova`; the F value, p and the normal probability plot are in More info).
+3. **Capability**: one plain verdict per zone from `qc.capability_verdict`. The Ppk, Cpk and expected-on-time table is in More info.
+
+**Actions tab**, top to bottom: a context line (dataset, priority, as-of date); the **Slip-back alerts** card only when a zone is slipping back; **Suggested actions** (from `qc.suggest`, with **Log this action**) next to **Actions taken** (with **Log an action**); then **Before and after** (the daily chart with the action marked) next to **Result**: an action dropdown, a verdict chip, and a table of Mean, Standard deviation, On time and Calls, before and after (`qc.before_after`).
 
 ---
 
@@ -663,5 +677,5 @@ There is no alerts panel and no separate On scene list. The page head holds a da
 
 | File | Covers |
 |---|---|
-| [`tests/test_qc.py`](../tests/test_qc.py) | Every function in section 4: the known answers from `SPEC.md` section 4, a degenerate case for each, a planted shift that must be flagged, the suggestion rules (each built to trigger only itself), before/after, slip-back, float-noise constants, invalid calls that must not move a window, the constant daily limits (from the baseline days' daily means, with the textbook B4 constant for the S chart), `capability_verdict`, and the live shift tools (`shift_window`, `shift_calls`, `zone_subgroup_chart`, `dispatcher_tips`, including the 2-call rule for naming a cause in T4) |
+| [`tests/test_qc.py`](../tests/test_qc.py) | Every function in section 4: the known answers from `SPEC.md` section 4, a degenerate case for each, a planted shift that must be flagged, the suggestion rules (each built to trigger only itself), before/after, slip-back, float-noise constants, invalid calls that must not move a window, the constant daily limits (center = mean of the window's daily means, sigma = their standard deviation, with the textbook B4 constant for the S chart), `summary` with `sd`, `PRIORITY_NAME` and `zone_delay_reason`, zone health following the chart period, `capability_verdict`, and the live shift tools (`shift_window`, `shift_calls`, `zone_subgroup_chart`, `dispatcher_tips`, including the 2-call rule for naming a cause in T4) |
 | [`tests/test_simulator.py`](../tests/test_simulator.py) | `events_until`, the replay clock, the manual clock, the ordered buttons, delay reasons, the fleet, zone tiles, `reset_all`, `calls_frame` and the export schema |

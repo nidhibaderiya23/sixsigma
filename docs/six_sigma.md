@@ -1,8 +1,8 @@
-# Response Watch: Six Sigma Define and Measure
+# ERGent: Six Sigma Define and Measure
 
 Team ERG (Nidhi Baderiya, Zeba Haq, Dhruv Bhandari) | Cornell Six Sigma Hackathon, SYSEN 5300 | Prompt: Health Systems, Emergency Response
 
-This page is the **Define** and **Measure** work for Response Watch, a dashboard for a city 911 EMS dispatch center. Section 7 shows where the app does **Analyze, Improve and Control**. Numbers and rules match [`SPEC.md`](../SPEC.md) and [`plan.md`](plan.md). If this page and `SPEC.md` ever disagree, `SPEC.md` wins.
+This page is the **Define** and **Measure** work for ERGent, a dashboard for a city 911 EMS dispatch center. Section 7 shows where the app does **Analyze, Improve and Control**. Numbers and rules match [`SPEC.md`](../SPEC.md) and [`plan.md`](plan.md). If this page and `SPEC.md` ever disagree, `SPEC.md` wins.
 
 | Term | Meaning |
 |---|---|
@@ -67,7 +67,7 @@ On-campus 24-hour event, **Fri Oct 16 to Sat Oct 17, 2026**.
 | When | What |
 |---|---|
 | Fri Oct 16, from 17:53 | Plan started. Team decisions approved Oct 16. |
-| Order of work (estimates from `plan.md`) | SPEC 30 min. Data and codebook 60 min. Statistics first (`app/qc.py`, one known-answer test per function) 3 h. Tool in layers 4 h: L1 role picker and dispatcher board, L2 supervisor Overview and Charts, L3 Actions and Control. Deploy right after L1, 1 h. Demo walkthrough 45 min. Docs 60 min. Fresh-clone check 20 min. L3 is cut first if time runs short. |
+| Order of work (estimates from `plan.md`) | SPEC 30 min. Data and codebook 60 min. Statistics first (`app/qc.py`, one known-answer test per function) 3 h. Tool in layers 4 h: L1 role picker and dispatcher board, L2 supervisor Charts (with the Overview merged in), L3 Actions and Control. Deploy right after L1, 1 h. Demo walkthrough 45 min. Docs 60 min. Fresh-clone check 20 min. L3 is cut first if time runs short. |
 | **Sat Oct 17, 1 PM ET** | Devpost submission: repo link plus a demo. Showcase 2 to 3 PM. |
 
 ## 2. Voice of the customer and the CTQ tree
@@ -95,7 +95,7 @@ Why the 90th percentile and not the average? The average blends fast and slow ca
 | Ambulance crew | Dispatch order | 3. Crew gets ready and leaves (**turnout**) | `en_route` stamp; reason code if late | Crew, supervisor |
 | Ambulance crew; roads; CAD weather feed | Unit on the road; weather | 4. Drive to the scene (**travel**) | `on_scene` stamp; reason code if late | **Patient**, supervisor |
 | Ambulance crew | Unit at the scene | 5. Finish and clear | `cleared` stamp; call moves to Resolved | Dispatcher, supervisor |
-| Team ERG; NFPA 1710 | The call records; targets (editable by the supervisor) | 6. Response Watch turns records into stage times, charts, flags and suggestions | Zone health, flags, suggestions with evidence, action log | **EMS operations supervisor** |
+| Team ERG; NFPA 1710 | The call records; targets (editable by the supervisor) | 6. ERGent turns records into stage times, charts, flags and suggestions | Zone health, flags, suggestions with evidence, action log | **EMS operations supervisor** |
 
 ## 4. Process map
 
@@ -204,8 +204,8 @@ The data checks in 6.2 are the second line of defense for what still gets throug
 | Phase | Question | Screen | Statistic (in `app/qc.py`) |
 |---|---|---|---|
 | **Define** | What is the problem, goal, scope? | No screen: this page (the team put Define and Measure in the docs) | Charter, CTQ tree, SIPOC |
-| **Measure** | What do we record, and can we trust it? | Dispatcher: live tables with running clocks, ordered buttons, reason codes, fleet board, history tab. Supervisor: Overview KPI tiles and history map | `stage_times` (stages, data checks); `summary` (mean for comparison only, median, 90th and 95th percentile, % on time) |
-| **Analyze** | Which zone, which stage, since when, is it real? | Supervisor: Overview zone health; Charts | `imr_limits`, `xbar_s_limits`, `flag_rules`, stage breakdown, `capability`, `anova_zones`, `welch_before_after` (7.1) |
+| **Measure** | What do we record, and can we trust it? | Dispatcher: live tables with running clocks, ordered buttons, reason codes, fleet board, history tab. Supervisor: Charts statistics (average, standard deviation, % on time) and zone map | `stage_times` (stages, data checks); `summary` (mean, standard deviation, percentiles, % on time) |
+| **Analyze** | Which zone, which stage, since when, is it real? | Supervisor: Charts (zone map, control charts) | `imr_chart` (every call), `daily_xbar_s` (daily X̄-S, limits from the chart period), `flag_rules`, stage breakdown, `capability`, `anova_zones`, `welch_before_after` (7.1) |
 | **Improve** | What should we try, and what would it gain? | Supervisor: Actions, suggestions | `suggest` and `impact_estimate` (7.2) |
 | **Control** | Did the fix work, and does it hold? | Supervisor: Actions, action log, before/after, slip-back alerts | `welch_before_after`, `before_after`, `slip_back` (7.3) |
 

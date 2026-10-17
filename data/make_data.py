@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Response Watch: make the synthetic test datasets.
+"""ERGent: make the synthetic test datasets.
 
 Run from anywhere:   python data/make_data.py
 It writes five files next to this script. All data is invented. The random

@@ -1,7 +1,7 @@
 #!/bin/bash
 # deployme.sh
 
-# Deploy the Response Watch Shiny app to Posit Connect.
+# Deploy the ERGent Shiny app to Posit Connect.
 # This script targets Posit Connect (not Connect Cloud).
 # It never contains a key: set CONNECT_SERVER and CONNECT_API_KEY in your shell
 # (or in an untracked .env file) before running it.

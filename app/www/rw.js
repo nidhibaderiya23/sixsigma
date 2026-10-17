@@ -1,4 +1,4 @@
-// Response Watch: small browser helpers.
+// ERGent: small browser helpers.
 //  1. Row buttons send one Shiny input (data-rw-input) instead of one input per call.
 //  2. Running clocks are repainted once a second from the server's clock message,
 //     so the tables never have to be redrawn just because time passed.

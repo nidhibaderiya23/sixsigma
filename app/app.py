@@ -1,4 +1,4 @@
-"""Response Watch (Team ERG): a Shiny for Python dashboard for a 911 EMS dispatch center.
+"""ERGent (Team ERG): a Shiny for Python dashboard for a 911 EMS dispatch center.
 
 Start page -> pick a role -> the dispatcher board or the supervisor screens.
 Run it with ./testme.sh (or `python -m shiny run app.py --port 8000` from this folder).
@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from shiny import App, reactive, render, ui  # noqa: E402
 
 import qc  # noqa: E402,F401  (all numbers on screen come from qc.py)
-from ui_dispatcher import (chip, dispatcher_server, dispatcher_ui, eyebrow, icon,  # noqa: E402
+from ui_dispatcher import (chip, dispatcher_server, dispatcher_ui, icon,  # noqa: E402
                            sim_controls_ui)
 from ui_supervisor import supervisor_server, supervisor_ui  # noqa: E402
 
@@ -41,21 +41,18 @@ def role_button(input_id: str, icon_name: str, name: str, description: str):
 
 start_page = ui.div(
     ui.div(
-        eyebrow("911 EMS dispatch"),
-        ui.h1("Response Watch"),
+        ui.h1("ERGent"),
         ui.div("Team ERG", class_="rw-hero-sub"),
         ui.div(
-            role_button("pick_dispatcher", "headset", "I'm a dispatcher",
-                        "Work the live board: incoming calls, ambulances, clocks and shift suggestions."),
-            role_button("pick_supervisor", "chart", "I'm a supervisor",
-                        "See which zone needs attention, which stage causes it, and what to try."),
+            role_button("pick_dispatcher", "headset", "I'm a dispatcher", "Work the live board."),
+            role_button("pick_supervisor", "chart", "I'm a supervisor", "See which zone needs attention."),
             class_="rw-roles"),
         class_="rw-hero"))
 
 header = ui.div(
     ui.div(icon("pulse"), class_="rw-logo"),
-    ui.div(ui.div("Response Watch", class_="rw-brand-name"),
-           ui.div("Team ERG \u00b7 City EMS dispatch", class_="rw-brand-sub")),
+    ui.div(ui.div("ERGent", class_="rw-brand-name"),
+           ui.div("Team ERG \u00b7 City EMS dispatch \u00b7 v1", class_="rw-brand-sub")),
     ui.output_ui("header_chips"),
     ui.div(
         # the simulation controls live in the dispatcher module's namespace ("dispatcher")
@@ -82,7 +79,7 @@ app_ui = ui.page_fluid(
             ui.nav_panel(None, supervisor_ui("supervisor"), value="supervisor"),
             id="page", selected="start"),
         class_="rw-shell"),
-    title="Response Watch")
+    title="ERGent")
 
 
 def server(input, output, session):

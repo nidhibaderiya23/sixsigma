@@ -1,4 +1,4 @@
-"""Response Watch statistics: every number the app shows comes from this file.
+"""ERGent statistics: every number the app shows comes from this file.
 
 Plain functions with plain inputs (pandas DataFrames, lists of numbers) and plain
 outputs (numbers, dicts, DataFrames). No Shiny, no plotting. Formulas and the
@@ -33,6 +33,9 @@ TARGETS = {
     "turnout": 60,
     "response": {1: 540, 2: 900, 3: 1200},
 }
+
+#: Plain names of the call priorities (the call-taker's medical code).
+PRIORITY_NAME = {1: "Life-threatening", 2: "Urgent", 3: "Non-urgent"}
 
 #: Delay reason codes the crew taps when a stage runs late (key -> label).
 REASON_CODES = {
@@ -191,18 +194,20 @@ def percentile(values, p: float) -> float:
 
 
 def summary(values_min, target_min: float) -> dict:
-    """Mean, median, 90th and 95th percentile and % on time, in minutes.
+    """Mean, standard deviation, median, 90th and 95th percentile and % on time, in minutes.
 
+    sd = sample standard deviation (n - 1), None with fewer than 2 values.
     On time = value <= target. With no values, every number is None.
     """
     xs = np.asarray(values_min, dtype=float)
     xs = xs[~np.isnan(xs)]
     if xs.size == 0:
-        return {"n": 0, "mean": None, "median": None, "p90": None,
+        return {"n": 0, "mean": None, "sd": None, "median": None, "p90": None,
                 "p95": None, "pct_on_time": None}
     return {
         "n": int(xs.size),
         "mean": float(xs.mean()),
+        "sd": float(xs.std(ddof=1)) if xs.size >= 2 else None,
         "median": percentile(xs, 0.5),
         "p90": percentile(xs, 0.9),
         "p95": percentile(xs, 0.95),
@@ -416,16 +421,15 @@ def _baseline_window(stages: pd.DataFrame, baseline_days: int, baseline_start=No
 def daily_xbar_s(stages: pd.DataFrame, zone: str, priority: int = 1,
                  baseline_days: int = 14, baseline_start=None) -> pd.DataFrame:
     """One row per day for a zone: the X-bar and S chart of log response minutes,
-    with CONSTANT limits (the team's decision, Oct 16).
+    with CONSTANT limits (the team's decisions, Oct 16-17).
 
     X-bar chart: each day's point is the mean of that day's log minutes. The
-    center line and limits come from the BASELINE days' daily means, treated as
-    individual values: center = mean of the baseline daily means; sigma_xbar =
-    MR-bar / 1.128 over consecutive baseline days; limits = center +/- 3
-    sigma_xbar, the same for every day. Using the variation between daily means
-    keeps the limits constant although days have different numbers of calls,
-    and counts ordinary day-to-day swings as normal. The baseline is
-    [baseline_start, + baseline_days), by default the first 14 days.
+    center line = the mean of the daily means in the limit window; sigma_xbar =
+    the standard deviation of those daily means; limits = center +/- 3
+    sigma_xbar, the same for every day. The limit window is
+    [baseline_start, + baseline_days): by default the first 14 days, and in the
+    app the chart period the user selects (the team chose this, knowing that a
+    long problem inside the period widens the limits and can hide itself).
     S chart: center s-bar = mean of the baseline daily standard deviations
     (days with 2+ calls); limits B4 s-bar and B3 s-bar (lower >= 0), with
     B3/B4 = 1 -/+ 3 sqrt(1 - c4^2) / c4 for n-bar = average calls per baseline day.
@@ -433,7 +437,7 @@ def daily_xbar_s(stages: pd.DataFrame, zone: str, priority: int = 1,
     the same back in minutes (_min, a geometric mean), s_center/s_ucl/s_lcl,
     s_flag, z, rules (list of rule ids), alarm (any slow-side rule), check (a
     fast-side rule only), baseline (the day is in the baseline).
-    attrs: xbbar (the center), sigma_xbar, mr_bar, sigma_short (the baseline's
+    attrs: xbbar (the center), sigma_xbar (SD of the daily means), mr_bar (None), sigma_short (the window's
     within-day sigma, for reference; zone_capability computes its own), s_bar, n_bar,
     message, baseline_note.
     """
@@ -447,7 +451,14 @@ def daily_xbar_s(stages: pd.DataFrame, zone: str, priority: int = 1,
     cols = ["date", "n", "mean_log", "sd_log", "x_center", "x_ucl", "x_lcl",
             "x_center_min", "x_ucl_min", "x_lcl_min", "s_center", "s_ucl", "s_lcl",
             "s_flag", "z", "rules", "alarm", "check", "baseline"]
-    lim = imr_limits([m for m, b in zip(means, in_base) if b])
+    base_means = np.asarray([m for m, b in zip(means, in_base) if b], dtype=float)
+    lim = {"ok": False, "message": "need at least 2 days with calls"}
+    if base_means.size >= 2:
+        if _no_spread(base_means):
+            lim = {"ok": False, "message": "no variation: every value is the same, so there are no limits"}
+        else:
+            lim = {"ok": True, "center": float(base_means.mean()),
+                   "sigma": float(base_means.std(ddof=1)), "mr_bar": None}
     if not lim["ok"]:
         out = pd.DataFrame(columns=cols)
         out.attrs.update(xbbar=None, sigma_xbar=None, mr_bar=None, sigma_short=None,
@@ -573,7 +584,7 @@ def ppk_to_pct(ppk: float | None) -> float | None:
 
 
 def capability_verdict(row, target_min: float) -> dict:
-    """A plain-language reading of one zone_capability() row, for non-experts.
+    """A short plain-language reading of one zone_capability() row, for non-experts.
 
     Uses the expected share of calls on time, Phi(3 * Ppk), against the 90%
     standard: >= 99% "Very reliable", >= 95% "Reliable", >= 90% "Just meets the
@@ -586,28 +597,24 @@ def capability_verdict(row, target_min: float) -> dict:
         msg = get("message") or ""
         if msg.startswith("too few calls"):
             return {"label": "Not enough calls", "tone": "grey",
-                    "text": f"Only {get('n')} calls in this period: at least 30 are needed to judge."}
+                    "text": f"Only {get('n')} calls; 30 are needed."}
         if msg.startswith("not stable"):
             return {"label": "Can't judge yet", "tone": "amber",
-                    "text": "This zone's times changed during the period (see its control chart), "
-                            "so a reliability score would mislead. Fix the cause first."}
+                    "text": "Times changed in this period, so no score yet."}
         return {"label": "Can't judge", "tone": "grey", "text": msg or "No data."}
-    pct = ppk_to_pct(get("ppk"))
-    per100 = f"about {min(pct, 99.9):.0f} in 100" if pct < 99.5 else "almost every one of 100"
+    pct = round(ppk_to_pct(get("ppk")))            # judge on the same rounded number we show
+    per100 = f"About {pct:.0f} in 100" if pct < 100 else "Almost every one of 100"
     if pct >= 99:
         return {"label": "Very reliable", "tone": "green",
-                "text": f"{per100.capitalize()} calls should arrive within {target_min:.0f} min."}
+                "text": f"{per100} calls within {target_min:.0f} min."}
     if pct >= 95:
         return {"label": "Reliable", "tone": "green",
-                "text": f"{per100.capitalize()} calls should arrive within {target_min:.0f} min, "
-                        "comfortably above the 90% standard."}
+                "text": f"{per100} calls within {target_min:.0f} min."}
     if pct >= 90:
         return {"label": "Just meets the standard", "tone": "amber",
-                "text": f"{per100.capitalize()} calls should arrive within {target_min:.0f} min: "
-                        "it meets the 90% standard with little room to spare."}
+                "text": f"{per100} calls within {target_min:.0f} min: little margin."}
     return {"label": "Below the standard", "tone": "red",
-            "text": f"Only {per100} calls should arrive within {target_min:.0f} min, below the "
-                    "90% standard. Look at the stage breakdown for the cause."}
+            "text": f"{per100.replace('About', 'Only about')} calls within {target_min:.0f} min."}
 
 
 def normality(values) -> dict:
@@ -700,6 +707,8 @@ def zone_capability(stages: pd.DataFrame, priority: int = 1, targets: dict = TAR
     usl = math.log(targets["response"][priority] / 60.0)
     period = last_days(stages, period_days) if period_days else stages
     start = _valid_dates(period).min()
+    if period_days:                     # limits from the chart period, as on the chart
+        baseline_start, baseline_days = start, period_days
     rows = []
     for zone in ZONES:
         calls = _calls(period, zone, priority)
@@ -796,7 +805,8 @@ def chart_signal(rules) -> bool:
 
 def zone_health(stages: pd.DataFrame, priority: int = 1, targets: dict = TARGETS,
                 baseline_days: int = 14, recent_days: int = 7, as_of=None,
-                actions: pd.DataFrame | None = None, baseline_start=None) -> pd.DataFrame:
+                actions: pd.DataFrame | None = None, baseline_start=None,
+                period_days: int | None = None) -> pd.DataFrame:
     """Per zone: 'green', 'amber', 'red' or 'unknown', with reasons in plain words.
 
     Looks at the last `recent_days` days up to as_of. A chart signal = rule 1
@@ -811,6 +821,9 @@ def zone_health(stages: pd.DataFrame, priority: int = 1, targets: dict = TARGETS
     target_min = targets["response"][priority] / 60.0
     st = stage_targets(priority, targets)
     end = _valid_dates(s).max()
+    if period_days:                     # limits from the chart period, as on the chart
+        baseline_days = period_days
+        baseline_start = end - pd.Timedelta(days=period_days - 1)
     slipping = {a["zone"]: a for a in slip_back(s, actions, priority)} if actions is not None else {}
     recent_start = end - pd.Timedelta(days=recent_days - 1)
     rows = []
@@ -868,7 +881,8 @@ def _hours_text(start: int, width: int = 3) -> str:
 
 def suggest(stages: pd.DataFrame, actions: pd.DataFrame | None = None,
             priority: int = 1, targets: dict = TARGETS, window_days: int = 14,
-            as_of=None, baseline_days: int = 14, baseline_start=None) -> list:
+            as_of=None, baseline_days: int = 14, baseline_start=None,
+            period_days: int | None = None) -> list:
     """Suggestions from the rules in docs/plan.md, on the last `window_days` days.
 
     Each is a dict: rule, zone, stage, text, evidence, impact (impact_estimate
@@ -881,7 +895,7 @@ def suggest(stages: pd.DataFrame, actions: pd.DataFrame | None = None,
     win_p = win_all[win_all["priority"] == priority]
     st = stage_targets(priority, targets)
     health = zone_health(s, priority, targets, baseline_days=baseline_days,
-                         baseline_start=baseline_start)
+                         baseline_start=baseline_start, period_days=period_days)
     city_median = {stg: float(win_p[f"{stg}_s"].median()) for stg in STAGES}
     found = []
 
@@ -1119,6 +1133,30 @@ def zone_subgroup_chart(stages: pd.DataFrame, priority: int) -> pd.DataFrame:
                      ("no completed calls yet in these two shifts" if not len(calls)
                       else lim["message"]))
     return out
+
+
+def zone_delay_reason(stages: pd.DataFrame, zone: str, priority: int,
+                      targets: dict = TARGETS) -> str:
+    """One plain sentence on why a zone is slow, for a chart hover label: its
+    typical time vs. the city's, the stage causing most minutes over target, and
+    the most-cited delay reason among its late calls."""
+    calls = _calls(stages, zone, priority)
+    city = _calls(stages, "All", priority)
+    if not len(calls):
+        return f"Zone {zone}: no completed calls."
+    mine = math.exp(np.log(calls["response_min"]).mean())
+    whole = math.exp(np.log(city["response_min"]).mean()) if len(city) else mine
+    _, share = _stage_excess(calls, stage_targets(priority, targets))
+    top = max(share, key=share.get)
+    words = {"processing": "dispatch processing", "turnout": "crew turnout", "travel": "travel"}
+    text = f"Zone {zone} is slower than the city: {mine:.1f} min typical vs. {whole:.1f} min."
+    if share[top] > 0:
+        text += f" Main cause: {words[top]} ({share[top]:.0%} of minutes over target)."
+    late = calls[calls["late"] | calls["turnout_late"] | calls["travel_late"]]
+    codes = late["delay_reason"][late["delay_reason"] != ""].value_counts()
+    if len(codes):
+        text += f" Top reason: {REASON_CODES[codes.index[0]].lower()} ({codes.iloc[0]} of {len(late)} late calls)."
+    return text
 
 
 def _fmt_secs(s: float) -> str:

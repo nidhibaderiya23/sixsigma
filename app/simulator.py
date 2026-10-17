@@ -1,4 +1,4 @@
-"""Response Watch live-board logic: the call model, the fleet, zone tiles and the shift replay.
+"""ERGent live-board logic: the call model, the fleet, zone tiles and the shift replay.
 
 Pure Python: no Shiny and no plotting, so every rule here is unit-tested
 (tests/test_simulator.py). The screens in ui_dispatcher.py only call this file and

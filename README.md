@@ -1,6 +1,6 @@
-# Response Watch
+# ERGent
 
-**A control-chart dashboard for a city 911 EMS dispatch center.**
+**A control-chart dashboard for a city 911 EMS dispatch center. Version 1.**
 Team ERG (Nidhi Baderiya, Zeba Haq, Dhruv Bhandari) | Prompt: Health Systems, Emergency Response
 
 > **About the hackathon:** this is our entry in the Cornell Six Sigma Hackathon. The event pages are in [`docs/README.md`](docs/README.md), and the submission is on [Devpost](https://six-sigma-hackathon.devpost.com).
@@ -24,7 +24,7 @@ Team ERG (Nidhi Baderiya, Zeba Haq, Dhruv Bhandari) | Prompt: Health Systems, Em
 
 ## 1. What it is
 
-Response Watch logs every 911 call's five timestamps, splits each response into three stages, and shows **which zone** is slow, **which stage** is slow, and **since when**. It flags zones that need action. It suggests a fix, with the evidence. Later it checks whether the fix worked, and warns if the zone slips back.
+ERGent logs every 911 call's five timestamps, splits each response into three stages, and shows **which zone** is slow, **which stage** is slow, and **since when**. It flags zones that need action. It suggests a fix, with the evidence. Later it checks whether the fix worked, and warns if the zone slips back.
 
 The prompt we chose: *"Ambulance dispatch to on-scene times are varying wildly across city zones, but the 911 center only looks at monthly averages, missing fatal outliers, not where or why these failures occur."*
 
@@ -111,20 +111,18 @@ The start page has two buttons: **I'm a dispatcher** and **I'm a supervisor**. E
 
 ### 4.1 Dispatcher (secondary user)
 
-The dispatcher has two tabs: **Live board** and **History**. The simulation controls sit in the page header, next to **Switch role**.
+The dispatcher has two tabs, **Live board** and **History**. The simulation controls sit in the page header, next to **Switch role**.
 
-| Screen | What it shows | How to read it |
+| Where | What it shows | How to read it |
 |---|---|---|
-| **Header: simulation controls** (dispatcher screen only) | **Day** (default Sep 20), **Speed** (30x, 60x, 120x), **Start** (00:00, 06:00, 14:00, 22:00), a coral **Simulate a shift** button (it becomes **Pause**), and **Reset**. A chip shows the clock mode: `LIVE 1x`, `LIVE 60x`, `SIM 120x` and so on. | Simulate replays one day of the demo data on a fast clock. Calls move through the lists at the times in the file, and replayed calls are read-only. **Reset clears everything to zero:** all calls, all 12 ambulances available, Resolved empty, and the clock back to real time. |
+| **Header: simulation controls** (dispatcher screen only) | **Day** (default Sep 20), **Speed** (30x, 60x, 120x), **Start** (00:00, 06:00, 14:00, 22:00), a coral **Simulate a shift** button (it becomes **Pause**), and **Reset**. A chip shows the clock: `LIVE 1x`, `LIVE 60x`, `SIM 120x` and so on. | Simulate replays one day of the demo data on a fast clock. Calls move through the cards at the times in the file, and replayed calls are read-only. **Reset clears everything to zero:** all calls, all 12 ambulances available, Resolved empty, and the clock back to real time. |
 | **Live board: counts** | Waiting, Dispatched, En route, On scene, and Units available | A quick view of the workload |
-| **The call process, in numbered steps** | **1 Log a call** (zone, priority, **Clock speed** 1x, 10x, 30x or 60x, **Add call**), **2 Incoming calls**, **3 Dispatched**, **4 En route**, **5 Resolved**. Each open call has a running clock. | Work a call from step 1 to step 5. The clock is green until 80% of its target, amber above that, and **red past the target**. The clock speed applies when no simulation is running: at 60x, one real second is one board minute, so you can watch clocks turn red without waiting. |
+| **Numbered cards** | **1 Log a call** (zone, priority such as "1: Life-threatening", **Clock speed** 1x, 10x, 30x or 60x, **Add call**), **2 Incoming calls**, **3 Dispatched**, **4 En route**, **5 Resolved**. Each open call has a running clock. | Work a call from card 1 to card 5. The clock is green until 80% of its target, amber above that, and **red past the target**. The clock speed applies when no simulation is running: at 60x, one real second is one board minute. |
 | **Poka-yoke** (mistake-proofing) | The buttons Dispatch, En route, On scene and Clear | See the list below. The wrong entry is hard to make. |
-| **Ambulances** | The 12 ambulances in four status columns, each with a count: **Available**, **Responding** (dispatched or en route), **On scene** and **Out of service**. Each shows its home zone and an **Out of service** or **Back in service** button. | "Out of service" flags that unit's open calls as a breakdown |
-| **Live zone map** | A schematic grid of the 6 zones (A B C on top, D E F below). Each tile shows open calls and free ambulances. | The tile takes the worst clock colour in the zone |
-| **5 Resolved** (full width) | Every call that has reached the scene, with its final response time. The list scrolls and shows the latest 60. A call you logged and that is still at the scene has a small **Clear** button, with a confirmation. A cleared call shows **Cleared**. Replayed calls show **At the scene** and **Replay**. | On scene counts as resolved. The time is red if the response was past its target. |
-| **History** (no selectors) | The **current shift and the previous shift** (day 06-14, evening 14-22, night 22-06), following the board clock (the simulated time during a simulation). It refreshes about every 5 seconds while visible. Calls, median, 90th percentile and % on time on top. Below: one **Response time by zone** chart on the left (about 60%), with a **Priority 1 / 2 / 3** dropdown, and condensed **Suggestions** on the right (about 40%), each named Dispatch now, Rebalance, Cover, Route, Station alert or Dispatcher load. | A zone's box plot shows its calls. Its diamond is the zone mean. A red diamond is a zone slower than the city as a whole, and a note under the chart names it. Suggestions are for the dispatcher's judgment. |
-
-There is no alerts panel and no separate On scene list: the suggestions and the Resolved list replace them.
+| **Ambulances** | The 12 ambulances in four columns with counts: **Available**, **Responding** (dispatched or en route), **On scene** and **Out of service**. Each shows its home zone and an **Out of service** or **Back in service** button. | "Out of service" flags that unit's open calls as a breakdown |
+| **Zone map** | A schematic grid of the 6 zones (A B C on top, D E F below). Each tile shows open calls and free ambulances. | The tile takes the worst clock colour in the zone |
+| **5 Resolved** (full width) | Every call that has reached the scene, with its final response time. The list scrolls and shows the latest 60. A call you logged and that is still at the scene has a **Clear** button, with a confirmation. A cleared call shows **Cleared**. Replayed calls show **At the scene** and **Replay**. | On scene counts as resolved. The time is red if the response was past its target. |
+| **History** | The **current shift and the previous shift** (day 06-14, evening 14-22, night 22-06), following the board clock. It refreshes about every 5 seconds while visible. Calls, Mean, Standard deviation and On time on top. Below: one **Response time by zone** chart (about 72% of the width) with a **Priority** dropdown ("Priority 2: Urgent"), and **Suggested actions** (about 28%), each named Dispatch now, Rebalance, Cover, Route, Station alert or Dispatcher load. | A zone's box plot shows its calls. Its diamond is the zone mean. A red diamond is a zone slower than the city as a whole: **hover it** to see why. Suggestions are for the dispatcher's judgment. |
 
 **Poka-yoke rules on the live board:**
 
@@ -136,15 +134,22 @@ There is no alerts panel and no separate On scene list: the suggestions and the 
 
 ### 4.2 Supervisor (primary user)
 
-A **settings card** at the top of every supervisor screen sets what you are looking at: **Dataset**, **Priority**, **As of**, and a **Targets and baseline** accordion (the parameters are listed in [section 5.3](#53-supervisor-settings-the-parameters)). Under it are three tabs.
+The supervisor view has two tabs, **Charts** and **Actions**. The **control bar** at the top of Charts sets what both tabs show: the chart, zone, priority, dataset, as-of date, chart period and a **Targets** button (see [section 5.3](#53-supervisor-controls-the-parameters)).
 
-**Screens show results only.** Every explanation sits behind a **More info...** toggle, with short plain-language questions and answers for someone new to Six Sigma (what a percentile is, what a red dot means, what the dashed lines are). The F statistic, p-values, Ppk and Cpk numbers and the normal probability plot are only in there.
+Every card has one plain title. A short **More info** toggle (2 or 3 sentences) explains it. The F value, p-values and the Ppk and Cpk numbers are only there.
 
-| Tab | What it shows | How to read it |
-|---|---|---|
-| **Overview** ("Is everything okay?") | Six tiles for the last 7 days: average, median, 90th and 95th percentile, % on time, zones flagged. A **zone health** list: green, amber or red, with the reason in plain words. A history map of the 6 zones. A list of calls left out of the statistics (only when there are some). | **Red means act. Amber means worth a look. Green means on track.** The average sits next to the 90th and 95th percentiles on purpose: the gap is the slow tail that a monthly average hides (the story sentence is in More info). |
-| **Charts** ("What is happening, and why?") | A **control bar**: a toggle between the **Daily chart (X̄-S)** and **Every call (I-MR)** (one chart is shown at a time), **Zone** (default D), **As of** (kept in step with Settings), **Chart period** (14, 28 or 42 days) and one **Jump** menu ("Sep 28 (before the fix)", "The latest day"). Below: the chosen chart, the stage breakdown, a **capability** card with one plain verdict per zone, and a **tests** card with a plain answer to "do the zones really differ?". | **A red dot is a day when this zone was slower than its own normal range. Open the stage breakdown to see which stage caused it.** Dashed grey lines are fixed control limits from the zone's own baseline days. On the I-MR chart, the solid amber line is the target. They are different lines. |
-| **Actions** ("How do we fix it, and did it work?") | Slip-back alerts (only when a zone is slipping back). Suggestions with evidence and an impact estimate. An action log. A before/after check with a verdict. The zone's daily chart around the action. | Every suggestion shows its evidence and says "for review by qualified staff". The verdict is *Improved*, *Got worse*, *No clear change yet* or *Not enough data*. |
+| Where | Card | What it shows | How to read it |
+|---|---|---|---|
+| Charts | **Control chart** | One chart at a time: the **Daily chart** (X̄ and S) or **Every call** (each call, with the UCL, LCL and the amber target line) | A red dot is a day (or call) outside the normal range. Dashed grey lines are control limits. The amber line is the target. They are different lines. |
+| Charts, right | **Statistics** | Average, Standard deviation, On time and Zones flagged, for the chart period and all zones | The goal is at least 90% on time. |
+| Charts, right | **Zone map** | Six tiles, A to F. Red means act, amber means worth a look, green means on track. | **Hover a tile** for its reasons. |
+| Charts, right | **Data quality** | The calls left out of the statistics, with the reason. It appears only when there are some. | Bad records are listed, never averaged in. |
+| Charts | **Delay by stage** | Each zone's minutes over target, split into dispatch, crew turnout and travel, for the chart period | **Hover a bar** for its share, minutes over target and median. |
+| Charts | **Zone comparison** | A plain answer to "do the zones really differ?" | "Yes. Zone D is typically 6.0 min against 4.9 min in Zone A..." |
+| Charts | **Capability** | One plain verdict per zone (Reliable, Just meets the standard, Below the standard, Can't judge yet, Not enough calls) | "About 98 in 100 calls within 9 min." |
+| Actions | **Suggested actions** | Fixed rules with evidence and an impact estimate | Every suggestion is "for review by qualified staff". |
+| Actions | **Actions taken** | The action log, with **Log an action** | |
+| Actions | **Before and after**, **Result** | The zone's daily chart with the action marked, and a table of Mean, Standard deviation, On time and Calls before and after, with a verdict chip | The verdict is *Improved*, *Got worse*, *No clear change yet* or *Not enough data*. |
 
 ---
 
@@ -182,22 +187,19 @@ Each target should be met by **at least 90% of calls**. Response (dispatched to 
 | Travel (`en_route` to `on_scene`) | 480 s | 840 s | 1140 s | P1: NFPA 1710 (advanced life support unit). P2, P3: response target minus the 60 s turnout target. |
 | **Response** (`dispatched` to `on_scene`) | **540 s (9 min)** | 900 s (15 min) | 1200 s (20 min) | P1: NFPA 1710. **P2 and P3 are our own assumptions**, because NFPA does not set them. |
 
-### 5.3 Supervisor settings (the parameters)
+### 5.3 Supervisor controls (the parameters)
 
-| Setting | Choices | Default | What it does |
+| Control | Choices | Default | What it does |
 |---|---|---|---|
-| Dataset | Demo city (42 days, planted problems), Baseline city (28 days, stable), Messy file (3 days, planted data errors) | Demo | Which file to analyze |
-| Priority | 1, 2, 3 | 1 | Which calls to analyze. Each priority has its own target. |
-| As of | a date in the file | 2026-10-12 (the last day of the demo file) | The "today" for every screen. Later calls are ignored. |
-| Priority 1, 2, 3 target (min) | 1 to 60, 1 to 90, 1 to 120 | 9, 15, 20 | The response targets |
-| Processing target (s) | 10 to 600 | 64 | The processing target |
-| Turnout target (s) | 10 to 600 | 60 | The turnout target |
-| Baseline start | a date in the file | 2026-09-01 | First day of the calm period that sets the control limits |
-| Baseline days | 5 to 28 | 14 | Length of that period |
+| Chart | Daily chart, Every call | Daily chart | Which control chart to show |
+| Zone | A to F | D | The zone the control chart shows |
+| Priority | 1: Life-threatening, 2: Urgent, 3: Non-urgent | 1 | Which calls to analyze. Each priority has its own target. |
+| Dataset | Demo city (42 days), Baseline city (28 days), Messy file (3 days) | Demo | Which file to analyze |
+| As of | a date in the file | 2026-10-12 (the last day of the demo file) | The "today" for every card. Later calls are ignored. It moves to the file's last day when you change the dataset. |
+| Chart period | Last 14, 28 or 42 days | 28 | How much history every card uses. It is also the window that sets the control limits. |
+| Targets (button) | Priority 1, 2 and 3 targets in minutes; processing and turnout targets in seconds | 9, 15, 20 min; 64 s; 60 s | The targets. Defaults: NFPA 1710 for priority 1; priorities 2 and 3 are our assumptions. |
 
-**On the Charts tab** (a control bar): the chart (Daily X̄-S or I-MR, default Daily), the zone (default D), an **As of** date that stays in step with the settings card, the **Chart period** (14, 28 or 42 days; default 28), and a **Jump** menu ("Sep 28 (before the fix)" or "The latest day") that sets **As of** for the demo.
-
-The dispatcher's controls are: simulation day (default 2026-09-20), speed (30x, **60x**, 120x), start time (**00:00**, 06:00, 14:00, 22:00), the clock speed for calls logged by hand (**1x**, 10x, 30x, 60x), and the zone and priority of a new call. The History tab has no settings: it follows the board clock.
+The dispatcher's controls are: simulation day (default 2026-09-20), speed (30x, **60x**, 120x), start time (**00:00**, 06:00, 14:00, 22:00), the clock speed for calls logged by hand (**1x**, 10x, 30x, 60x), and the zone and priority of a new call. The History tab has one control, the priority of its chart.
 
 ---
 
@@ -210,12 +212,12 @@ Response times are skewed: most are fast, and a few are very slow. So control ch
 | # | Statistic | Formula | Function in `qc.py` | Why |
 |---|---|---|---|---|
 | 1 | **Stage times** | processing = dispatched - call_received. turnout = en_route - dispatched. travel = on_scene - en_route. **response = on_scene - dispatched.** A call is flagged and left out if a needed timestamp is missing or out of order, its call ID is a duplicate, its response is zero, or its zone or priority is unknown. | `stage_times`, `data_issues` | Splits a delay into its stages, so we can say *why*. Bad rows never enter a statistic. |
-| 2 | **Summary numbers** | mean (comparison only), median, 90th and 95th percentile, % on time (value <= target). Percentiles use linear interpolation, "type 7": position h = (n - 1) x p on the sorted values, then x[floor h] + (h - floor h)(next - this). Same as R's default and Excel's PERCENTILE.INC. | `summary`, `percentile`, `zone_summary` | The danger is in the slow tail. The average hides it. |
-| 3 | **I-MR chart** (individuals and moving range), per zone, on **ln minutes** in call order | center = mean of the logs. sigma_short = MR-bar / 1.128. limits = center +/- 3 sigma_short. MR upper limit = 3.267 x MR-bar; lower = 0. Limits come from the baseline calls. | `imr_limits`, `imr_chart` | Catches a single extreme delay (the "fatal outlier"). |
-| 4 | **Daily X̄-S chart**, per zone (a subgroup is one zone-day), on **ln minutes**, with **constant limits** | Each day's point = the mean of that day's ln minutes. **X̄ chart:** center = the mean of the **baseline days' daily means**. sigma_xbar = MR-bar / 1.128, where MR-bar is the average gap between consecutive baseline daily means. Limits = center +/- 3 sigma_xbar, **the same for every day**. **S chart:** center s-bar = the mean of the baseline daily standard deviations. Limits = s-bar x (1 +/- 3 sqrt(1 - c4^2) / c4) with c4 = c4(n-bar), n-bar = average calls per baseline day (the B4 and B3 constants; lower never below 0). **The baseline is the first 14 days** by default. | `daily_xbar_s`, `c4` (and `xbar_s_limits` for zone subgroups) | Shows *where* and *since when*. Limits from calm days stay put, so a new slowdown shows up as a flag instead of stretching the limits. We tested limits from the chart period instead: on the demo city they hid Zone D (0 flagged days instead of 11 as of Sep 28). |
-| 5 | **Flag rules R1 to R5** on the daily X̄ points (table below). A point on the **slow side is an alarm**. A point on the fast side only says "check the data". | z = (daily mean - center) / sigma_xbar, so "1 sigma" is sigma_xbar, the typical day-to-day move of the baseline daily means. | `flag_rules` (daily points). `imr_chart` column `beyond` (single extreme calls). | One rule alone is slow or noisy. Stacking several catches both jumps and drifts. |
+| 2 | **Summary numbers** | mean and standard deviation (sample, n - 1), median, 90th and 95th percentile, % on time (value <= target). Percentiles use linear interpolation, "type 7": position h = (n - 1) x p on the sorted values, then x[floor h] + (h - floor h)(next - this). Same as R's default and Excel's PERCENTILE.INC. | `summary`, `percentile`, `zone_summary` | The danger is in the slow tail. The average hides it. |
+| 3 | **I-MR limits** (individuals and moving range), per zone, on **ln minutes** in call order. The **Every call** chart draws the individuals part (each call, the UCL and LCL, and the target). | center = mean of the logs. sigma_short = MR-bar / 1.128. limits = center +/- 3 sigma_short. MR upper limit = 3.267 x MR-bar; lower = 0. In the app the limits come from the calls in the chart period. | `imr_limits`, `imr_chart` | Catches a single extreme delay (the "fatal outlier"). |
+| 4 | **Daily X̄-S chart**, per zone (a subgroup is one zone-day), on **ln minutes**, with **constant limits** | Each day's point = the mean of that day's ln minutes. **X̄ chart:** center = the mean of the daily means in the limit window. sigma_xbar = the standard deviation of those daily means. Limits = center +/- 3 sigma_xbar, **the same for every day**. **S chart:** center s-bar = the mean of the window's daily standard deviations. Limits = s-bar x (1 +/- 3 sqrt(1 - c4^2) / c4) with c4 = c4(n-bar), n-bar = average calls per day (the B4 and B3 constants; lower never below 0). **In the app the limit window is the chart period you pick** (14, 28 or 42 days). | `daily_xbar_s`, `c4` (and `xbar_s_limits` for zone subgroups) | Shows *where* and *since when*. One window for everything keeps the chart, zone map, suggestions and capability in agreement. The cost: a problem that lasts most of the period widens the limits and can hide itself (see section 12). |
+| 5 | **Flag rules R1 to R5** on the daily X̄ points (table below). A point on the **slow side is an alarm**. A point on the fast side only says "check the data". | z = (daily mean - center) / sigma_xbar, so "1 sigma" is sigma_xbar, the typical day-to-day spread of the daily means. | `flag_rules` (daily points). `imr_chart` column `beyond` (single extreme calls). | One rule alone is slow or noisy. Stacking several catches both jumps and drifts. |
 | 6 | **Zone health** (green, amber, red, unknown) over the last 7 days up to the as-of date | A **chart signal** = rule R1 fired, or 2 or more different slow-side rules fired. **red** = a chart signal AND the 90th percentile is over target. **amber** = exactly one of the two. **green** = neither. **unknown** = not enough data for limits. One weaker rule alone is still drawn on the chart and noted in the reasons ("one weak signal ... keep watching"), but it does not change the status. A zone that slips back after a logged action is at least amber. | `zone_health`, `chart_signal` | One traffic light per zone, with the reason in plain words. Requiring a stronger signal keeps chance alarms rare. Red means act. |
-| 7 | **Capability**, upper side only, on **ln minutes** | Ppk = (ln USL - mean of ln x) / (3 x sd of ln x), using sigma_total. Cpk is the same with sigma_short. USL is the target in minutes. Expected on time = Phi(3 x Ppk). **Shown only when the zone's daily chart has no slow-side flag AND the zone has at least 30 calls in the period.** Otherwise: "not stable: capability is not meaningful" or "too few calls for capability (n = X; need 30)". The screen turns this into a **plain verdict**: Very reliable (99% or more expected on time), Reliable (95% to 99%), Just meets the standard (90% to 95%), Below the standard, Can't judge yet, or Not enough calls. The Ppk and Cpk numbers sit behind More info. | `capability`, `zone_capability`, `ppk_to_pct`, `capability_verdict` | Asks "can this zone meet the target at all?". Needs a stable process, and enough calls, to mean anything. |
+| 7 | **Capability**, upper side only, on **ln minutes** | Ppk = (ln USL - mean of ln x) / (3 x sd of ln x), using sigma_total. Cpk is the same with sigma_short. USL is the target in minutes. Expected on time = Phi(3 x Ppk). **Shown only when the zone's daily chart (limits from the chart period) has no slow-side flag AND the zone has at least 30 calls in the period.** Otherwise: "not stable: capability is not meaningful" or "too few calls for capability (n = X; need 30)". The screen turns this into a **plain verdict**, judged on the rounded %: Very reliable (99 or more in 100 on time), Reliable (95 to 98), Just meets the standard (90 to 94), Below the standard (under 90), Can't judge yet, or Not enough calls. The Ppk and Cpk numbers sit behind More info. | `capability`, `zone_capability`, `ppk_to_pct`, `capability_verdict` | Asks "can this zone meet the target at all?". Needs a stable process, and enough calls, to mean anything. |
 | 8 | **Tests**, on ln minutes, alpha = 0.05 | One-way **ANOVA** across zones: F = (SSB / (k - 1)) / (SSW / (N - k)). **Welch's t-test**, one-sided, before vs. after an action: t = (mean_b - mean_a) / sqrt(s_b^2 / n_b + s_a^2 / n_a), with Welch-Satterthwaite df and p = P(T > t). | `anova_zones`, `zone_anova`, `welch_before_after` | Do zones really differ? Did response time really drop after the fix? |
 | 9 | **Normality check** | Shapiro-Wilk W and p on ln minutes, plus a normal probability plot. | `normality` | Checks the assumption behind rows 3 to 8. |
 | 10 | **Stage breakdown** | stage excess = max(0, stage time - stage target), summed over calls. A stage's share = its excess / the zone's total excess. Also the median seconds per stage. | `stage_breakdown` | Shows which stage causes the minutes over target. |
@@ -298,7 +300,7 @@ flowchart TD
     csv --> st
 
     st --> summ["summary / zone_summary<br>percentiles, % on time"]
-    st --> chart["daily_xbar_s / imr_chart<br>constant limits from the baseline days"]
+    st --> chart["daily_xbar_s / imr_chart<br>constant limits from the chart period"]
     chart --> rules["flag_rules<br>R1 to R5, slow side = alarm"]
     rules --> cap["zone_capability<br>only when stable, then<br>capability_verdict"]
     st --> tests["zone_anova<br>welch_before_after"]
@@ -313,8 +315,8 @@ flowchart TD
     log --> ba["<b>before_after</b><br>slip_back"]
     tests --> ba
 
-    st --> shift["shift_calls / zone_subgroup_chart<br>dispatcher_tips (T1 to T6)"]
-    zh --> screens["Screens<br>Overview, Charts, Actions,<br>Dispatcher History"]
+    st --> shift["shift_calls / zone_subgroup_chart<br>zone_delay_reason, dispatcher_tips"]
+    zh --> screens["Screens<br>Charts, Actions,<br>Dispatcher History"]
     shift --> screens
     cap --> screens
     sug --> screens
@@ -364,16 +366,16 @@ An independent fresh-context review (a reviewer with no memory of the build) che
 Output on our machine (Python 3.12.15):
 
 ```text
-........................................................................ [ 97%]
-..                                                                       [100%]
-74 passed in 0.86s
+........................................................................ [ 93%]
+.....                                                                    [100%]
+77 passed in 0.95s
 ```
 
-That is 46 tests of `qc.py` (`tests/test_qc.py`) and 28 tests of the live-board logic (`tests/test_simulator.py`).
+That is 49 tests of `qc.py` (`tests/test_qc.py`) and 28 tests of the live-board logic (`tests/test_simulator.py`).
 
-The daily chart's constant limits have their own tests: the limits are the same on every day, they equal an individuals chart on the baseline daily means, and the S chart uses the textbook B4 constant (2.568 for 3 calls a day). `xbar_s_limits` still passes the SPEC section 4 X̄-S known answer above, because the zone chart and Cpk still use it.
+The daily chart's constant limits have their own tests: the limits are the same on every day, the center and sigma come from the window's daily means, and the S chart uses the textbook B4 constant (2.568 for 3 calls a day). Zone health is tested to follow the chart period. `xbar_s_limits` still passes the SPEC section 4 X̄-S known answer above, because the zone chart and Cpk still use it.
 
-**The messy file.** `data/calls_messy.csv` (61 rows) is built with missing en-route stamps, out-of-order times, a duplicate call ID and a zone with almost no calls. In the app, pick **Messy file** in the supervisor's Dataset menu. The Overview data-quality card lists the 7 planted defects, each with its reason, and zones with too few calls show "Not enough data". Nothing crashes. You can also check it from Python:
+**The messy file.** `data/calls_messy.csv` (61 rows) is built with missing en-route stamps, out-of-order times, a duplicate call ID and a zone with almost no calls. In the app, pick **Messy file** in the supervisor's Dataset menu. The **Data quality** card lists the 7 planted defects, each with its reason, and zones with too few calls show "Not enough data" on the zone map. Nothing crashes. You can also check it from Python:
 
 ```python
 from app import qc
@@ -391,11 +393,11 @@ The full walkthrough, with exact clicks, numbers and "how to read this" for each
 
 The five-step story on the demo city (Zone D's night-shift turnout gets slower from Sep 15; a fix is logged on Sep 29):
 
-1. **Supervisor, as of Sep 28.** Pick **I'm a supervisor** (Demo dataset, Priority 1). Open **Charts**, choose **Jump**, then **Sep 28 (before the fix)**; the **As of** date in Settings follows. On **Overview**, **Zone D is red** and its reason names **turnout**. Zone C is amber (travel). The other zones are green.
-2. **Charts.** Zone D is the default zone. Its daily chart shows flagged (red) days from Sep 18 on, 11 of them, against limits fixed from the first 14 days. Open **More info...** under the chart for a plain explanation. The stage breakdown shows turnout, not travel or processing, causing the minutes over target.
+1. **Supervisor, as of Sep 28.** Pick **I'm a supervisor** (Demo dataset, Priority 1) and set **As of** to 2026-09-28. On **Zone map**, **Zone D is amber** ("Worth a look"). Hover it: its 90th percentile is 10.2 min against the 9-min target, and turnout causes 99% of its minutes over target. The other zones are green.
+2. **Charts.** Zone D's daily chart shows **no red dots**. That is the trade-off of using the chart period as the limit window: D's slowdown (from Sep 15) is inside the window, so it widens the limits and hides itself. The other cards still show it. **Delay by stage** says 92% turnout. **Capability** says D is *Below the standard* (only about 89 in 100 calls within 9 min). **Zone comparison** says D is typically 6.0 min against 4.9 min in Zone A.
 3. **Actions.** The suggestion **"Review crew readiness at Zone D's station, especially the night shift"** appears with its evidence and an impact estimate (on time rises from about 78% to about 97% if turnout were typical). Log it. (The demo's fix is already in the log as A1, dated Sep 29.)
-4. **Jump to the latest day** (Oct 12, in the Charts **Jump** menu). The before/after check for that action says **Improved** (median 6.8 to 5.2 minutes, on time 78% to 97%), and the zone's chart after the action shows no warning signs: a stable new level. Zone D is green on **Overview**.
-5. **Dispatcher.** Click **Switch role**, then **I'm a dispatcher**. In the header, pick Sep 20, 120x and a 14:00 start, then press **Simulate a shift**. Watch calls move through the numbered steps, clocks turn red, and the zone map update. Open **History** for the current and previous shift, with a zone chart (pick a priority) and suggestions for the dispatcher. **Reset** puts everything back to zero.
+4. **Set As of to 2026-10-12.** **Result** for A1 says **Improved**: mean 7.2 to 5.5 minutes, on time 78% to 97%. Zone D is green on the map.
+5. **Dispatcher.** Click **Switch role**, then **I'm a dispatcher**. In the header, pick Sep 16, 120x and a 06:00 start, then press **Simulate a shift**. Watch calls move through the numbered cards. Open **History**, and at about 06:46 on the simulated clock pick **Priority 2: Urgent**. Zone D is a red diamond: hover it to see why (crew turnout, crew not ready). **Reset** puts everything back to zero.
 
 ---
 
@@ -449,7 +451,8 @@ The app follows the course's **four-script contract**. All four files are in [`a
 - **Flags are for qualified staff.** They are for staff to investigate, not automatic dispatch decisions. The tool flags and suggests. It never dispatches or changes staffing. Every suggestion says "for review by qualified staff", and the dispatcher's tips say they are for the dispatcher's judgment.
 - **Amber means "worth a look". Red means "act".** Several rules plus a 90th-percentile check will sometimes fire by chance. We count a chart signal only when rule R1 fires or 2 or more different rules fire in the last 7 days. On a pure-noise simulation, a stable zone-week then shows amber by chance about 2.5% of the time, versus 7.7% if any single rule counted. Red needs a chart signal *and* a 90th percentile over target, so it is rarer still.
 - **P2 and P3 targets are our assumptions.** NFPA 1710 does not set them. The NFPA numbers are quoted from agency reports, not read from the standard. All targets are editable.
-- **Assumptions behind the statistics:** log response times are roughly normal (the Charts tab shows a Shapiro-Wilk p-value and a probability plot per zone). Calls in time order are roughly independent (stated, not tested). The baseline period is stable (the baseline is shown, and you can move it). Capability needs stability, so it is hidden for flagged zones.
+- **Control limits come from the chart period.** That keeps the daily chart, the zone map, the suggestions and the capability card in agreement, and it is simple. But a problem that lasts most of the period widens the limits and can hide itself. On the demo city, as of Sep 28 with a 28-day period, Zone D's daily chart shows no red dots. The zone map (D is amber from its 90th percentile), the capability card (D is below the standard) and the zone comparison still show it. Read the daily chart together with those cards.
+- **Assumptions behind the statistics:** log response times are roughly normal (the Zone comparison card has a probability plot in More info). Calls in time order are roughly independent (stated, not tested). The chart period is mostly normal days. Capability needs stability, so it is hidden for flagged zones.
 - **A better time after a fix does not prove the fix caused it.** The check shows an apparent change. Staff judge the cause.
 - **Button-press timing is not validated.** A crew may press "on scene" a little after arriving. The times are only as good as the pressing habit.
 - **Out of scope:** logins, a database, real maps or GPS, forecasting, AI-written suggestions, per-person dispatcher rankings, and a board shared across browsers (each browser session has its own).

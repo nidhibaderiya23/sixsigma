@@ -198,3 +198,24 @@ tasks:
       pytest tests passes, the browser checks of every item pass, and the
       README, app/README and demo/README describe the new screens.
     result: "74 pytest tests pass (incl. constant-limit, B4 = 2.568, capability_verdict and route-tip tests); browser-checked all 5 dispatcher and 9 supervisor items with real clicks; README, app/README and demo/README re-measured and updated; manifest re-written."
+
+  - id: H-11
+    title: Third round of team feedback, rename to ERGent, version 1 (Oct 17)
+    points: "protects H-04/H-05/H-07: simpler professional screens, the team's chosen limit method"
+    status: done
+    owner: "Claude (agent) + Claude helper (UI) + Nidhi Baderiya"
+    started_at: "2026-10-17 00:37"
+    owns: ["app/", "tests/", "SPEC.md", "README.md", "app/README.md", "demo/README.md", "docs/"]
+    notes: >
+      Renamed to ERGent (v1). Dispatcher: 72/28 History layout, bold priority
+      names, mean and SD KPIs, hover reasons on red points. Supervisor:
+      Overview merged into Charts, one control bar with priority and dataset,
+      no jump menu, individuals chart instead of I-MR, target line on the X-bar
+      chart, limits from the selected chart period (team decision), hover bars
+      with date range, zone comparison next to the stage chart, short
+      capability texts, Actions side by side with a before/after table. Single
+      plain titles everywhere; More info cut to 2-3 sentences.
+    definition_of_done: >
+      pytest tests passes; every item checked in the browser; docs updated;
+      committed and tagged v1 locally.
+    result: "77 pytest tests pass; every dispatcher and supervisor item browser-checked (hover reasons, bold priority titles, mean/SD, merged Charts tab, period limits, Actions table); docs renamed to ERGent and re-measured; committed and tagged v1 locally."

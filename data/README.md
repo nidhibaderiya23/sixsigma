@@ -1,4 +1,4 @@
-# Response Watch test data (codebook)
+# ERGent test data (codebook)
 
 **All data in this folder is synthetic.** No real calls, patients, addresses or names.
 A seeded script, `make_data.py`, invents it. It uses numpy's `default_rng` with **seed 42**,

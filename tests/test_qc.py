@@ -92,6 +92,8 @@ def test_summary_hand_checked():
     s = qc.summary([4, 5, 6, 7, 8, 9, 10, 11, 12, 20], target_min=9)
     assert s["n"] == 10
     assert s["mean"] == pytest.approx(9.2)
+    # squared deviations from 9.2 sum to 189.6; sd = sqrt(189.6 / 9) = 4.5898
+    assert s["sd"] == pytest.approx(4.5898, abs=1e-4)
     assert s["median"] == pytest.approx(8.5)
     assert s["p90"] == pytest.approx(12.8)
     assert s["p95"] == pytest.approx(16.4)
@@ -488,16 +490,18 @@ def test_dispatcher_tips_shift_rules():
 
 # ---- constant daily-chart limits (team decision, Oct 16, H-10) ------------------------------------
 
-def test_daily_limits_are_constant_and_come_from_baseline_daily_means():
+def test_daily_limits_are_constant_and_come_from_the_window_daily_means():
     rows = daily_calls("D", 21, 3, lambda d, k: 300 + WOBBLE[(d * 3 + k) % 10] + (250 if d >= 14 else 0))
     st = qc.stage_times(make_calls(rows))
     chart = qc.daily_xbar_s(st, "D", baseline_days=14)
     assert chart["x_ucl"].nunique() == 1 and chart["x_lcl"].nunique() == 1      # constant
     base_means = chart[chart["baseline"]]["mean_log"].to_numpy()
-    ref = qc.imr_limits(base_means)                     # center = mean, sigma = MR-bar / 1.128
-    assert chart["x_center"].iloc[0] == pytest.approx(ref["center"])
-    assert chart["x_ucl"].iloc[0] == pytest.approx(ref["ucl"])
-    assert chart.attrs["sigma_xbar"] == pytest.approx(ref["sigma"])
+    # team decision (Oct 17): center = mean of the daily means, sigma = their standard deviation
+    center, sd = base_means.mean(), base_means.std(ddof=1)
+    assert chart["x_center"].iloc[0] == pytest.approx(center)
+    assert chart["x_ucl"].iloc[0] == pytest.approx(center + 3 * sd)
+    assert chart["x_lcl"].iloc[0] == pytest.approx(center - 3 * sd)
+    assert chart.attrs["sigma_xbar"] == pytest.approx(sd)
     assert chart[~chart["baseline"]]["alarm"].all() and not chart[chart["baseline"]]["alarm"].any()
 
 
@@ -516,11 +520,11 @@ def test_capability_verdict_plain_language():
     assert qc.capability_verdict({"shown": True, "ppk": 0.43}, 9)["label"] == "Just meets the standard"
     assert qc.capability_verdict({"shown": True, "ppk": 0.30}, 9)["tone"] == "red"
     assert qc.capability_verdict({"shown": True, "ppk": 1.2}, 9)["label"] == "Very reliable"
-    assert "about 98 in 100" in qc.capability_verdict({"shown": True, "ppk": 0.68}, 9)["text"].lower()
+    assert qc.capability_verdict({"shown": True, "ppk": 0.68}, 9)["text"] == "About 98 in 100 calls within 9 min."
     unstable = {"shown": False, "message": "not stable: capability is not meaningful", "n": 200}
     assert qc.capability_verdict(unstable, 9)["label"] == "Can't judge yet"
     few = {"shown": False, "message": "too few calls for capability (n = 7; need 30)", "n": 7}
-    assert "Only 7 calls" in qc.capability_verdict(few, 9)["text"]
+    assert qc.capability_verdict(few, 9)["text"] == "Only 7 calls; 30 are needed."
 
 
 def test_route_tip_needs_two_late_calls_to_name_a_cause():
@@ -531,3 +535,28 @@ def test_route_tip_needs_two_late_calls_to_name_a_cause():
     window = qc.shift_calls(qc.stage_times(make_calls(rows)), "2026-09-20 15:30")
     t4 = [t for t in qc.dispatcher_tips(window, None, [], "2026-09-20 15:30") if t["rule"] == "T4"]
     assert t4 and t4[0]["zone"] == "F" and "check the route" in t4[0]["text"]   # 1 late call: no cause named
+
+
+
+def test_summary_sd_degenerate():
+    assert qc.summary([7.5], target_min=9)["sd"] is None
+    assert qc.summary([], target_min=9)["sd"] is None
+
+
+def test_priority_names_and_delay_reason():
+    assert qc.PRIORITY_NAME == {1: "Life-threatening", 2: "Urgent", 3: "Non-urgent"}
+    rows = daily_calls("D", 3, 4, lambda d, k: 300, lambda d, k: 200, delay_reason="crew_not_ready")
+    rows += daily_calls("A", 3, 4, lambda d, k: 300)
+    text = qc.zone_delay_reason(qc.stage_times(make_calls(rows)), "D", 1)
+    assert text.startswith("Zone D is slower than the city") and "crew turnout" in text
+    assert "crew not ready" in text
+
+
+def test_zone_health_follows_the_chart_period():
+    # D slow for the last 14 of 28 days: limits from the whole 28-day period widen and stay quiet,
+    # limits from the first 14 days catch it
+    rows = daily_calls("D", 28, 6, lambda d, k: (520 if d >= 14 else 330) + WOBBLE[(d + k) % 10])
+    st = qc.stage_times(make_calls(rows))
+    first14 = qc.zone_health(st).set_index("zone").loc["D", "rules"]
+    period28 = qc.zone_health(st, period_days=28).set_index("zone").loc["D", "rules"]
+    assert first14 and len(period28) <= len(first14)

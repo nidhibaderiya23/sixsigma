@@ -1,4 +1,4 @@
-# Plan: Response Watch (Team ERG)
+# Plan: ERGent (Team ERG)
 Statistics first, then the tool, then the screens. Formulas and known answers: `SPEC.md` section 4. Started Fri 17:53.
 
 ## Tasks
@@ -11,7 +11,7 @@ Statistics first, then the tool, then the screens. Formulas and known answers: `
    - `stage_times` (stage = later stamp - earlier stamp; flags missing or out of order) | degenerate: missing stamp.
    - `summary` (mean, type-7 percentiles, % on time) | degenerate: n = 1.
    - `imr_limits` (center ± 3 MR̄/1.128; MR upper 3.267 MR̄) | degenerate: constant gives None.
-   - `xbar_s_limits` (x̄̄ ± 3σ_s/√nᵢ, σ_s = √mean(sᵢ²); S: (c₄ ± 3√(1 - c₄²))σ_s) | degenerate: a 1-call day.
+   - `daily_xbar_s` (constant limits: mean of the period's daily means ± 3 SD of them; S: B₃/B₄ s̄) | degenerate: constant days.
    - `flag_rules` (Western Electric 1-4 + 6 rising; slow side = alarm) | degenerate: under 8 points.
    - `capability` (Ppk, Cpk upper on logs; hidden if flagged) | degenerate: constant.
    - `anova_zones`, `welch_before_after` (scipy, on logs) | degenerate: a group with 1 value.
@@ -19,7 +19,7 @@ Statistics first, then the tool, then the screens. Formulas and known answers: `
 4. **H-04 tool** (`app/`) - 4 h, in layers:
    - **L1:** role picker; dispatcher board (status tables, clocks, ordered buttons, reason codes, fleet,
      alerts, live map, simulate, history). It reads `data/` through `qc.py` only.
-   - **L2:** supervisor Overview and Charts.
+   - **L2:** supervisor Charts (Overview merged in on Oct 17).
    - **L3:** Actions and Control.
    - Test: `testme.sh` starts it; one data file shows the same numbers as the H-03 tests.
 5. **H-08 (first half) + H-06 deploy** (`.github/workflows/`, `app/manifest.json`, `app/.python-version`) -
@@ -47,7 +47,7 @@ T3 unit out of service → neighbour covers · T4 zone travel median ≥ 1.25× 
 ## Decisions (approved by the team, Oct 16)
 - Stages: processing, turnout, travel (headline: dispatch to on scene); reasons: automatic + code when late; fields incl. ambulance, distance, dispatcher ID (stats by shift, not person), weather.
 - Roles: a start-page picker. Dispatcher: queue and status tables, fleet, alerts, live map, weekly and monthly history, full poka-yoke.
-- Supervisor: Overview, Charts and Actions (not DMAIC tabs). Define and Measure live in the docs.
+- Supervisor: Charts and Actions (not DMAIC tabs; Overview merged into Charts). Define and Measure live in the docs.
 - Charts: I-MR, daily X̄-S (the course's method, not a p-chart), stage breakdown, capability, ANOVA and Welch (on logs).
 - Actions: rules with an impact estimate, an action log, before/after, slip-back alerts. No Pareto, fishbone or control plan.
 - Targets: NFPA 1710 (64 s, 60 s, 480 s; P1 = 9 min), P2 15 / P3 20 assumed, editable. 6 zones; demo: D turnout, C travel. Simulation + manual entry, one board per browser, live and history maps.

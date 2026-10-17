@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # testme.sh
-# A helper script to test the Response Watch Shiny app locally.
+# A helper script to test the ERGent Shiny app locally.
 # Run from anywhere: ./testme.sh   then open http://localhost:8000
 
 set -euo pipefail
