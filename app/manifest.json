@@ -29,10 +29,10 @@
       "checksum": "b5eb75f83f258c221d96707ffd22c729"
     },
     "app.py": {
-      "checksum": "9ee5ce14a33d1660a5a06201f561186d"
+      "checksum": "23d5a1da18f5e651b198ca7b32187d87"
     },
     "charts.py": {
-      "checksum": "1b74636fcdaa4538381cd296bc7b02a6"
+      "checksum": "cd20cc13b6c0b904fa4b3de2f4112110"
     },
     "data/actions_demo.csv": {
       "checksum": "bcfa33f71f65c7990137ef7c800ee15f"
@@ -65,22 +65,22 @@
       "checksum": "a579c10a4ebde3d3d56e3493f43eb243"
     },
     "ui_dispatcher.py": {
-      "checksum": "6a36df5fe3da620e1ca090d15f937166"
+      "checksum": "dac47f9881617202aa51f789ca2727a8"
     },
     "ui_supervisor.py": {
-      "checksum": "54eaea69b98663e0965fde8d593b9a70"
+      "checksum": "7371ed5c297bb3c1d8c955f37d6a8334"
     },
     "www/manual.html": {
       "checksum": "3f2c296e2b801837203c0c18e03ed8ac"
     },
     "www/rw.css": {
-      "checksum": "4c253f331c7dfd9f130cbbea5260c00f"
+      "checksum": "c982384f1dd76a38a57a53ded8feee96"
     },
     "www/rw.js": {
       "checksum": "36bb1a3b4844103c874d00336062dcd1"
     },
     "www/zonemap.js": {
-      "checksum": "4dd9c78a87dfc21edc76d4c26a745cf5"
+      "checksum": "c4f066dcff173ad088ddc5d3dd69e806"
     },
     "zonemap.py": {
       "checksum": "c080e5d0e30a6acd63068ecd1ffd1e44"
