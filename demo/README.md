@@ -1,6 +1,6 @@
 # Demo: ERGent on every test dataset
 
-A step-by-step walkthrough of ERGent (version 1) that anyone can follow and get the same numbers. All
+A step-by-step walkthrough of ERGent (version 2 and later; Ithaca, NY) that anyone can follow and get the same numbers. All
 data is synthetic (see [`data/README.md`](../data/README.md)). Every number below comes from
 `app/qc.py`. The "How to read it" lines are what to say to a judge.
 
@@ -18,7 +18,7 @@ Open http://localhost:8000. You see the start page with two buttons: **I'm a dis
 ## 1. The demo city, before the fix (`data/calls_demo.csv`, as of Sep 28)
 
 Click **I'm a supervisor**. The **control bar** at the top of **Charts** sets everything. Keep
-**Dataset: Demo city (42 days)**, **Priority 1: Life-threatening** and **Chart period: Last 28 days**,
+**Dataset: Ithaca demo (42 days)**, **Priority 1: Life-threatening** and **Chart period: Last 28 days**,
 and set **As of** to 2026-09-28 (type it, or pick it in the calendar).
 
 Every card has one plain title. A **More info** toggle under it opens a short explanation.
@@ -32,7 +32,7 @@ Every card has one plain title. A **More info** toggle under it opens a short ex
 | On time | 93% |
 | Zones flagged | 1 / 6 |
 
-- **Zone map:** **Zone D is amber ("Worth a look")**, labelled "Crew turnout". Hover the tile: "90th
+- **Zone map:** **Zone D is amber ("Worth a look")**, on the map of Ithaca (West End & Southwest). Hover it: "Main delay: crew turnout", then "90th
   percentile 10.2 min vs. 9 min target; turnout causes 99% of minutes over target". Every other zone is
   green ("On track").
 
@@ -63,7 +63,7 @@ percentile is 10.2 min, and the delay is the crew getting out the door, not the 
 
 ### 1.3 Actions
 
-The context line reads "Demo city (42 days) · Priority 1: Life-threatening · as of Sep 28". Under
+The context line reads "Ithaca demo (42 days) · Priority 1: Life-threatening · as of Sep 28". Under
 **Suggested actions**, in this order:
 1. **Crew readiness, Zone D:** "Review crew readiness at Zone D's station, especially the night shift
    (50% of the turnout delay from 16% of the calls)". Estimate: on time 78% → 97%.
@@ -119,7 +119,7 @@ confirm it worked, and the tool keeps watching for a slide back.
 
 ## 3. The baseline city (`data/calls_baseline.csv`, stable)
 
-In the control bar, choose **Dataset: Baseline city (28 days)** (the as-of date moves to its last day,
+In the control bar, choose **Dataset: Ithaca baseline (28 days)** (the as-of date moves to its last day,
 Sep 28).
 
 - **Statistics** (Sep 01 to Sep 28, 1266 calls): average 5.4 min, standard deviation 1.7 min, on time
@@ -166,7 +166,7 @@ source (the dispatcher's buttons) stops most of it from happening at all.
 ## 5. The dispatcher: live board and History
 
 Click **Switch role**, then **I'm a dispatcher**. The header shows **ERGent** with the subtitle "Team
-ERG · City EMS dispatch · v1". The simulation controls sit in the header, to the left of **Switch
+ERG · Ithaca, NY EMS dispatch · v2" (the last part names the version you run). The simulation controls sit in the header, to the left of **Switch
 role**: **Day** (default Sep 20), **Speed** (30x, 60x, 120x), **Start** (00:00, 06:00, 14:00, 22:00), a
 coral **Simulate a shift** button and **Reset**. A chip shows the clock mode. Right now it says
 `LIVE 1x` (real time).
@@ -181,8 +181,8 @@ coral **Simulate a shift** button and **Reset**. A chip shows the clock mode. Ri
    - The cards are numbered in call order: **1 Log a call**, **2 Incoming calls**, **3 Dispatched**,
      **4 En route**, **5 Resolved**. Calls appear in card 2, then move to cards 3 and 4 at the times in
      the file. Replayed rows carry a **Replay** tag and no buttons: they are read-only.
-   - Each running clock is green, turns amber above 80% of its stage target, and red past it. The
-     **Zone map** tile of a zone takes the worst clock colour in it.
+   - Each running clock is green, turns amber above 80% of its stage target, and red past it. On the
+     **Zone map** of Ithaca, each zone takes the worst clock colour in it (hover it for its open calls and free units; click it to pick it in Log a call).
    - **Ambulances** are grouped in four status columns with counts: **Available**, **Responding**
      (dispatched or en route), **On scene** and **Out of service**.
    - A call that reaches the scene moves to **5 Resolved** (full width, scrolls, latest 60) with its

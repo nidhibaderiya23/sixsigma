@@ -24,7 +24,8 @@ This folder holds ERGent (version 1): a Shiny for Python dashboard for a city 91
 | [`ui_dispatcher.py`](ui_dispatcher.py) | Dispatcher screens (live board, History tab), the simulation controls for the page header, and the building blocks both roles share. |
 | [`ui_supervisor.py`](ui_supervisor.py) | Supervisor screens: the Charts and Actions tabs, with short "More info" toggles. |
 | [`app.py`](app.py) | The Shiny app: start page, role picker, header. Wires the two roles together. |
-| `www/rw.css`, `www/rw.js` | The dark look, and a small script that repaints the running clocks once a second. |
+| [`zonemap.py`](zonemap.py), `www/zonemap.js` | The interactive Ithaca, NY zone map (Leaflet) both roles use. See [section 5a](#5a-zonemappy-and-wwwzonemapjs-the-ithaca-map). |
+| `www/rw.css`, `www/rw.js` | The look (each version has its own), and a small script that repaints the running clocks once a second and opens a view from a link. |
 | `requirements.txt` | Pinned dependencies (`==`). |
 | `.python-version` | `3.12`. Must match the manifest. |
 | `testme.sh`, `manifestme.sh`, `deployme.sh` | The scripts in [section 2](#2-the-four-scripts). |
@@ -580,6 +581,30 @@ Drawing only. There are 11 public functions. Each takes a result from `qc.py` an
 
 ---
 
+## 5a. `zonemap.py` and `www/zonemap.js`: the Ithaca map
+
+The six zones drawn on a Leaflet map of Ithaca, NY. The outlines are **illustrative** areas of the city (not official
+EMS districts) on the same 3 x 2 layout as `qc.NEIGHBORS`: A West Hill, B Northside & Fall Creek, C Cornell &
+Collegetown (north of State Street), D West End & Southwest, E Downtown & South Hill, F East Hill & Belle Sherman. The
+names live in `qc.ZONE_NAMES`, the city in `qc.CITY`. The map tiles are Esri's grey canvas (no API key); the map needs
+an internet connection.
+
+| Name | Inputs | Output | Notes |
+|---|---|---|---|
+| `POLYGONS` | | `{zone: [[lat, lon], ...]}` | The zone outlines. |
+| `geojson()` | | GeoJSON FeatureCollection | Each feature has `zone`, `name` and `center` (for the letter label). |
+| `head()` | | Leaflet's CSS and JS (unpkg, 1.9.4) and `www/zonemap.js` | Added once to the page head in `app.py`. |
+| `map_div(element_id, click_input=None, height="320px", tiles=None)` | namespaced ids (use `resolve_id` in a module UI) | the map container | `click_input`: the Shiny input that receives the clicked zone letter. `tiles`: "dark" or "light" (default: the CSS variable `--map-tiles`). |
+| `update(session, element_id, zones)` (async) | `zones = {zone: {"sev": "green"/"amber"/"red"/"grey", "status": str, "lines": [str]}}` | a `rw-zonemap` custom message | Colours each zone (CSS variables `--map-green`, `--map-amber`, `--map-red`, `--map-grey`) and sets its hover text. Await it inside an async `reactive.effect`. |
+
+The supervisor's map (`ui_supervisor.py`, `_paint_map`) paints `qc.zone_health`: the status word, the main delay and the
+reasons. The dispatcher's map (`ui_dispatcher.py`, `_paint_live_map`) paints `Board.zone_tiles`: the worst open clock,
+the open calls and the available units.
+
+**Links that open a view directly** (`www/rw.js`, for demos and screenshots): `/?role=dispatcher` or
+`/?role=supervisor`; add `&tab=History` or `&tab=Actions` to open that tab, and `&sim=1` to start the dispatcher's
+shift replay.
+
 ## 6. `simulator.py`: the live board
 
 Pure Python, no Shiny, no plotting, and **no statistics**. It uses `qc` only for targets and reason codes. Time is always passed in as `now`, never read from the clock inside a function, so the same code runs on wall-clock time and on the replay clock. It is unit-tested in [`tests/test_simulator.py`](../tests/test_simulator.py).
@@ -634,7 +659,7 @@ Each call's state at a simulated time. This is what the "Simulate a shift" repla
 
 1. A KPI row: Waiting, Dispatched, En route, On scene, Units available.
 2. Numbered cards in a 2 x 2 grid: **1 Log a call** (zone, priority as "1: Life-threatening", **Clock speed** 1x, 10x, 30x or 60x, **Add call**) next to **2 Incoming calls**; then **3 Dispatched** next to **4 En route**.
-3. **Ambulances** next to the **Zone map**. The ambulances sit in four status columns, each with a count: **Available**, **Responding** (dispatched or en route, and the chip says which), **On scene** and **Out of service**. Each chip shows the unit ID, its home zone and one button (**Out of service** or **Back in service**).
+3. **Ambulances** next to the **Zone map**, an interactive map of Ithaca, NY (`zonemap.py`). Each zone is coloured by its worst open call (the same green / amber / red as the clocks); hover a zone for its name, status, open calls and available units; click a zone to pick it in **Log a call**. The ambulances sit in four status columns, each with a count: **Available**, **Responding** (dispatched or en route, and the chip says which), **On scene** and **Out of service**. Each chip shows the unit ID, its home zone and one button (**Out of service** or **Back in service**).
 4. **5 Resolved**, full width. A call counts as resolved once it is on scene. The list scrolls (at most 360 px tall) and shows the latest 60. A call you logged by hand and that is still at the scene has a small **Clear** button (with a confirmation); a cleared call shows **Cleared**. Replay rows show **At the scene** and **Replay** tags.
 
 The page head holds a date and time chip and **Download calls (CSV)** (`Board.to_frame`, saved as `ergent_calls_<date>_<time>.csv`).
@@ -655,11 +680,11 @@ The page head holds a date and time chip and **Download calls (CSV)** (`Board.to
 
 `ui_supervisor.py` draws it. Every number is a `qc` call and every chart a `charts` call. There are **two tabs, Charts and Actions**. There is no Overview tab and no settings card. Every card has one plain title, and every **More info** toggle (`_more`) holds 2 or 3 sentences.
 
-**Control bar** (top of Charts; it sets what both tabs show): **Chart** (Daily chart or Every call), **Zone** (default D), **Priority** (1: Life-threatening, 2: Urgent, 3: Non-urgent), **Dataset** (Demo city, Baseline city, Messy file), **As of**, **Chart period** (14, 28 or 42 days; default 28) and a **Targets** button that opens a dialog (the three response targets, the processing target, the turnout target). There is no jump menu. The **chart period is also the limit window**: control limits, the zone map, suggestions and capability all use it, so they agree.
+**Control bar** (top of Charts; it sets what both tabs show): **Chart** (Daily chart or Every call), **Zone** (default D), **Priority** (1: Life-threatening, 2: Urgent, 3: Non-urgent), **Dataset** (Ithaca demo, Ithaca baseline, Messy file), **As of**, **Chart period** (14, 28 or 42 days; default 28) and a **Targets** button that opens a dialog (the three response targets, the processing target, the turnout target). There is no jump menu. The **chart period is also the limit window**: control limits, the zone map, suggestions and capability all use it, so they agree.
 
 **Charts tab**, top to bottom:
 
-1. **Control chart** (left, about two thirds): `charts.daily_chart` or `charts.individuals_chart`, one at a time. On the right: **Statistics** (Average, Standard deviation, On time, Zones flagged, for the chart period and all zones; from `qc.summary` and `qc.zone_health`) and **Zone map** (six tiles; hover a tile for its reasons). A **Data quality** card appears below them only when calls were left out.
+1. **Control chart** (left, about two thirds): `charts.daily_chart` or `charts.individuals_chart`, one at a time. On the right: **Statistics** (Average, Standard deviation, On time, Zones flagged, for the chart period and all zones; from `qc.summary` and `qc.zone_health`) and **Zone map** (an interactive map of Ithaca with the six zones coloured by health; hover a zone for its reasons, click it to pick that zone in the control bar). A **Data quality** card appears below them only when calls were left out.
 2. **Delay by stage** (with the date range, and hover bars from `charts.stage_share_svg`) next to **Zone comparison** (a plain answer from `qc.zone_anova`; the F value, p and the normal probability plot are in More info).
 3. **Capability**: one plain verdict per zone from `qc.capability_verdict`. The Ppk, Cpk and expected-on-time table is in More info.
 
