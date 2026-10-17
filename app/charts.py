@@ -1,4 +1,4 @@
-"""Matplotlib figures for the supervisor screens, in the app's dark style.
+"""Matplotlib figures for the supervisor screens, in the app's light style.
 
 Drawing only: every number plotted comes from a qc.py result passed in.
 Control limits (from the process) are dashed grey; the target (a spec limit,
@@ -19,26 +19,38 @@ import re  # noqa: E402
 
 import numpy as np  # noqa: E402
 
-BG = "#16191f"
-FG = "#f2f2f0"
-MUTED = "#9aa0a6"
-GRID = "#2a2e36"
-GREEN, AMBER, RED = "#6fd39a", "#f2c14e", "#ef6461"
-LINE = "#7aa7ff"
-STAGE_COLORS = {"processing": "#b39ddb", "turnout": AMBER, "travel": LINE}
+BG = "#ffffff"            # the card colour, so a chart sits flat on its card
+FG = "#16202e"            # ink
+MUTED = "#5d6775"         # labels, center line and control limits
+GRID = "#e5e8ed"          # soft grid
+GREEN, AMBER, RED = "#21914e", "#e78d02", "#db2b33"   # deeper status tones that read on white
+LINE = "#145ec1"          # the app's primary blue: the measured series
+BOX, BOX_EDGE = "#ecf4ff", "#8ba0be"
+BASELINE = "#145ec1"      # baseline shading (drawn very faint)
+STAGE_COLORS = {"processing": "#886acf", "turnout": "#39b4dd", "travel": LINE}
+
+# The page font draws the text of inline SVG charts (svg.fonttype "none" keeps text as text);
+# PNG charts use the first of these the machine has.
+plt.rcParams.update({
+    "font.family": "sans-serif",
+    "font.sans-serif": ["Figtree", "Helvetica Neue", "Helvetica", "Arial", "DejaVu Sans"],
+    "svg.fonttype": "none",
+    "axes.titleweight": "semibold",
+})
 
 
 def _style(ax, title=None, ylabel=None):
     ax.set_facecolor(BG)
     for side in ("top", "right"):
         ax.spines[side].set_visible(False)
-    for side in ("left", "bottom"):
-        ax.spines[side].set_color(GRID)
-    ax.tick_params(colors=MUTED, labelsize=9)
-    ax.grid(True, color=GRID, linewidth=0.6, alpha=0.8)
+    ax.spines["left"].set_visible(False)
+    ax.spines["bottom"].set_color("#c3cbd7")
+    ax.tick_params(labelcolor=MUTED, color="#c3cbd7", labelsize=9)
+    ax.tick_params(axis="y", which="both", length=0)
+    ax.grid(True, color=GRID, linewidth=0.8)
     ax.set_axisbelow(True)
     if title:
-        ax.set_title(title, color=FG, fontsize=11, loc="left", pad=22)
+        ax.set_title(title, color=FG, fontsize=11.5, loc="left", pad=22)
     if ylabel:
         ax.set_ylabel(ylabel, color=MUTED, fontsize=9)
 
@@ -80,14 +92,14 @@ def daily_chart(chart, zone: str, action_dates=(), target_min: float | None = No
     base = chart[chart["baseline"]]
     if 0 < len(base) < len(chart):          # shade only a separate baseline, not the whole chart
         for ax in (ax1, ax2):
-            ax.axvspan(base["date"].min(), base["date"].max(), color="#ffffff", alpha=0.04,
+            ax.axvspan(base["date"].min(), base["date"].max(), color=BASELINE, alpha=0.05,
                        label="baseline" if ax is ax1 else None)
     ax1.plot(d, chart["x_center_min"], color=MUTED, linewidth=1, label="center")
     ax1.step(d, chart["x_ucl_min"], where="mid", color=MUTED, linestyle="--", linewidth=1,
              label="control limits (3σ)")
     ax1.step(d, chart["x_lcl_min"], where="mid", color=MUTED, linestyle="--", linewidth=1)
-    ax1.plot(d, np.exp(chart["mean_log"]), color=LINE, linewidth=1.4, marker="o",
-             markersize=3.5, label="daily average")
+    ax1.plot(d, np.exp(chart["mean_log"]), color=LINE, linewidth=1.8, marker="o",
+             markersize=4.5, markeredgecolor=BG, markeredgewidth=0.8, label="daily average")
     alarm = chart[chart["alarm"]]
     ax1.scatter(alarm["date"], np.exp(alarm["mean_log"]), color=RED, s=36, zorder=5,
                 label="flagged day")
@@ -101,12 +113,13 @@ def daily_chart(chart, zone: str, action_dates=(), target_min: float | None = No
             ax.axvline(when, color=GREEN, linewidth=1.2)
         ax1.text(when, ax1.get_ylim()[1], " action", color=GREEN, fontsize=8, va="top")
     _style(ax1, f"Zone {zone}: daily average response", "minutes")
-    _legend(ax1, ncol=4)
-    ax1.set_title(ax1.get_title(loc="left"), color=FG, fontsize=11, loc="left", pad=36)
+    _legend(ax1, ncol=3)      # two rows of three, so the legend fits a half-width card
+    ax1.set_title(ax1.get_title(loc="left"), color=FG, fontsize=11.5, loc="left", pad=36)
     s = chart.dropna(subset=["sd_log"])
     ax2.step(s["date"], s["s_ucl"], where="mid", color=MUTED, linestyle="--", linewidth=1)
     ax2.plot(s["date"], s["s_center"], color=MUTED, linewidth=1)
-    ax2.plot(s["date"], s["sd_log"], color=LINE, linewidth=1.2, marker="o", markersize=3)
+    ax2.plot(s["date"], s["sd_log"], color=LINE, linewidth=1.5, marker="o", markersize=4,
+             markeredgecolor=BG, markeredgewidth=0.8)
     sf = s[s["s_flag"]]
     ax2.scatter(sf["date"], sf["sd_log"], color=RED, s=30, zorder=5)
     _style(ax2, "Daily spread (standard deviation of log minutes)", "sd of ln(min)")
@@ -143,7 +156,7 @@ def individuals_chart(imr, zone: str, target_min: float):
     _style(ax1, f"Zone {zone}: every call", "minutes (log scale)")
     ax1.set_xlabel("call number, in order", color=MUTED, fontsize=9)
     _legend(ax1, ncol=3)
-    ax1.set_title(ax1.get_title(loc="left"), color=FG, fontsize=11, loc="left", pad=36)
+    ax1.set_title(ax1.get_title(loc="left"), color=FG, fontsize=11.5, loc="left", pad=36)
     return fig
 
 
@@ -195,8 +208,13 @@ def _stage_share_fig(bd):
     ax.set_xlim(0, 100)
     ax.invert_yaxis()
     _style(ax, "Share of minutes over target, by stage", None)
-    ax.set_xlabel("% of minutes over target", color=MUTED, fontsize=9)
+    ax.set_xlabel("% of minutes over target", color=MUTED, fontsize=16)
     _legend(ax)
+    # this chart is drawn as SVG and scaled down to a half-width card, so its text is set larger
+    ax.set_title(ax.get_title(loc="left"), color=FG, fontsize=18, loc="left", pad=30)
+    ax.tick_params(labelsize=16)
+    for text in ax.get_legend().get_texts():
+        text.set_fontsize(16)
     return fig, tips
 
 
@@ -243,6 +261,7 @@ def normal_plot(norm: dict, zone: str):
     ax.plot(t, slope * t + intercept, color=MUTED, linewidth=1)
     _style(ax, f"Zone {zone}: normal probability plot of ln(minutes)  "
                f"(Shapiro-Wilk p = {norm['p']:.3f})", "ln(minutes)")
+    ax.set_title(ax.get_title(loc="left"), color=FG, fontsize=10, loc="left", pad=22)   # a long title, small figure
     ax.set_xlabel("normal quantile", color=MUTED, fontsize=9)
     return fig
 
@@ -275,9 +294,9 @@ def zone_box_chart(sub, priority: int, target_min: float, reasons: dict | None =
     have = [i for i, v in enumerate(sub["values_log"]) if len(v)]
     ax.boxplot([sub["values_log"].iloc[i] for i in have], positions=have, widths=0.5,
                patch_artist=True, showfliers=True, manage_ticks=False,
-               medianprops={"color": FG, "linewidth": 1.2},
-               boxprops={"facecolor": "#232833", "edgecolor": MUTED},
-               whiskerprops={"color": MUTED}, capprops={"color": MUTED},
+               medianprops={"color": FG, "linewidth": 1.4},
+               boxprops={"facecolor": BOX, "edgecolor": BOX_EDGE},
+               whiskerprops={"color": BOX_EDGE}, capprops={"color": BOX_EDGE},
                flierprops={"marker": "o", "markersize": 3, "markerfacecolor": MUTED,
                            "markeredgecolor": "none"})
     xbbar = sub.attrs.get("xbbar")
@@ -319,12 +338,15 @@ def zone_box_chart(sub, priority: int, target_min: float, reasons: dict | None =
     ax.set_xticklabels([f"{z}\nn={n}" for z, n in zip(zones, sub["n"])])
     ax.set_xlim(-0.6, len(zones) - 0.4)
     _style(ax, _priority_title(priority), "minutes (log scale)")
-    ax.set_title(_priority_title(priority), color=FG, fontsize=12, loc="left", pad=36,
+    ax.set_title(_priority_title(priority), color=FG, fontsize=13, loc="left", pad=50,
                  fontweight="bold")
-    leg = ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), fontsize=8, frameon=False, ncol=3,
+    leg = ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), fontsize=11, frameon=False, ncol=3,
                     borderaxespad=0.2, handlelength=1.6, columnspacing=1.2)
     for text in leg.get_texts():
         text.set_color(MUTED)
+    # drawn as SVG and scaled to its card, so its axis text is set a little larger
+    ax.tick_params(labelsize=12)
+    ax.yaxis.label.set_fontsize(12)
     return fig
 
 

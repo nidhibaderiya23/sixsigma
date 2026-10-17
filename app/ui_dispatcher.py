@@ -59,6 +59,11 @@ _ICONS = {
     "headset": ('<path d="M3 18v-6a9 9 0 0 1 18 0v6"/>'
                 '<path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>'),
     "chart": '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+    "arrow": '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
+    "check": '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+    "list": ('<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>'
+             '<line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>'
+             '<line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>'),
 }
 
 
@@ -92,8 +97,14 @@ def chip(text, tone: str | None = None, **attrs):
     return ui.span(dot, text, class_=f"rw-chip {extra}".strip(), **attrs)
 
 
+def empty_state(message, icon_name: str = "info"):
+    """An empty list or panel: the message under a small icon tile."""
+    return ui.div(ui.span(icon(icon_name), class_="rw-empty-icon"), ui.span(message, class_="rw-empty-text"),
+                  class_="rw-empty")
+
+
 def placeholder_card(label: str, title: str, message: str):
-    return ui.div(card_head(label, title), ui.div(message, class_="rw-empty"), class_="rw-card")
+    return ui.div(card_head(label, title), empty_state(message), class_="rw-card")
 
 
 # ---- data files (read-only, shared between sessions; never changed after loading) ----------
@@ -201,6 +212,10 @@ def unit_picker(call, available: list[dict], selected: str | None):
                           **{"data-rw-call": call.call_id, "aria-label": "Unit to dispatch"})
 
 
+#: The icon an empty list shows, by call step (the same icons as the counts above the board).
+_STEP_ICON = {2: "clock", 3: "send", 4: "route", 5: "pin"}
+
+
 def list_card(label: str, title: str, rows: list, empty: str, host: dict, total: int | None = None,
               step: int | None = None, scroll_key: str | None = None):
     """A card with a count and a list of rows. With scroll_key the list scrolls (max 360 px) and
@@ -211,7 +226,7 @@ def list_card(label: str, title: str, rows: list, empty: str, host: dict, total:
     elif rows:
         body = ui.div(*rows, class_="rw-rows")
     else:
-        body = ui.div(empty, class_="rw-empty")
+        body = empty_state(empty, _STEP_ICON.get(step, "info"))
     return ui.div(card_head(label, title, count, step=step), body, class_="rw-card", **host)
 
 
@@ -859,8 +874,11 @@ def history_server(input, output, session, visible, board, now):
             on_time = f"{100 * (1 - window['late'].mean()):.0f}%"
         items = [("Calls", str(n)), ("Mean (min)", mean), ("Standard deviation (min)", sd),
                  ("On time", on_time)]
+        icons = {"Calls": "headset", "Mean (min)": "clock", "Standard deviation (min)": "chart",
+                 "On time": "route"}
         return ui.div(
-            ui.div(*[ui.div(ui.div(value, class_="rw-kpi-num"), ui.div(label, class_="rw-kpi-label"),
+            ui.div(*[ui.div(ui.div(icon(icons.get(label, "info")), class_="rw-kpi-icon"),
+                            ui.div(value, class_="rw-kpi-num"), ui.div(label, class_="rw-kpi-label"),
                             class_="rw-kpi") for label, value in items],
                    class_="rw-kpis rw-kpis-4"),
             ui.p("All priorities. On time means within each call's own target.",
@@ -895,7 +913,7 @@ def history_server(input, output, session, visible, board, now):
                        ui.div(tip["evidence"], class_="rw-row-sub"), class_="rw-row-main"),
                 class_="rw-row rw-row-wrap"))
         body = ui.div(*rows, class_="rw-rows") if rows else \
-            ui.div("No suggestions right now.", class_="rw-empty")
+            empty_state("No suggestions right now.", "check")
         return ui.div(
             card_head("", "Suggested actions", ui.span(str(len(rows)), class_="rw-count")),
             body,

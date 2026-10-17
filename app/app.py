@@ -23,14 +23,14 @@ import zonemap  # noqa: E402
 HERE = Path(__file__).resolve().parent
 
 #: Shown in the header; each saved version of the app sets its own.
-VERSION = "Ithaca base"
+VERSION = "v7"
 WWW = HERE / "www"
 
-FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+FONTS = "https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap"
 
 # A small pulse icon as the browser-tab icon (inline, so there is no file to serve).
 FAVICON = ("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' "
-           "fill='none' stroke='%23ff6b5b' stroke-width='2' stroke-linecap='round' "
+           "fill='none' stroke='%23145ec1' stroke-width='2.4' stroke-linecap='round' "
            "stroke-linejoin='round'%3E%3Cpolyline points='22 12 18 12 15 21 9 3 6 12 2 12'/%3E%3C/svg%3E")
 
 
@@ -39,7 +39,8 @@ def role_button(input_id: str, icon_name: str, name: str, description: str):
         input_id,
         ui.TagList(ui.span(icon(icon_name), class_="rw-role-icon"),
                    ui.span(name, class_="rw-role-name"),
-                   ui.span(description, class_="rw-role-desc")),
+                   ui.span(description, class_="rw-role-desc"),
+                   ui.span(icon("arrow"), class_="rw-role-go")),
         class_="rw-role")
 
 

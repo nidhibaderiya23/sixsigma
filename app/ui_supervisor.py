@@ -28,7 +28,7 @@ from shiny.module import resolve_id  # noqa: E402
 import charts  # noqa: E402
 import qc  # noqa: E402
 import zonemap  # noqa: E402
-from ui_dispatcher import card_head, chip, get_calls, icon, tag  # noqa: E402
+from ui_dispatcher import card_head, chip, empty_state, get_calls, icon, tag  # noqa: E402
 
 DATASETS = {"demo": "Ithaca demo (42 days)", "baseline": "Ithaca baseline (28 days)",
             "messy": "Messy file (3 days)"}
@@ -43,37 +43,80 @@ RULE_NAME = {"S1": "Crew readiness", "S2": "Coverage", "S3": "Routes", "S4": "Di
              "S5": "Maintenance", "S6": "Address checks"}
 
 STYLE = """
-.rw-moreinfo { margin-top: 12px; }
-.rw-moreinfo > summary { cursor: pointer; color: var(--muted, #9aa0a6); font-size: 13px;
-  list-style: none; display: inline-flex; align-items: center; gap: 6px; }
+.rw-moreinfo { margin-top: 14px; }
+.rw-moreinfo > summary { cursor: pointer; color: var(--primary-ink); font-size: 14px; font-weight: 600;
+  list-style: none; display: inline-flex; align-items: center; gap: 8px; min-height: 34px;
+  padding: 4px 14px 4px 6px; border-radius: 999px; background: var(--primary-tint);
+  transition: background-color 160ms var(--ease); }
+.rw-moreinfo > summary:hover { background: var(--primary-soft); }
 .rw-moreinfo > summary::-webkit-details-marker { display: none; }
-.rw-moreinfo > summary::before { content: "+"; display: inline-grid; place-items: center;
-  width: 18px; height: 18px; border: 1px solid rgba(255,255,255,0.18); border-radius: 50%; font-size: 12px; }
-.rw-moreinfo[open] > summary::before { content: "–"; }
-.rw-moreinfo-body { margin-top: 10px; padding: 12px 14px; border-radius: 10px;
-  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
-  font-size: 13.5px; line-height: 1.6; }
-.rw-moreinfo-body p { margin: 0 0 6px; }
-.rw-chartbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.rw-moreinfo > summary::before { content: ""; flex: none; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--surface) center / 14px 14px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23145ec1' stroke-width='2.6' stroke-linecap='round'%3E%3Cline x1='12' y1='5' x2='12' y2='19'/%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E");
+  box-shadow: var(--edge), var(--shadow-1); }
+.rw-moreinfo[open] > summary::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23145ec1' stroke-width='2.6' stroke-linecap='round'%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E"); }
+.rw-moreinfo-body { margin-top: 10px; padding: 14px 16px; border-radius: var(--r-md);
+  background: var(--inset); color: var(--ink-2); font-size: 14.5px; line-height: 1.6; }
+.rw-moreinfo-body p { margin: 0 0 8px; max-width: 72ch; }
+.rw-moreinfo-body p:last-child { margin-bottom: 0; }
+.rw-moreinfo-body .rw-table-wrap, .rw-moreinfo-body .shiny-plot-output { margin-top: 10px;
+  background: var(--surface); border-radius: 12px; }
+.rw-chartbar { display: flex; flex-wrap: wrap; gap: 14px 16px; align-items: flex-end; }
 .rw-chartbar .shiny-input-container { width: auto; margin-bottom: 0; }
-.rw-chartbar .shiny-input-radiogroup .shiny-options-group { display: flex; gap: 6px; }
-.rw-sup-grid { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 16px;
-  align-items: start; margin-top: 16px; }
-.rw-sup-side { display: grid; gap: 16px; }
+.rw-chartbar .shiny-input-radiogroup { display: flex; flex-direction: column; }
+.rw-chartbar .shiny-input-radiogroup .shiny-options-group { display: inline-flex; gap: 4px; padding: 4px;
+  background: var(--inset-2); border-radius: 13px; }
+.rw-chartbar .shiny-input-container:not(.shiny-input-radiogroup) { width: auto !important; }
+.rw-chartbar .radio-inline { position: relative; display: block; margin: 0; padding: 0; cursor: pointer; }
+.rw-chartbar .radio-inline input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0;
+  opacity: 0; cursor: pointer; z-index: 1; }
+.rw-chartbar .radio-inline span { display: block; height: 34px; line-height: 34px; padding: 0 16px;
+  border-radius: 10px; color: var(--muted); font-size: 14px; font-weight: 600; white-space: nowrap;
+  transition: background-color 160ms var(--ease), color 160ms var(--ease); }
+.rw-chartbar .radio-inline:hover span { color: var(--ink); }
+.rw-chartbar .radio-inline:has(input:checked) span { background: var(--surface);
+  color: var(--primary-ink); box-shadow: var(--edge), var(--shadow-1); }
+.rw-chartbar .radio-inline:has(input:focus-visible) span {
+  outline: 2.5px solid var(--primary); outline-offset: 1px; }
+.rw-chartbar .btn.rw-btn { min-height: 42px; padding: 8px 18px; }
+.rw-sup-grid { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 18px;
+  align-items: start; margin-top: 18px; }
+.rw-sup-side { display: grid; gap: 18px; }
 .rw-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.rw-stats .rw-kpi-num { font-size: 24px; }
-.rw-verdict { display: grid; grid-template-columns: 80px 190px minmax(0, 1fr); gap: 10px;
-  align-items: center; padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.06); }
-.rw-verdict:first-child { border-top: 0; }
-.rw-answer { font-size: 15px; line-height: 1.55; }
-.rw-subtitle { color: var(--muted, #9aa0a6); font-size: 13px; margin: -6px 0 8px; }
+.rw-stats .rw-kpi { display: block; padding: 14px 16px; min-height: 0; background: var(--inset);
+  box-shadow: none; border-radius: var(--r-md); }
+.rw-stats .rw-kpi-icon { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px;
+  border-radius: 10px; background: var(--surface); box-shadow: var(--edge); }
+.rw-stats .rw-kpi-icon svg { width: 17px; height: 17px; }
+.rw-stats .rw-kpi-num { font-size: 24px; padding-right: 34px; white-space: nowrap; }
+.rw-stats .rw-kpi-label { margin-top: 4px; }
+.rw-verdicts { display: grid; grid-template-columns: max-content max-content minmax(0, 1fr);
+  column-gap: 18px; }
+.rw-verdict { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; align-items: center;
+  padding: 10px 0; border-top: 1px solid var(--line); }
+.rw-verdict:first-child { border-top: 0; padding-top: 2px; }
+.rw-verdict .rw-row-sub { white-space: normal; overflow: visible; color: var(--ink-2); font-size: 14.5px; }
+.rw-answer { font-size: 16px; line-height: 1.6; color: var(--ink); max-width: 64ch; }
+.rw-subtitle { color: var(--muted); font-size: 14px; margin: -8px 0 12px; }
 .rw-svg { width: 100%; }
-.rw-tip { cursor: help; } .rw-tip:hover { opacity: .8; }
-.rw-ctxline { color: var(--muted, #9aa0a6); font-size: 13px; margin: 4px 0 12px; }
+.rw-tip { cursor: help; } .rw-tip:hover { opacity: .75; }
+.rw-ctxline { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 14px;
+  font-weight: 500; margin: 0 0 18px; padding: 8px 16px; border-radius: 999px; background: var(--surface);
+  box-shadow: var(--edge), var(--shadow-1); }
 .rw-ba-table td, .rw-ba-table th { text-align: right; }
 .rw-ba-table td:first-child, .rw-ba-table th:first-child { text-align: left; }
+.rw-supervisor .rw-card > .btn.rw-btn { margin-top: 14px; }
+.rw-supervisor .rw-two + .rw-card { margin-top: 18px; }
+/* supervisor rows (suggestions, the action log, data issues) wrap instead of cutting the text off */
+.rw-supervisor .rw-row { align-items: flex-start; }
+.rw-supervisor .rw-row > .rw-dot { margin-top: 7px; }
+.rw-supervisor .rw-row-title, .rw-supervisor .rw-row-sub { white-space: normal; overflow: visible; }
+.rw-supervisor .rw-row-title .rw-tag { margin: 0 4px 3px 0; }
+.rw-supervisor .rw-row-actions { align-self: center; }
+@media (max-width: 1180px) { .rw-chartbar { gap: 12px 14px; }
+  .rw-stats .rw-kpi-icon { display: none; } .rw-stats .rw-kpi-num { padding-right: 0; } }
 @media (max-width: 992px) { .rw-sup-grid { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 640px) { .rw-verdict { grid-template-columns: 70px minmax(0, 1fr); }
+@media (max-width: 640px) { .rw-verdicts { grid-template-columns: max-content minmax(0, 1fr); }
   .rw-verdict > :last-child { grid-column: 1 / -1; } }
 """
 
@@ -105,8 +148,8 @@ def _card(title, *body, right=None):
     return ui.div(card_head("", title, right), *body, class_="rw-card")
 
 
-def _empty(text):
-    return ui.div(text, class_="rw-empty")
+def _empty(text, ic="info"):
+    return empty_state(text, ic)
 
 
 def _more(*content):
@@ -396,7 +439,7 @@ def charts_server(input, output, session, ctx):
         table = ui.div(ui.tags.table(
             ui.tags.thead(ui.tags.tr(*[ui.tags.th(h) for h in ("Zone", "Ppk", "Cpk", "Expected on time")])),
             ui.tags.tbody(*nums), class_="rw-table"), class_="rw-table-wrap")
-        return ui.div(ui.div(*rows), _more(
+        return ui.div(ui.div(*rows, class_="rw-verdicts"), _more(
             _p("How reliably each zone's calls arrive within the target. Ppk uses the spread of all "
                "calls and Cpk the spread within each day; Ppk 0.43 means about 90% on time."),
             table))
@@ -451,7 +494,7 @@ def actions_server(input, output, session, ctx):
         if ctx.upto() is None:
             return _empty(ctx.why())
         if not items:
-            return _empty("No suggested actions for this period.")
+            return _empty("No suggested actions for this period.", "check")
         rows = []
         for i, s in enumerate(items):
             imp = s["impact"]
@@ -523,7 +566,7 @@ def actions_server(input, output, session, ctx):
     def log():
         acts = ctx.actions()
         if not len(acts):
-            return _empty("No actions logged yet.")
+            return _empty("No actions logged yet.", "list")
         when = ctx.as_of()
         rows = []
         for a in acts.itertuples():
@@ -540,7 +583,7 @@ def actions_server(input, output, session, ctx):
         acts = ctx.actions()
         zoned = acts[acts["zone"] != "All"]
         if not len(zoned):
-            return _empty("Log a zone action to see its result.")
+            return _empty("Log a zone action to see its result.", "chart")
         choices = {a.action_id: f"{a.action_id}: Zone {a.zone}, {a.date}" for a in zoned.itertuples()}
         when = ctx.as_of()
         done = [a.action_id for a in zoned.itertuples() if when is None or pd.Timestamp(a.date) <= when]
