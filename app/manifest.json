@@ -32,7 +32,7 @@
       "checksum": "e9ab8f9709508aee811970fcb8d689ec"
     },
     "charts.py": {
-      "checksum": "4cbdc329fb3e53e5b526d4b1ee9331c6"
+      "checksum": "0040211886197726b571423e72f63af0"
     },
     "data/actions_demo.csv": {
       "checksum": "bcfa33f71f65c7990137ef7c800ee15f"
@@ -74,13 +74,13 @@
       "checksum": "5e8301f0bef0792036b459b4f6631986"
     },
     "www/rw.css": {
-      "checksum": "cc428739fa8d82851764c4370b3689b5"
+      "checksum": "84ee804716262cab658f83d77cdd4a41"
     },
     "www/rw.js": {
       "checksum": "36bb1a3b4844103c874d00336062dcd1"
     },
     "www/zonemap.js": {
-      "checksum": "8dc2c2569e9a7017a680e98f7aae1bdd"
+      "checksum": "71d96657429a4a1add155fa15803e501"
     },
     "zonemap.py": {
       "checksum": "c080e5d0e30a6acd63068ecd1ffd1e44"
