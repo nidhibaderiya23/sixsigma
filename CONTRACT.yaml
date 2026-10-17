@@ -253,11 +253,12 @@ tasks:
     definition_of_done: >
       The manual builds; every statistic matches app/qc.py; the team has
       filled in About us.
+    result: "Built: 6 chapters, 40 pages (HTML + PDF), served in the app at /manual.html with a Manual link; statistics checked against qc.py. Open: the team fills in About us."
 
   - id: H-14
     title: Versions 2-7 - six UI designs with impeccable
     points: "protects H-04: a clear, professional interface for the showcase"
-    status: in_progress
+    status: done
     owner: "Claude (agent) + six Claude helpers (design)"
     started_at: "2026-10-17 02:10"
     owns: ["VERSIONS.md"]
@@ -268,6 +269,7 @@ tasks:
     definition_of_done: >
       Each version runs, passes pytest, has its map styled, and is described
       in VERSIONS.md.
+    result: "Six designs on branches version-2..7, tagged v2..v7; each passes 77 tests, was checked in 1440 and 1024 px screenshots, and is described in VERSIONS.md. v1 untouched."
 
   - id: H-15
     title: Hackathon deliverables ready (Devpost text, screenshots, demo, deploy notes)
@@ -279,6 +281,7 @@ tasks:
     definition_of_done: >
       docs/deliverables holds the Devpost write-up, screenshots, demo script
       and deploy/submit checklist; the team submits on Devpost.
+    result: "Ready: devpost.md, submission-checklist.md (criteria map), demo-video-script.md, screenshots. Open: push, secrets, deploy, submit."
 
   - id: H-16
     title: Class presentation (two decks and a live-demo cue card)
@@ -290,3 +293,4 @@ tasks:
     definition_of_done: >
       Two decks (patient story; DMAIC walkthrough) and a cue card are ready;
       the team rehearses once.
+    result: "Ready: deck 1 (patient story) and deck 2 (DMAIC), cue card, role-play, lightning talk, Q&A prep. Open: share decks with teammates, rehearse."
