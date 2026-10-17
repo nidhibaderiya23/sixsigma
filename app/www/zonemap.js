@@ -6,7 +6,7 @@
   "use strict";
   var maps = {};
   var waiting = {};
-  var FALLBACK = { green: "#6fd39a", amber: "#f2c14e", red: "#ef6461", grey: "#6b7280" };
+  var FALLBACK = { green: "#1B7F45", amber: "#F2C200", red: "#C21F32", grey: "#8A93A0" };
 
   function cssVar(name) {
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim().replace(/["']/g, "");
@@ -36,7 +36,7 @@
     map.getPane("rwLabels").style.pointerEvents = "none";
     L.tileLayer(esri + "Reference/MapServer/tile/{z}/{y}/{x}", { maxZoom: 16, pane: "rwLabels" }).addTo(map);
     var layers = {};
-    var line = cssVar("--map-line") || "#ffffff";
+    var line = cssVar("--map-line") || "#0C2340";
     L.geoJSON(geo, {
       style: function () { return { color: line, weight: 1.5, fillColor: FALLBACK.grey, fillOpacity: 0.35 }; },
       onEachFeature: function (f, layer) {
@@ -60,7 +60,9 @@
     var bounds = L.geoJSON(geo).getBounds();
     map.fitBounds(bounds, { padding: [8, 8] });
     if (window.ResizeObserver) {
-      new ResizeObserver(function () { map.invalidateSize(); if (el.offsetWidth) map.fitBounds(bounds, { padding: [8, 8] }); }).observe(el);
+      // refit without the zoom animation: no motion for a layout change, and no half-zoomed frame
+      // (a hidden map, width 0, keeps its view, so showing it again does not reload every tile)
+      new ResizeObserver(function () { if (!el.offsetWidth) return; map.invalidateSize(false); map.fitBounds(bounds, { padding: [8, 8], animate: false }); }).observe(el);
     }
     maps[el.id] = { map: map, layers: layers };
     return maps[el.id];
@@ -71,7 +73,7 @@
       var layer = entry.layers[z];
       if (!layer) return;
       var info = zones[z];
-      layer.setStyle({ fillColor: colour(info.sev), fillOpacity: info.sev === "grey" ? 0.2 : 0.38 });
+      layer.setStyle({ fillColor: colour(info.sev), fillOpacity: info.sev === "grey" ? 0.2 : 0.45 });
       var lines = (info.lines || []).map(esc).join("<br>");
       layer.setTooltipContent("<b>Zone " + z + " &middot; " + esc(info.name) + "</b><br>" +
         esc(info.status || "") + (lines ? "<br>" + lines : ""));

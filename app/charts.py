@@ -1,4 +1,4 @@
-"""Matplotlib figures for the supervisor screens, in the app's dark style.
+"""Matplotlib figures for the supervisor screens, in the app's light "Civic Ithaca" style.
 
 Drawing only: every number plotted comes from a qc.py result passed in.
 Control limits (from the process) are dashed grey; the target (a spec limit,
@@ -19,13 +19,24 @@ import re  # noqa: E402
 
 import numpy as np  # noqa: E402
 
-BG = "#16191f"
-FG = "#f2f2f0"
-MUTED = "#9aa0a6"
-GRID = "#2a2e36"
-GREEN, AMBER, RED = "#6fd39a", "#f2c14e", "#ef6461"
-LINE = "#7aa7ff"
-STAGE_COLORS = {"processing": "#b39ddb", "turnout": AMBER, "travel": LINE}
+BG = "#ffffff"          # the white panel the chart sits on
+FG = "#13233b"          # navy ink
+MUTED = "#5b6472"       # ticks, labels, control limits (6:1 on white)
+GRID = "#e6e3dc"        # warm hairlines
+GREEN, AMBER, RED = "#1b7f45", "#a57c00", "#c21f32"    # amber is a deep gold here: 3.8:1 on white
+LINE = "#1f4e8c"        # the data series, civic navy-blue
+BOX = "#e3eaf3"         # box-plot fill, a pale navy
+# the three stages as one blue family (light to dark in call order), never a status colour
+STAGE_COLORS = {"processing": "#a9bcd6", "turnout": "#5b82b5", "travel": "#1b365d"}
+
+# SVG text stays text, so the browser draws it in the page's own font (Public Sans);
+# PNG charts fall back to DejaVu Sans, which matplotlib always has.
+matplotlib.rcParams.update({
+    "svg.fonttype": "none",
+    "font.family": "sans-serif",
+    "font.sans-serif": ["Public Sans", "DejaVu Sans"],
+    "axes.titleweight": "bold",
+})
 
 
 def _style(ax, title=None, ylabel=None):
@@ -80,7 +91,7 @@ def daily_chart(chart, zone: str, action_dates=(), target_min: float | None = No
     base = chart[chart["baseline"]]
     if 0 < len(base) < len(chart):          # shade only a separate baseline, not the whole chart
         for ax in (ax1, ax2):
-            ax.axvspan(base["date"].min(), base["date"].max(), color="#ffffff", alpha=0.04,
+            ax.axvspan(base["date"].min(), base["date"].max(), color=FG, alpha=0.04,
                        label="baseline" if ax is ax1 else None)
     ax1.plot(d, chart["x_center_min"], color=MUTED, linewidth=1, label="center")
     ax1.step(d, chart["x_ucl_min"], where="mid", color=MUTED, linestyle="--", linewidth=1,
@@ -195,8 +206,12 @@ def _stage_share_fig(bd):
     ax.set_xlim(0, 100)
     ax.invert_yaxis()
     _style(ax, "Share of minutes over target, by stage", None)
-    ax.set_xlabel("% of minutes over target", color=MUTED, fontsize=9)
+    ax.set_title(ax.get_title(loc="left"), color=FG, fontsize=13, loc="left", pad=28)
+    ax.tick_params(labelsize=11.5)            # this SVG is drawn smaller than its 9-inch canvas
+    ax.set_xlabel("% of minutes over target", color=MUTED, fontsize=11)
     _legend(ax)
+    for text in ax.get_legend().get_texts():
+        text.set_fontsize(11)
     return fig, tips
 
 
@@ -276,7 +291,7 @@ def zone_box_chart(sub, priority: int, target_min: float, reasons: dict | None =
     ax.boxplot([sub["values_log"].iloc[i] for i in have], positions=have, widths=0.5,
                patch_artist=True, showfliers=True, manage_ticks=False,
                medianprops={"color": FG, "linewidth": 1.2},
-               boxprops={"facecolor": "#232833", "edgecolor": MUTED},
+               boxprops={"facecolor": BOX, "edgecolor": MUTED},
                whiskerprops={"color": MUTED}, capprops={"color": MUTED},
                flierprops={"marker": "o", "markersize": 3, "markerfacecolor": MUTED,
                            "markeredgecolor": "none"})
@@ -319,6 +334,7 @@ def zone_box_chart(sub, priority: int, target_min: float, reasons: dict | None =
     ax.set_xticklabels([f"{z}\nn={n}" for z, n in zip(zones, sub["n"])])
     ax.set_xlim(-0.6, len(zones) - 0.4)
     _style(ax, _priority_title(priority), "minutes (log scale)")
+    ax.tick_params(labelsize=10)
     ax.set_title(_priority_title(priority), color=FG, fontsize=12, loc="left", pad=36,
                  fontweight="bold")
     leg = ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), fontsize=8, frameon=False, ncol=3,

@@ -28,7 +28,7 @@ from shiny.module import resolve_id  # noqa: E402
 import charts  # noqa: E402
 import qc  # noqa: E402
 import zonemap  # noqa: E402
-from ui_dispatcher import card_head, chip, get_calls, icon, tag  # noqa: E402
+from ui_dispatcher import card_head, chip, get_calls, icon, tag, zone_tag  # noqa: E402
 
 DATASETS = {"demo": "Ithaca demo (42 days)", "baseline": "Ithaca baseline (28 days)",
             "messy": "Messy file (3 days)"}
@@ -42,40 +42,7 @@ STAGE_WORD = {"processing": "Dispatch processing", "turnout": "Crew turnout", "t
 RULE_NAME = {"S1": "Crew readiness", "S2": "Coverage", "S3": "Routes", "S4": "Dispatcher cover",
              "S5": "Maintenance", "S6": "Address checks"}
 
-STYLE = """
-.rw-moreinfo { margin-top: 12px; }
-.rw-moreinfo > summary { cursor: pointer; color: var(--muted, #9aa0a6); font-size: 13px;
-  list-style: none; display: inline-flex; align-items: center; gap: 6px; }
-.rw-moreinfo > summary::-webkit-details-marker { display: none; }
-.rw-moreinfo > summary::before { content: "+"; display: inline-grid; place-items: center;
-  width: 18px; height: 18px; border: 1px solid rgba(255,255,255,0.18); border-radius: 50%; font-size: 12px; }
-.rw-moreinfo[open] > summary::before { content: "–"; }
-.rw-moreinfo-body { margin-top: 10px; padding: 12px 14px; border-radius: 10px;
-  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
-  font-size: 13.5px; line-height: 1.6; }
-.rw-moreinfo-body p { margin: 0 0 6px; }
-.rw-chartbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
-.rw-chartbar .shiny-input-container { width: auto; margin-bottom: 0; }
-.rw-chartbar .shiny-input-radiogroup .shiny-options-group { display: flex; gap: 6px; }
-.rw-sup-grid { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 16px;
-  align-items: start; margin-top: 16px; }
-.rw-sup-side { display: grid; gap: 16px; }
-.rw-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.rw-stats .rw-kpi-num { font-size: 24px; }
-.rw-verdict { display: grid; grid-template-columns: 80px 190px minmax(0, 1fr); gap: 10px;
-  align-items: center; padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.06); }
-.rw-verdict:first-child { border-top: 0; }
-.rw-answer { font-size: 15px; line-height: 1.55; }
-.rw-subtitle { color: var(--muted, #9aa0a6); font-size: 13px; margin: -6px 0 8px; }
-.rw-svg { width: 100%; }
-.rw-tip { cursor: help; } .rw-tip:hover { opacity: .8; }
-.rw-ctxline { color: var(--muted, #9aa0a6); font-size: 13px; margin: 4px 0 12px; }
-.rw-ba-table td, .rw-ba-table th { text-align: right; }
-.rw-ba-table td:first-child, .rw-ba-table th:first-child { text-align: left; }
-@media (max-width: 992px) { .rw-sup-grid { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 640px) { .rw-verdict { grid-template-columns: 70px minmax(0, 1fr); }
-  .rw-verdict > :last-child { grid-column: 1 / -1; } }
-"""
+STYLE = ""  # the supervisor styles live in www/rw.css with the rest of the theme
 
 
 # ---- small formatting helpers (formatting only, no statistics) ------------------------------------
@@ -93,12 +60,12 @@ def _kpi(label, value, ic=None, tone=None):
                   ui.div(label, class_="rw-kpi-label"), class_="rw-kpi")
 
 
-def _row(sev, title, sub):
+def _row(sev, title, sub, wrap=False):
     return ui.div(ui.span(class_="rw-dot"),
                   ui.div(ui.div(*title, class_="rw-row-title") if isinstance(title, (list, tuple))
                          else ui.div(title, class_="rw-row-title"),
                          ui.div(sub, class_="rw-row-sub"), class_="rw-row-main"),
-                  class_="rw-row", **{"data-sev": sev})
+                  class_="rw-row rw-row-wrap" if wrap else "rw-row", **{"data-sev": sev})
 
 
 def _card(title, *body, right=None):
@@ -166,7 +133,7 @@ def charts_ui():
             _card("Delay by stage", ui.output_ui("share_range"), ui.output_ui("share_svg"),
                   ui.output_ui("share_more")),
             _card("Zone comparison", ui.output_ui("tests")),
-            class_="rw-two"),
+            class_="rw-two rw-two-wide"),
         _card("Capability", ui.output_ui("capability")))
 
 
@@ -315,7 +282,7 @@ def charts_server(input, output, session, ctx):
         bad = qc.data_issues(st)
         if not len(bad):
             return None
-        rows = [_row("amber", [r.call_id, tag(f"Zone {r.zone}")], r.issue)
+        rows = [_row("amber", [r.call_id, zone_tag(f"Zone {r.zone}")], r.issue)
                 for r in bad.head(20).itertuples()]
         return _card(f"Data quality ({len(bad)} left out)", ui.div(*rows, class_="rw-rows"))
 
@@ -396,7 +363,7 @@ def charts_server(input, output, session, ctx):
         table = ui.div(ui.tags.table(
             ui.tags.thead(ui.tags.tr(*[ui.tags.th(h) for h in ("Zone", "Ppk", "Cpk", "Expected on time")])),
             ui.tags.tbody(*nums), class_="rw-table"), class_="rw-table-wrap")
-        return ui.div(ui.div(*rows), _more(
+        return ui.div(ui.div(*rows, class_="rw-verdicts"), _more(
             _p("How reliably each zone's calls arrive within the target. Ppk uses the spread of all "
                "calls and Cpk the spread within each day; Ppk 0.43 means about 90% on time."),
             table))
@@ -415,7 +382,7 @@ def actions_ui():
                class_="rw-two"),
         ui.div(_card("Before and after", ui.output_plot("ba_chart", height="380px")),
                _card("Result", ui.output_ui("pick_action"), ui.output_ui("result")),
-               class_="rw-two"))
+               class_="rw-two rw-two-wide"))
 
 
 @module.server
@@ -465,12 +432,12 @@ def actions_server(input, output, session, ctx):
             rows.append(ui.div(
                 ui.span(class_="rw-dot"),
                 ui.div(ui.div(tag(RULE_NAME.get(s["rule"], s["rule"])),
-                              tag("Citywide" if s["zone"] == "All" else f"Zone {s['zone']}"),
+                              zone_tag("Citywide" if s["zone"] == "All" else f"Zone {s['zone']}"),
                               s["text"], class_="rw-row-title"),
                        ui.div(s["evidence"], class_="rw-row-sub"),
                        ui.div(impact, class_="rw-row-sub") if impact else None, class_="rw-row-main"),
                 ui.div(button, class_="rw-row-actions"),
-                class_="rw-row", **{"data-sev": "green" if logged else "amber"}))
+                class_="rw-row rw-row-wrap", **{"data-sev": "green" if logged else "amber"}))
         return ui.div(ui.div(*rows, class_="rw-rows"), _more(_p(
             "Each suggestion comes from a fixed rule on the data, with its evidence. The estimate is a "
             "best case if that stage were typical; qualified staff decide.")))
@@ -529,10 +496,10 @@ def actions_server(input, output, session, ctx):
         for a in acts.itertuples():
             later = when is not None and pd.Timestamp(a.date) > when
             rows.append(_row("grey" if later else "green",
-                             [a.action_id, tag("Citywide" if a.zone == "All" else f"Zone {a.zone}"),
+                             [a.action_id, zone_tag("Citywide" if a.zone == "All" else f"Zone {a.zone}"),
                               tag(STAGE_WORD.get(a.stage, a.stage)),
                               tag("After the as-of date") if later else None],
-                             f"{a.date}: {a.description} ({a.owner})"))
+                             f"{a.date}: {a.description} ({a.owner})", wrap=True))
         return ui.div(*rows, class_="rw-rows")
 
     @render.ui

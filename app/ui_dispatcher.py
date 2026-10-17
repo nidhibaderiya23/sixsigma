@@ -59,6 +59,7 @@ _ICONS = {
     "headset": ('<path d="M3 18v-6a9 9 0 0 1 18 0v6"/>'
                 '<path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>'),
     "chart": '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+    "arrow": '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
 }
 
 
@@ -142,6 +143,11 @@ def tag(text: str, tone: str | None = None):
     return ui.span(text, class_=cls)
 
 
+def zone_tag(text: str):
+    """A place tag ("Zone C", "Citywide"), drawn as a small street-name plate."""
+    return ui.span(text, class_="rw-tag rw-tag-zone")
+
+
 def clock_box(label: str, since: datetime, target_s: float, now: datetime):
     """A running clock: the browser repaints it every second from the server clock."""
     elapsed = (now - since).total_seconds()
@@ -162,7 +168,7 @@ def final_box(label: str, seconds: float, target_s: float):
 
 def row(call, sub: str, *, actions=(), clocks=(), live=True, sev="green", extra_tags=()):
     """One dark inset row: status dot, bold title + muted subtitle, buttons, clocks."""
-    title = ui.div(call.call_id, tag(f"Zone {call.zone}"), tag(f"P{call.priority}"),
+    title = ui.div(call.call_id, zone_tag(f"Zone {call.zone}"), tag(f"P{call.priority}"),
                    *extra_tags, class_="rw-row-title")
     attrs = {"data-sev": sev}
     if live:
@@ -272,7 +278,7 @@ def _live_board_ui():
         # 2 x 2: log a call | incoming, dispatched | en route
         ui.div(log_call, ui.output_ui("incoming"), ui.output_ui("dispatched"), ui.output_ui("en_route"),
                class_="rw-two"),
-        ui.div(ui.output_ui("fleet"), _zone_map_card(), class_="rw-two"),
+        ui.div(ui.output_ui("fleet"), _zone_map_card(), class_="rw-two rw-two-wide"),
         ui.div(ui.output_ui("resolved"), style="margin-top:16px"),
     )
 
@@ -890,7 +896,7 @@ def history_server(input, output, session, visible, board, now):
             where = "All zones" if tip["zone"] == "All" else f"Zone {tip['zone']}"
             rows.append(ui.div(
                 ui.span(class_="rw-dot", **{"data-tone": tone}),
-                ui.div(ui.div(tag(TIP_NAMES.get(tip["rule"], tip["rule"])), tag(where),
+                ui.div(ui.div(tag(TIP_NAMES.get(tip["rule"], tip["rule"])), zone_tag(where),
                               ui.span(tip["text"], class_="rw-tip-text"), class_="rw-row-title"),
                        ui.div(tip["evidence"], class_="rw-row-sub"), class_="rw-row-main"),
                 class_="rw-row rw-row-wrap"))

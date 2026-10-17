@@ -135,6 +135,6 @@
       { call: sel.getAttribute("data-rw-call"), unit: sel.value }, { priority: "event" });
   });
 
-  // The page is dark; make Bootstrap's own parts (modals, selects) dark too.
-  document.documentElement.setAttribute("data-bs-theme", "dark");
+  // The working area is light; keep Bootstrap's own parts (modals, selects) light too.
+  document.documentElement.setAttribute("data-bs-theme", "light");
 })();
