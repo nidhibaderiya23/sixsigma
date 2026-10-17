@@ -70,6 +70,9 @@
     "ui_supervisor.py": {
       "checksum": "54eaea69b98663e0965fde8d593b9a70"
     },
+    "www/manual.html": {
+      "checksum": "3f2c296e2b801837203c0c18e03ed8ac"
+    },
     "www/rw.css": {
       "checksum": "4c253f331c7dfd9f130cbbea5260c00f"
     },

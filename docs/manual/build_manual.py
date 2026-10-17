@@ -26,6 +26,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 HTML_FILE = HERE / "ERGent-Manual.html"
 PDF_FILE = HERE / "ERGent-Manual.pdf"
+#: A copy the app serves at /manual.html (the Manual link in its header).
+APP_COPY = HERE.parent.parent / "app" / "www" / "manual.html"
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 TITLE = "ERGent User Manual"
@@ -277,8 +279,12 @@ def count_pages(pdf: Path) -> int:
 
 
 def main() -> int:
-    HTML_FILE.write_text(build_html(), encoding="utf-8")
+    html = build_html()
+    HTML_FILE.write_text(html, encoding="utf-8")
     print(f"wrote {HTML_FILE} ({HTML_FILE.stat().st_size // 1024} KB)")
+    if APP_COPY.parent.is_dir():
+        APP_COPY.write_text(html, encoding="utf-8")
+        print(f"wrote {APP_COPY} (served by the app at /manual.html)")
     if not Path(CHROME).exists():
         print("Google Chrome was not found, so the PDF was not made. Open the HTML file and use "
               "Print > Save as PDF.")
