@@ -680,3 +680,6 @@ body:has(.tab-pane.active[data-value="start"]) .rw-topbar { padding-bottom: 176p
   .rw-verdicts > .rw-verdict, .rw-verdict { grid-template-columns: 70px minmax(0, 1fr); column-gap: 12px; }
   .rw-verdict > :last-child { grid-column: 1 / -1; }
 }
+
+/* the map tooltip keeps its natural width (up to its max-width), so it never squeezes near the map edge */
+.leaflet-tooltip.rw-map-tip { width: max-content; }
