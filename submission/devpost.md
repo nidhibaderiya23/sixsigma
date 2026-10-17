@@ -58,7 +58,7 @@ The tool flags and suggests. Qualified staff decide.
   - road works slowing travel in Zone C at rush hour;
   - an evening dispatcher bottleneck;
   - an ambulance that keeps breaking down.
-- **The app.** Shiny for Python (Core), matplotlib SVG charts with hover tooltips, and a Leaflet map of Ithaca. It is deployed on the course's Posit Connect server.
+- **The app.** Shiny for Python (Core), matplotlib charts with hover text, and a Leaflet map of Ithaca, deployed on the course's Posit Connect server.
 - **AI as a teammate.** We used an AI coding agent under a written contract (`CONTRACT.yaml`) and a spec (`SPEC.md`). The team reviewed every design decision and can explain every number.
 
 ### Challenges we ran into
