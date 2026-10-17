@@ -50,7 +50,7 @@ never below 4.5:1. Text selection, scrollbars and the focus ring are themed from
   row subtitles), `--fs-body` 14 (body, row titles), `--fs-title` 15 (pane titles), `--fs-page` 18
   (page titles), `--fs-num` 22 (stat numbers); clocks 15 px mono semibold; the live clock 15 px.
   Nothing on screen is smaller than 12 px.
-- Uppercase only for the wordmark, the role chip and table column heads.
+- Uppercase only for the wordmark and the role chip.
 
 ## 4. Space, shape, structure
 
@@ -66,8 +66,10 @@ never below 4.5:1. Text selection, scrollbars and the focus ring are themed from
 Page head (title, date chip, live clock chip, Download) / command row: **Log a call** inline form
 + 5-cell stat strip / a 12-column board, rows fixed at 268 px and 372 px so nothing jumps while
 the shift runs: Incoming (4) | Dispatched (4) | En route (4), then Ambulances (5) | Zone map (3) |
-Resolved (4). Lists scroll inside their pane and keep their scroll position (`data-rw-key`).
-At 1024 px: a 6-column board (three lists, then Ambulances 4 + map 2, then Resolved full width).
+Resolved (4). Lists scroll inside their pane and keep their scroll position (`data-rw-key`); pane heads never
+shrink, and a scroll-driven bottom fade (`--rw-fade`, no JS) shows there is more below until the end.
+At 1024 px: a 6-column board, rows 252 / 396 / 260 px (three lists, then Ambulances 4 + map 2,
+then Resolved full width).
 
 ### Supervisor Charts
 Control bar in one row / a 3-column board: Control chart (span 2) | Statistics + Zone map, then
@@ -106,10 +108,12 @@ map, Delay | Comparison, Capability full width.
   long verdict chip never overlaps its sentence.
 - **More info** (`details.rw-moreinfo`): a 16 px boxed +/- and a 13 px label; the body is an
   `--inset` well, 14 px at 1.5 line height, max 72ch.
-- **Tables** (`.rw-table`): `--panel-2` head in 12 px caps, 5 px x 10 px cells, mono values,
-  row hover.
+- **Tables** (`.rw-table`): `--panel-2` head in 12 px semibold, original case (Ppk, Cpk), 5 px x
+  10 px cells, mono values, row hover.
 - **Bootstrap parts**: modals (`--panel`, `--panel-2` head, 4 px radius, no backdrop blur),
-  notifications (`--panel-2`, a status lamp at the left: cyan info, amber warning, red error),
+  notifications (one 40 px line, `--panel-2`, a status lamp on the text line: cyan info, amber
+  warning, red error; 6 px apart; below a dialog's backdrop, except an error, which stays above it;
+  scoped under `#shiny-notification-panel` because Shiny injects its own toast styles later),
   the date picker (dark, mono days, cyan selected day), Shiny busy indicators in cyan.
 
 ## 6. Charts (matplotlib, `app/charts.py`)
@@ -124,8 +128,10 @@ map, Delay | Comparison, Capability full width.
 - Text: SVG charts use `svg.fonttype = "none"` and name Barlow Semi Condensed first, so the
   browser draws chart text in the page font; PNG charts render with an installed condensed face
   (Avenir Next Condensed on macOS, DejaVu Sans elsewhere). Ticks 9 pt and legends 9 pt (12 px).
-- Inline SVG charts are sized to draw near 1:1 where they sit (stage share 4.8 x 2.6 in, zone
-  box 7.4 x 3.0 in), so their text stays at or above 12 px at 1024 and 1440.
+- Inline SVG charts are sized to draw near 1:1 where they sit (stage share 4.4 x 2.5 in, capped
+  at 520 px; zone box 7.4 x 3.0 in, capped at 760 px, title 10.5 pt), so their text stays about
+  12-14 px at 1024 and 1440. At 1280 px and up the History chart pane is 784 px wide and the
+  suggestions take the rest. The normal-plot title puts the Shapiro-Wilk p on a second line.
 
 ## 7. Map (Leaflet, `app/www/zonemap.js`)
 

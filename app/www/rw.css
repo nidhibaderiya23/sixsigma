@@ -238,6 +238,9 @@ p { margin-bottom: 8px; }
 }
 .rw-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .rw-hist-grid { grid-template-columns: minmax(0, 72fr) minmax(0, 28fr); }
+@media (min-width: 1280px) { .rw-hist-grid { grid-template-columns: minmax(0, 784px) minmax(0, 1fr); } }
+.rw-hist-grid .rw-svg svg { max-width: min(100%, 760px); }
+.rw-sup-board .rw-svg svg { max-width: min(100%, 520px); }
 .rw-two > *, .rw-hist-grid > *, .rw-board > *, .rw-sup-board > * { min-width: 0; background: var(--panel); }
 .rw-two > .shiny-html-output, .rw-hist-grid > .shiny-html-output, .rw-board > .shiny-html-output,
 .rw-sup-board > .shiny-html-output, .rw-sup-side > .shiny-html-output { display: flex; flex-direction: column; }
@@ -472,8 +475,8 @@ textarea.form-control { height: auto; padding: 6px 8px; line-height: 1.45; font-
 .rw-table-wrap { overflow-x: auto; }
 .rw-table { width: 100%; border-collapse: collapse; font-size: var(--fs-ui); font-variant-numeric: tabular-nums; }
 .rw-table th {
-  text-align: right; padding: 5px 10px; font-size: var(--fs-cap); font-weight: 600; letter-spacing: 0.04em;
-  text-transform: uppercase; color: var(--text-2); background: var(--panel-2);
+  text-align: right; padding: 5px 10px; font-size: var(--fs-cap); font-weight: 600; letter-spacing: 0.01em;
+  text-transform: none; color: var(--text-2); background: var(--panel-2);
   border-bottom: 1px solid var(--line); white-space: nowrap;
 }
 .rw-table td { text-align: right; padding: 5px 10px; border-bottom: 1px solid var(--line); }
@@ -545,6 +548,7 @@ textarea.form-control { height: auto; padding: 6px 8px; line-height: 1.45; font-
 .rw-board > :nth-child(5) { grid-column: span 3; }
 .rw-board > :nth-child(6) { grid-column: span 4; }
 .rw-board .rw-card { display: flex; flex-direction: column; padding-bottom: 0; overflow: hidden; container-type: inline-size; }
+.rw-board .rw-card > .rw-card-head { flex: none; }
 .rw-board .rw-card > .rw-rows { flex: 1 1 auto; min-height: 0; overflow-y: auto; margin-bottom: 0; }
 .rw-board .rw-card > .rw-empty {
   margin: 0 calc(-1 * var(--pad)); margin-top: -8px; flex: 1 1 auto; display: grid; place-items: center;
@@ -552,6 +556,16 @@ textarea.form-control { height: auto; padding: 6px 8px; line-height: 1.45; font-
 }
 .rw-board .rw-card > .rw-more { padding: 6px 0; border-top: 1px solid var(--line); margin: 0 calc(-1 * var(--pad)); }
 .rw-board .rw-card > .rw-ucols { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+/* "more below" cue: only while a list can scroll and is not at its end (scroll-driven, no JS) */
+@property --rw-fade { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@keyframes rw-more-below { 0%, 94% { --rw-fade: 36px; } 100% { --rw-fade: 0px; } }
+@supports (animation-timeline: scroll()) {
+  .rw-board .rw-card > .rw-rows, .rw-board .rw-card > .rw-ucols {
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - var(--rw-fade)), rgba(0, 0, 0, 0.12) 100%);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - var(--rw-fade)), rgba(0, 0, 0, 0.12) 100%);
+    animation: rw-more-below linear both; animation-timeline: scroll(self);
+  }
+}
 .rw-board .rw-card > .rw-leaflet { flex: none; }
 .rw-board .rw-card > .rw-legend { padding-bottom: 10px; }
 
@@ -695,25 +709,32 @@ textarea.form-control { height: auto; padding: 6px 8px; line-height: 1.45; font-
 .modal-backdrop.show { opacity: 0.7; }
 .modal, .modal-backdrop { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
 
-#shiny-notification-panel { max-width: 380px; }
-.shiny-notification {
-  position: relative; background: var(--panel-2); color: var(--text); border: 1px solid var(--line-2);
-  border-radius: var(--r2); opacity: 1; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  padding: 10px 28px 10px 28px; font-size: var(--fs-body); line-height: 1.4;
+/* Shiny injects its toast styles after this file, so these rules are scoped by the panel id */
+body > #shiny-notification-panel { max-width: 380px; padding: 0 12px 12px; z-index: 1040 !important; }
+/* an error raised inside a dialog (e.g. "Choose a reason first.") must stay readable above it */
+body > #shiny-notification-panel:has(.shiny-notification-error) { z-index: 1060 !important; }
+#shiny-notification-panel .shiny-notification {
+  position: relative; display: flex; align-items: flex-start; min-height: 40px; margin: 6px 0 0;
+  padding: 10px 32px 10px 28px; background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--line-2); border-radius: var(--r2); opacity: 1;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); font-size: var(--fs-body); line-height: 18px;
 }
-.shiny-notification::before {
-  content: ""; position: absolute; left: 11px; top: 16px; width: 8px; height: 8px; border-radius: 1px;
+#shiny-notification-panel .shiny-notification::before {
+  content: ""; position: absolute; left: 11px; top: 15px; width: 8px; height: 8px; border-radius: 1px;
   background: var(--accent);
 }
-.shiny-notification-content { display: block; margin: 0; }
-.shiny-notification-content-text { margin: 0; padding: 0; }
-.shiny-notification-content-action:empty { display: none; }
-.shiny-notification-warning::before { background: var(--amber); }
-.shiny-notification-error::before { background: var(--red); }
-.shiny-notification-warning { border-color: rgba(255, 181, 71, 0.55); }
-.shiny-notification-error { border-color: rgba(255, 107, 98, 0.6); }
-.shiny-notification-close { color: var(--text-2); top: 6px; right: 8px; }
-.shiny-notification-close:hover { color: var(--text); }
+#shiny-notification-panel .shiny-notification-content { display: block; margin: 0; padding: 0; flex: 1 1 auto; min-width: 0; }
+#shiny-notification-panel .shiny-notification-content-text { margin: 0; padding: 0; }
+#shiny-notification-panel .shiny-notification-content-action:empty { display: none; }
+#shiny-notification-panel .shiny-notification-warning::before { background: var(--amber); }
+#shiny-notification-panel .shiny-notification-error::before { background: var(--red); }
+#shiny-notification-panel .shiny-notification-warning { border-color: rgba(255, 181, 71, 0.55); }
+#shiny-notification-panel .shiny-notification-error { border-color: rgba(255, 107, 98, 0.6); }
+#shiny-notification-panel .shiny-notification-close {
+  position: absolute; display: block; top: 9px; right: 8px; width: 18px; height: 20px; padding: 0; line-height: 20px; text-align: center;
+  color: var(--text-2); font-size: 16px;
+}
+#shiny-notification-panel .shiny-notification-close:hover { color: var(--text); }
 
 .datepicker.dropdown-menu, .datepicker-dropdown {
   background: var(--panel-2); color: var(--text); border: 1px solid var(--line-2); border-radius: var(--r2);
@@ -739,7 +760,7 @@ textarea.form-control { height: auto; padding: 6px 8px; line-height: 1.45; font-
 
 @media (max-width: 1099px) {
   /* projector: three call lists, then ambulances (wide) and the map, then resolved */
-  .rw-board { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: 252px 362px 260px; }
+  .rw-board { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: 252px 396px 260px; }
   .rw-board > :nth-child(-n+3) { grid-column: span 2; }
   .rw-board > :nth-child(4) { grid-column: span 4; }
   .rw-board > :nth-child(5) { grid-column: span 2; }
@@ -778,4 +799,5 @@ textarea.form-control { height: auto; padding: 6px 8px; line-height: 1.45; font-
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  .rw-board .rw-card > .rw-rows, .rw-board .rw-card > .rw-ucols { animation-duration: auto !important; }
 }

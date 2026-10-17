@@ -188,7 +188,7 @@ def _secs(s) -> str:
 
 
 def _stage_share_fig(bd):
-    fig, (ax,) = _fig(height=2.6, width=4.8)      # drawn near 1:1 in a one-third pane
+    fig, (ax,) = _fig(height=2.5, width=4.4)      # drawn near 1:1 in a one-third pane
     zones = list(bd["zone"])
     labels = ["City" if z == "All" else z for z in zones]
     left = np.zeros(len(zones))
@@ -255,9 +255,8 @@ def normal_plot(norm: dict, zone: str):
     ax.scatter(t, o, color=LINE, s=8)
     slope, intercept = np.polyfit(t, o, 1)
     ax.plot(t, slope * t + intercept, color=MUTED, linewidth=1)
-    _style(ax, f"Zone {zone}: normal probability plot of ln(minutes)  "
+    _style(ax, f"Zone {zone}: normal probability plot of ln(minutes)\n"
                f"(Shapiro-Wilk p = {norm['p']:.3f})", "ln(minutes)")
-    ax.title.set_wrap(True)            # a long title wraps inside a narrow pane
     ax.set_xlabel("normal quantile", color=MUTED, fontsize=9)
     return fig
 
@@ -334,7 +333,7 @@ def zone_box_chart(sub, priority: int, target_min: float, reasons: dict | None =
     ax.set_xticklabels([f"{z}\nn={n}" for z, n in zip(zones, sub["n"])])
     ax.set_xlim(-0.6, len(zones) - 0.4)
     _style(ax, _priority_title(priority), "minutes (log scale)")
-    ax.set_title(_priority_title(priority), color=FG, fontsize=12, loc="left", pad=36,
+    ax.set_title(_priority_title(priority), color=FG, fontsize=10.5, loc="left", pad=36,
                  fontweight="bold")
     leg = ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), fontsize=9, frameon=False, ncol=3,
                     borderaxespad=0.2, handlelength=1.6, columnspacing=1.2)
