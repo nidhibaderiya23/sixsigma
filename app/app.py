@@ -23,14 +23,17 @@ import zonemap  # noqa: E402
 HERE = Path(__file__).resolve().parent
 
 #: Shown in the header; each saved version of the app sets its own.
-VERSION = "Ithaca base"
+VERSION = "v6"
 WWW = HERE / "www"
 
-FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+# Barlow Semi Condensed for labels and prose (compact, open forms that stay legible at 12-14 px);
+# JetBrains Mono for clocks, call and unit IDs and numbers (tabular, a distinct 0 and O).
+FONTS = ("https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700"
+         "&family=JetBrains+Mono:wght@400;500;600&display=swap")
 
 # A small pulse icon as the browser-tab icon (inline, so there is no file to serve).
 FAVICON = ("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' "
-           "fill='none' stroke='%23ff6b5b' stroke-width='2' stroke-linecap='round' "
+           "fill='none' stroke='%234cc2ff' stroke-width='2' stroke-linecap='round' "
            "stroke-linejoin='round'%3E%3Cpolyline points='22 12 18 12 15 21 9 3 6 12 2 12'/%3E%3C/svg%3E")
 
 
@@ -122,7 +125,7 @@ def server(input, output, session):
         if current == "dispatcher":
             live = mode() == "LIVE 1x"          # green only for the real-time clock
             return ui.div(chip("Dispatcher", None),
-                          chip(mode(), "green" if live else "amber"),
+                          chip(mode(), "green" if live else "amber", class_="rw-chip-mode"),
                           class_="rw-header-chips")
         if current == "supervisor":
             return ui.div(chip("Supervisor", None), chip("Synthetic data", "grey"),

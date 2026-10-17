@@ -19,13 +19,25 @@ import re  # noqa: E402
 
 import numpy as np  # noqa: E402
 
-BG = "#16191f"
-FG = "#f2f2f0"
-MUTED = "#9aa0a6"
-GRID = "#2a2e36"
-GREEN, AMBER, RED = "#6fd39a", "#f2c14e", "#ef6461"
-LINE = "#7aa7ff"
-STAGE_COLORS = {"processing": "#b39ddb", "turnout": AMBER, "travel": LINE}
+# v6 "Ops console" palette: the charts sit on the pane colour, so they read as part of the console.
+BG = "#14171a"
+FG = "#e6e9ec"
+MUTED = "#a3abb4"
+GRID = "#252a2f"
+GREEN, AMBER, RED = "#3fd68a", "#ffb547", "#ff6b62"   # status only (and the amber target line)
+LINE = "#62a8ff"                                        # the data series
+ACTION = "#b9a8ff"                                      # a logged action (an event, not a status)
+BOX_FACE = "#1f2429"
+# stage colours avoid the status hues; fixed order violet, magenta, blue (adjacent pairs separate)
+STAGE_COLORS = {"processing": "#9085e9", "turnout": "#d55181", "travel": "#3987e5"}
+
+# Text: matplotlib measures with an installed condensed face; the SVG charts name the page's own
+# web font first (see to_svg), so the browser draws their text in Barlow Semi Condensed.
+WEB_FONT = "Barlow Semi Condensed"
+_INSTALLED = {f.name for f in matplotlib.font_manager.fontManager.ttflist}
+_FONTS = [f for f in ("Avenir Next Condensed", "Arial Narrow", "DejaVu Sans") if f in _INSTALLED]
+plt.rcParams.update({"font.family": _FONTS or ["DejaVu Sans"], "svg.fonttype": "none",
+                     "axes.titleweight": "semibold"})
 
 
 def _style(ax, title=None, ylabel=None):
@@ -34,8 +46,8 @@ def _style(ax, title=None, ylabel=None):
         ax.spines[side].set_visible(False)
     for side in ("left", "bottom"):
         ax.spines[side].set_color(GRID)
-    ax.tick_params(colors=MUTED, labelsize=9)
-    ax.grid(True, color=GRID, linewidth=0.6, alpha=0.8)
+    ax.tick_params(colors=MUTED, labelsize=9, length=3, width=0.6)
+    ax.grid(True, color=GRID, linewidth=0.6, alpha=1.0)
     ax.set_axisbelow(True)
     if title:
         ax.set_title(title, color=FG, fontsize=11, loc="left", pad=22)
@@ -43,16 +55,16 @@ def _style(ax, title=None, ylabel=None):
         ax.set_ylabel(ylabel, color=MUTED, fontsize=9)
 
 
-def _fig(rows=1, height=3.2, sharex=False):
+def _fig(rows=1, height=3.2, sharex=False, width=9):
     # constrained layout re-fits titles, legends and labels at whatever size Shiny draws the figure
-    fig, axes = plt.subplots(rows, 1, figsize=(9, height), sharex=sharex, facecolor=BG,
+    fig, axes = plt.subplots(rows, 1, figsize=(width, height), sharex=sharex, facecolor=BG,
                              squeeze=False, layout="constrained")
     return fig, [a[0] for a in axes]
 
 
 def _legend(ax, ncol=6):
     """A legend between the title and the plot, so it never covers data."""
-    leg = ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), fontsize=8, frameon=False,
+    leg = ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), fontsize=9, frameon=False,
                     ncol=ncol, borderaxespad=0.2, handlelength=1.6, columnspacing=1.2)
     for text in leg.get_texts():
         text.set_color(MUTED)
@@ -98,8 +110,8 @@ def daily_chart(chart, zone: str, action_dates=(), target_min: float | None = No
         ax1.axhline(target_min, color=AMBER, linewidth=1.4, label=f"{target_min:.0f}-min target (spec)")
     for when in action_dates:
         for ax in (ax1, ax2):
-            ax.axvline(when, color=GREEN, linewidth=1.2)
-        ax1.text(when, ax1.get_ylim()[1], " action", color=GREEN, fontsize=8, va="top")
+            ax.axvline(when, color=ACTION, linewidth=1.2)
+        ax1.text(when, ax1.get_ylim()[1], " action", color=ACTION, fontsize=9, va="top")
     _style(ax1, f"Zone {zone}: daily average response", "minutes")
     _legend(ax1, ncol=4)
     ax1.set_title(ax1.get_title(loc="left"), color=FG, fontsize=11, loc="left", pad=36)
@@ -176,14 +188,15 @@ def _secs(s) -> str:
 
 
 def _stage_share_fig(bd):
-    fig, (ax,) = _fig(height=3.4)
+    fig, (ax,) = _fig(height=2.6, width=4.8)      # drawn near 1:1 in a one-third pane
     zones = list(bd["zone"])
     labels = ["City" if z == "All" else z for z in zones]
     left = np.zeros(len(zones))
     tips = {}
     for stage in ("processing", "turnout", "travel"):
         vals = bd[f"{stage}_share"].fillna(0).to_numpy() * 100
-        bars = ax.barh(labels, vals, left=left, color=STAGE_COLORS[stage], label=stage, height=0.6)
+        bars = ax.barh(labels, vals, left=left, color=STAGE_COLORS[stage], label=stage, height=0.64,
+                       edgecolor=BG, linewidth=1)
         for z, bar, v, over, med in zip(zones, bars, vals, bd[f"{stage}_excess_min"],
                                         bd[f"{stage}_median_s"]):
             gid = f"bar-{z}-{stage}"
@@ -218,6 +231,7 @@ def to_svg(fig, tips: dict | None = None) -> str:
     svg = svg[svg.index("<svg"):]
     svg = re.sub(r'<svg([^>]*?) width="[^"]+" height="[^"]+"',
                  r'<svg\1 width="100%" style="height:auto;display:block"', svg, count=1)
+    svg = svg.replace("font-family: ", f"font-family: '{WEB_FONT}', ")
     for gid, text in (tips or {}).items():
         svg = svg.replace(f'<g id="{gid}">',
                           f'<g id="{gid}" class="rw-tip"><title>{html.escape(text)}</title>', 1)
@@ -243,6 +257,7 @@ def normal_plot(norm: dict, zone: str):
     ax.plot(t, slope * t + intercept, color=MUTED, linewidth=1)
     _style(ax, f"Zone {zone}: normal probability plot of ln(minutes)  "
                f"(Shapiro-Wilk p = {norm['p']:.3f})", "ln(minutes)")
+    ax.title.set_wrap(True)            # a long title wraps inside a narrow pane
     ax.set_xlabel("normal quantile", color=MUTED, fontsize=9)
     return fig
 
@@ -270,13 +285,13 @@ def zone_box_chart(sub, priority: int, target_min: float, reasons: dict | None =
     city), else its typical time."""
     if sub is None or not len(sub) or int(sub["n"].sum()) == 0:
         return empty(f"{_priority_title(priority)}: no completed calls in these two shifts yet")
-    fig, (ax,) = _fig(height=3.6)
+    fig, (ax,) = _fig(height=3.0, width=7.4)      # text near 12 px on a 1024 px projector
     zones = list(sub["zone"])
     have = [i for i, v in enumerate(sub["values_log"]) if len(v)]
     ax.boxplot([sub["values_log"].iloc[i] for i in have], positions=have, widths=0.5,
                patch_artist=True, showfliers=True, manage_ticks=False,
                medianprops={"color": FG, "linewidth": 1.2},
-               boxprops={"facecolor": "#232833", "edgecolor": MUTED},
+               boxprops={"facecolor": BOX_FACE, "edgecolor": MUTED},
                whiskerprops={"color": MUTED}, capprops={"color": MUTED},
                flierprops={"marker": "o", "markersize": 3, "markerfacecolor": MUTED,
                            "markeredgecolor": "none"})
@@ -321,7 +336,7 @@ def zone_box_chart(sub, priority: int, target_min: float, reasons: dict | None =
     _style(ax, _priority_title(priority), "minutes (log scale)")
     ax.set_title(_priority_title(priority), color=FG, fontsize=12, loc="left", pad=36,
                  fontweight="bold")
-    leg = ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), fontsize=8, frameon=False, ncol=3,
+    leg = ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), fontsize=9, frameon=False, ncol=3,
                     borderaxespad=0.2, handlelength=1.6, columnspacing=1.2)
     for text in leg.get_texts():
         text.set_color(MUTED)

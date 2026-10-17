@@ -162,7 +162,7 @@ def final_box(label: str, seconds: float, target_s: float):
 
 def row(call, sub: str, *, actions=(), clocks=(), live=True, sev="green", extra_tags=()):
     """One dark inset row: status dot, bold title + muted subtitle, buttons, clocks."""
-    title = ui.div(call.call_id, tag(f"Zone {call.zone}"), tag(f"P{call.priority}"),
+    title = ui.div(ui.span(call.call_id, class_="rw-id"), tag(f"Zone {call.zone}"), tag(f"P{call.priority}"),
                    *extra_tags, class_="rw-row-title")
     attrs = {"data-sev": sev}
     if live:
@@ -245,7 +245,7 @@ def _zone_map_card():
         class_="rw-legend")
     return ui.div(card_head("", "Zone map", right=ui.span(qc.CITY, class_="rw-muted")),
                   zonemap.map_div(resolve_id("live_map"), click_input=resolve_id("map_click"),
-                                  height="300px"),
+                                  height="282px"),
                   legend, class_="rw-card")
 
 
@@ -258,7 +258,7 @@ def _live_board_ui():
             ui.input_select("manual_speed", "Clock speed", choices=MANUAL_SPEED_CHOICES, selected="1"),
             ui.input_action_button("new_call", "Add call", class_="btn-default"),
             class_="rw-controls rw-controls-call"),
-        class_="rw-card")
+        class_="rw-card rw-logcall")
 
     return ui.TagList(
         ui.div(
@@ -268,12 +268,12 @@ def _live_board_ui():
                                       class_="btn-default btn-sm"),
                    class_="rw-btnrow"),
             class_="rw-page-head"),
-        ui.output_ui("kpis"),
-        # 2 x 2: log a call | incoming, dispatched | en route
-        ui.div(log_call, ui.output_ui("incoming"), ui.output_ui("dispatched"), ui.output_ui("en_route"),
-               class_="rw-two"),
-        ui.div(ui.output_ui("fleet"), _zone_map_card(), class_="rw-two"),
-        ui.div(ui.output_ui("resolved"), style="margin-top:16px"),
+        # command row: log a call | the five counts
+        ui.div(log_call, ui.output_ui("kpis"), class_="rw-cmdrow"),
+        # one 3 x 2 board: incoming | dispatched | en route, then ambulances | zone map | resolved
+        ui.div(ui.output_ui("incoming"), ui.output_ui("dispatched"), ui.output_ui("en_route"),
+               ui.output_ui("fleet"), _zone_map_card(), ui.output_ui("resolved"),
+               class_="rw-board"),
     )
 
 
@@ -618,7 +618,8 @@ def dispatcher_server(input, output, session, active):
             rows.append(row(c, f"Waiting for dispatch, target {sim.fmt_clock(tg['processing'])}",
                             actions=actions, sev=c.severity(t),
                             clocks=[clock_box("Waiting", c.call_received, tg["processing"], t)]))
-        return list_card("", "Incoming calls", rows, "No calls waiting.", host(), step=2)
+        return list_card("", "Incoming calls", rows, "No calls waiting.", host(), step=2,
+                         scroll_key="incoming")
 
     @render.ui
     def dispatched():
@@ -633,7 +634,8 @@ def dispatcher_server(input, output, session, active):
                             actions=actions, sev=c.severity(t),
                             clocks=[clock_box("Turnout", c.dispatched, tg["turnout"], t)],
                             extra_tags=[tag("Breakdown", "red")] if c.breakdown else ()))
-        return list_card("", "Dispatched", rows, "No calls waiting to roll.", host(), step=3)
+        return list_card("", "Dispatched", rows, "No calls waiting to roll.", host(), step=3,
+                         scroll_key="dispatched")
 
     @render.ui
     def en_route():
@@ -650,7 +652,8 @@ def dispatcher_server(input, output, session, active):
                             clocks=[clock_box("Travel", c.en_route, tg["travel"], t),
                                     clock_box("Total", c.dispatched, tg["response"], t)],
                             extra_tags=[tag("Breakdown", "red")] if c.breakdown else ()))
-        return list_card("", "En route", rows, "No units on the road.", host(), step=4)
+        return list_card("", "En route", rows, "No units on the road.", host(), step=4,
+                         scroll_key="en_route")
 
     @render.ui
     def resolved():

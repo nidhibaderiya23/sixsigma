@@ -6,7 +6,7 @@
   "use strict";
   var maps = {};
   var waiting = {};
-  var FALLBACK = { green: "#6fd39a", amber: "#f2c14e", red: "#ef6461", grey: "#6b7280" };
+  var FALLBACK = { green: "#3fd68a", amber: "#ffb547", red: "#ff6b62", grey: "#7d8691" };
 
   function cssVar(name) {
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim().replace(/["']/g, "");
@@ -38,13 +38,13 @@
     var layers = {};
     var line = cssVar("--map-line") || "#ffffff";
     L.geoJSON(geo, {
-      style: function () { return { color: line, weight: 1.5, fillColor: FALLBACK.grey, fillOpacity: 0.35 }; },
+      style: function () { return { color: line, weight: 1.25, fillColor: FALLBACK.grey, fillOpacity: 0.3 }; },
       onEachFeature: function (f, layer) {
         var z = f.properties.zone;
         layers[z] = layer;
         layer.bindTooltip("<b>Zone " + z + " &middot; " + esc(f.properties.name) + "</b>", { sticky: true, className: "rw-map-tip" });
-        layer.on("mouseover", function () { layer.setStyle({ weight: 3 }); });
-        layer.on("mouseout", function () { layer.setStyle({ weight: 1.5 }); });
+        layer.on("mouseover", function () { layer.setStyle({ weight: 2.5 }); });
+        layer.on("mouseout", function () { layer.setStyle({ weight: 1.25 }); });
         layer.on("click", function () {
           var id = el.dataset.clickInput;
           if (id && window.Shiny && Shiny.setInputValue) Shiny.setInputValue(id, z, { priority: "event" });
@@ -60,7 +60,7 @@
     var bounds = L.geoJSON(geo).getBounds();
     map.fitBounds(bounds, { padding: [8, 8] });
     if (window.ResizeObserver) {
-      new ResizeObserver(function () { map.invalidateSize(); if (el.offsetWidth) map.fitBounds(bounds, { padding: [8, 8] }); }).observe(el);
+      new ResizeObserver(function () { map.invalidateSize(); if (el.offsetWidth) map.fitBounds(bounds, { padding: [8, 8], animate: false }); }).observe(el);
     }
     maps[el.id] = { map: map, layers: layers };
     return maps[el.id];
@@ -71,7 +71,7 @@
       var layer = entry.layers[z];
       if (!layer) return;
       var info = zones[z];
-      layer.setStyle({ fillColor: colour(info.sev), fillOpacity: info.sev === "grey" ? 0.2 : 0.38 });
+      layer.setStyle({ fillColor: colour(info.sev), fillOpacity: info.sev === "grey" ? 0.2 : 0.46 });
       var lines = (info.lines || []).map(esc).join("<br>");
       layer.setTooltipContent("<b>Zone " + z + " &middot; " + esc(info.name) + "</b><br>" +
         esc(info.status || "") + (lines ? "<br>" + lines : ""));
