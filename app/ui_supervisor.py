@@ -3,7 +3,11 @@
 Overview answers "is everything okay?", Charts answers "what is happening, and
 why?", and Actions answers "how do we fix it, and did it work?" (the Six Sigma
 Improve and Control steps). A settings card above the tabs picks the dataset,
-priority, as-of date, period, targets and baseline; every tab reads them.
+priority, as-of date and targets; the Charts tab has its own control bar (chart
+toggle, zone, as-of date kept in sync, chart period, jump to).
+
+Screens show results only. Explanations for a supervisor who is new to Six
+Sigma sit behind "More info..." toggles, with short questions and answers.
 
 Each tab is one module pair (`<name>_ui()` and `<name>_server(ctx)`) listed in
 TABS. Every statistic comes from qc.py and every chart from charts.py; this
@@ -33,12 +37,45 @@ DATASETS = {"demo": "Demo city: 42 days, planted problems",
 PRIORITY_CHOICES = {"1": "Priority 1 (life-threatening)", "2": "Priority 2", "3": "Priority 3"}
 PERIODS = {"14": "Last 14 days", "28": "Last 28 days", "42": "Last 42 days"}
 ZONE_CHOICES = {z: f"Zone {z}" for z in qc.ZONES}
+VIEWS = {"xbar": "Daily chart (X̄-S)", "imr": "Every call (I-MR)"}
+JUMPS = {"": "Jump to…", "before": "Sep 28 (before the fix)", "latest": "The latest day"}
 STATUS_WORD = {"green": "On track", "amber": "Worth a look", "red": "Act now",
                "unknown": "Not enough data"}
 STAGE_WORD = {"processing": "Dispatcher processing", "turnout": "Crew turnout", "travel": "Travel"}
+STAGE_PLAIN = {"processing": "the dispatcher sending the ambulance",
+               "turnout": "the crew getting the ambulance moving",
+               "travel": "the drive to the scene"}
 RULE_NAME = {"S1": "Crew readiness", "S2": "Coverage", "S3": "Routes", "S4": "Dispatcher cover",
              "S5": "Maintenance", "S6": "Address checks"}
 DEMO_BEFORE_FIX = "2026-09-28"
+
+STYLE = """
+.rw-moreinfo { margin-top: 12px; }
+.rw-moreinfo > summary { cursor: pointer; color: var(--muted, #9aa0a6); font-size: 13px;
+  list-style: none; display: inline-flex; align-items: center; gap: 6px; }
+.rw-moreinfo > summary::-webkit-details-marker { display: none; }
+.rw-moreinfo > summary::before { content: "+"; display: inline-grid; place-items: center;
+  width: 18px; height: 18px; border: 1px solid rgba(255,255,255,0.18); border-radius: 50%; font-size: 12px; }
+.rw-moreinfo[open] > summary::before { content: "–"; }
+.rw-moreinfo-body { margin-top: 10px; padding: 12px 14px; border-radius: 10px;
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+  font-size: 13.5px; line-height: 1.6; color: var(--fg, #f2f2f0); }
+.rw-moreinfo-body p { margin: 0 0 8px; }
+.rw-faq { margin: 8px 0 0; }
+.rw-faq dt { font-weight: 600; margin-top: 8px; }
+.rw-faq dd { margin: 2px 0 0; color: var(--muted, #9aa0a6); }
+.rw-chartbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.rw-chartbar .shiny-input-container { width: auto; margin-bottom: 0; }
+.rw-chartbar .shiny-input-radiogroup .shiny-options-group { display: flex; gap: 6px; }
+.rw-chartbar .shiny-input-radiogroup label.radio-inline,
+.rw-chartbar .shiny-input-radiogroup .form-check { margin: 0; }
+.rw-verdict { display: grid; grid-template-columns: 90px 190px minmax(0, 1fr); gap: 10px;
+  align-items: center; padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+.rw-verdict:first-child { border-top: 0; }
+.rw-answer { font-size: 15px; line-height: 1.55; }
+@media (max-width: 640px) { .rw-verdict { grid-template-columns: 70px minmax(0, 1fr); }
+  .rw-verdict > :last-child { grid-column: 1 / -1; } }
+"""
 
 
 # ---- small formatting helpers (formatting only, no statistics) ------------------------------------
@@ -76,8 +113,22 @@ def _empty(text):
     return ui.div(text, class_="rw-empty")
 
 
-def _note(text):
-    return ui.div(text, class_="rw-small rw-muted rw-note")
+def _more(*content):
+    """A 'More info...' toggle; the explanation stays hidden until clicked."""
+    return ui.tags.details(ui.tags.summary("More info…"),
+                           ui.div(*content, class_="rw-moreinfo-body"), class_="rw-moreinfo")
+
+
+def _faq(pairs):
+    """Questions and answers for someone new to Six Sigma."""
+    items = []
+    for q, a in pairs:
+        items += [ui.tags.dt(q), ui.tags.dd(a)]
+    return ui.tags.dl(*items, class_="rw-faq")
+
+
+def _p(text):
+    return ui.tags.p(text)
 
 
 # ---- settings shared by every tab -------------------------------------------------------------------
@@ -89,14 +140,7 @@ def _settings_ui():
             ui.input_select("dataset", "Dataset", DATASETS, selected="demo"),
             ui.input_select("priority", "Priority", PRIORITY_CHOICES, selected="1"),
             ui.input_date("as_of", "As of", value="2026-10-12"),
-            ui.input_select("period", "Chart period", PERIODS, selected="28"),
             class_="rw-controls"),
-        ui.div(
-            ui.input_action_button("jump_before", "Jump to Sep 28 (before the fix)",
-                                   class_="rw-btn rw-btn-ghost"),
-            ui.input_action_button("jump_latest", "Jump to the latest day",
-                                   class_="rw-btn rw-btn-ghost"),
-            class_="rw-btnrow"),
         ui.accordion(
             ui.accordion_panel(
                 "Targets and baseline",
@@ -109,9 +153,15 @@ def _settings_ui():
                     ui.input_date("base_start", "Baseline start", value="2026-09-01"),
                     ui.input_numeric("base_days", "Baseline days", 14, min=5, max=28, step=1),
                     class_="rw-controls"),
-                _note("Defaults come from NFPA 1710 for priority 1: 64 s processing, 60 s turnout and "
-                      "480 s travel, each met by 90% of calls. The priority 2 and 3 targets are our "
-                      "own assumptions. Control limits come from the baseline days, never from the target.")),
+                _more(_faq([
+                    ("Where do the targets come from?",
+                     "Priority 1 uses NFPA 1710, the US standard: 64 s to send the ambulance, 60 s for "
+                     "the crew to get moving and 8 min to drive, each met by 90% of calls, so 9 min from "
+                     "dispatch to arrival. The priority 2 and 3 targets are our own assumptions."),
+                    ("What is the baseline?",
+                     "A stretch of normal days (by default the first 14) that sets each zone's normal "
+                     "range on the control charts. The charts then ask: are later days still normal?"),
+                ]))),
             open=False, id="settings_more"),
         class_="rw-card rw-settings")
 
@@ -165,14 +215,22 @@ def overview_server(input, output, session, ctx):
             _kpi("Zones flagged", f"{flagged} / {len(health)}", "pin",
                  "amber" if flagged else None),
             class_="rw-kpis rw-kpis-6")
-        if s["n"]:
-            msg = (f"The average says {s['mean']:.1f} min. But 1 in 10 patients waited more than "
-                   f"{s['p90']:.1f} min, and 1 in 20 more than {s['p95']:.1f} min. "
-                   f"Priority {ctx.priority()} target: {ctx.target_min():.0f} min for 90% of calls. "
-                   f"{s['n']} calls, last 7 days up to {ctx.as_of():%b %d}.")
-        else:
-            msg = "No valid calls in the last 7 days."
-        return ui.div(tiles, _note(msg), class_="rw-stack")
+        if not s["n"]:
+            return ui.div(tiles, class_="rw-stack")
+        story = (f"In the last 7 days up to {ctx.as_of():%b %d}, the average call took "
+                 f"{s['mean']:.1f} min. But 1 in 10 patients waited more than {s['p90']:.1f} min, "
+                 f"and 1 in 20 more than {s['p95']:.1f} min ({s['n']} priority {ctx.priority()} calls).")
+        return ui.div(tiles, _more(_p(story), _faq([
+            ("Why not just the average?",
+             "A few very slow calls hide inside a good-looking average. The 90th and 95th percentiles "
+             "show how long the slowest patients waited, which is what the prompt worries about."),
+            ("What is the 90th percentile?",
+             "Sort the calls from fastest to slowest: 9 in 10 arrived faster than this number. The "
+             f"standard says it should be under {ctx.target_min():.0f} min."),
+            ("What is 'On time'?",
+             f"The share of calls that arrived within {ctx.target_min():.0f} min of dispatch. The goal "
+             "is at least 90%."),
+        ])), class_="rw-stack")
 
     @render.ui
     def health():
@@ -184,9 +242,19 @@ def overview_server(input, output, session, ctx):
                                             r.status if r.status in ("amber", "red") else None)],
                      "; ".join(r.reasons), _num(r.p90_recent, 1), "p90 min")
                 for r in h.itertuples()]
-        legend = _note("Last 7 days. Red: a flag rule fired AND the 90th percentile is over target "
-                       "(act). Amber: one of the two (worth a look). Green: neither.")
-        return _card("Zones", "Zone health", ui.div(*rows, class_="rw-rows"), legend)
+        return _card("Zones", "Zone health", ui.div(*rows, class_="rw-rows"), _more(_faq([
+            ("What do the colors mean?",
+             "Red, act now: the zone's control chart shows a real change AND its 90th percentile "
+             "misses the target. Amber, worth a look: one of the two. Green: neither. "
+             "It looks at the last 7 days."),
+            ("What is a 'real change'?",
+             "The zone's daily times broke one of the control-chart rules: for example a day far "
+             "outside its normal range, or many days in a row above normal. One weak sign on its own "
+             "is shown but does not turn the zone amber, to avoid false alarms."),
+            ("What should I do with a red zone?",
+             "Open Charts, pick that zone, and look at the stage breakdown to see which part of the "
+             "call is slow. Then check the Actions tab for a suggestion."),
+        ])))
 
     @render.ui
     def history_map():
@@ -205,8 +273,9 @@ def overview_server(input, output, session, ctx):
                        ui.div(STATUS_WORD[r.status], class_="rw-tile-status")),
                 class_="rw-tile", **{"data-sev": sev}))
         return _card("Zones", "History map (last 7 days)", ui.div(*cells, class_="rw-map"),
-                     _note("A B C on the top row, D E F below. The tile names the stage behind "
-                           "the delays when a zone is flagged."))
+                     _more(_p("The tiles sit like the city: zones A, B and C on the top row, D, E and "
+                              "F below. A flagged tile names the stage of the call that causes most "
+                              "of the delay.")))
 
     @render.ui
     def issues():
@@ -215,50 +284,96 @@ def overview_server(input, output, session, ctx):
             return None
         bad = qc.data_issues(st)
         if not len(bad):
-            return _note("Data quality: every call in this period passed the checks.")
+            return None
         rows = [_row("amber", [r.call_id, tag(f"Zone {r.zone}")], r.issue)
                 for r in bad.head(20).itertuples()]
         return _card("Data quality", f"{len(bad)} call(s) left out of the statistics",
                      ui.div(*rows, class_="rw-rows"),
-                     _note("Calls with missing or out-of-order times, duplicate IDs, a zero response "
-                           "time or an unknown zone or priority are listed here and never counted."))
+                     _more(_p("These records have a missing or out-of-order time, a duplicate ID, a "
+                              "zero response time, or an unknown zone or priority. They are never "
+                              "counted, so one bad record cannot distort a chart.")))
 
 
 # ---- Charts: what is happening, and why? ---------------------------------------------------------------------
 
 @module.ui
 def charts_ui():
+    bar = ui.div(
+        ui.input_radio_buttons("view", "Chart", VIEWS, selected="xbar", inline=True),
+        ui.input_select("zone", "Zone", ZONE_CHOICES, selected="D", width="130px"),
+        ui.input_date("c_as_of", "As of", value="2026-10-12", width="150px"),
+        ui.input_select("period", "Chart period", PERIODS, selected="28", width="150px"),
+        ui.input_select("jump", "Jump", JUMPS, selected="", width="200px"),
+        class_="rw-chartbar")
     return ui.div(
         ui.div(ui.div(eyebrow("Charts"), ui.h2("What is happening, and why?", class_="rw-page-title")),
-               ui.input_select("zone", None, ZONE_CHOICES, selected="D", width="160px"),
                class_="rw-page-head"),
-        _card("Control chart", "Daily average and spread (X-bar and S)",
-              ui.output_plot("daily", height="430px"), ui.output_ui("daily_note")),
-        _card("Control chart", "Every call (I-MR, log scale)",
-              ui.output_plot("imr", height="430px"), ui.output_ui("imr_note")),
+        ui.div(bar, class_="rw-card"),
+        ui.panel_conditional(
+            "input.view === 'xbar'",
+            _card("Control chart", "Daily average and spread (X̄-S)",
+                  ui.output_plot("daily", height="430px"), ui.output_ui("daily_more"))),
+        ui.panel_conditional(
+            "input.view === 'imr'",
+            _card("Control chart", "Every call (I-MR, log scale)",
+                  ui.output_plot("imr", height="430px"), ui.output_ui("imr_more"))),
         ui.div(
             _card("Stage breakdown", "Which stage causes the delays",
-                  ui.output_plot("share", height="300px"),
-                  _note("Each bar splits a zone's minutes over target into processing, turnout and "
-                        "travel. Stage targets: processing 64 s, turnout 60 s, travel = response "
-                        "target minus 60 s.")),
+                  ui.output_plot("share", height="300px"), ui.output_ui("share_more")),
             _card("Stage breakdown", "Median minutes in each stage",
                   ui.output_plot("medians", height="300px")),
             class_="rw-two"),
         ui.div(
             _card("Capability", "Can each zone meet the target?", ui.output_ui("capability")),
-            _card("Tests", "Are the differences real?", ui.output_ui("tests"),
-                  ui.output_plot("normal", height="260px")),
+            _card("Tests", "Do the zones really differ?", ui.output_ui("tests")),
             class_="rw-two"))
 
 
 @module.server
 def charts_server(input, output, session, ctx):
 
+    # -- keep the chart bar's as-of date and the settings card's in step ------------------------------
+    @reactive.effect
+    def _follow_settings():
+        when, rng = ctx.as_of(), ctx.date_range()
+        if when is None or rng is None:
+            return
+        with reactive.isolate():
+            mine = input.c_as_of()
+        ui.update_date("c_as_of", value=when.date() if str(mine) != str(when.date()) else None,
+                       min=rng[0], max=rng[1])
+
+    @reactive.effect
+    @reactive.event(input.c_as_of, ignore_init=True)
+    def _push_to_settings():
+        if input.c_as_of() and ctx.as_of() is not None and str(input.c_as_of()) != str(ctx.as_of().date()):
+            ctx.set_as_of(input.c_as_of())
+
+    @reactive.effect
+    @reactive.event(input.jump, ignore_init=True)
+    def _jump():
+        choice = input.jump()
+        if not choice:
+            return
+        rng = ctx.date_range()
+        if choice == "before":
+            ctx.set_as_of(DEMO_BEFORE_FIX)
+        elif choice == "latest" and rng is not None:
+            ctx.set_as_of(rng[1])
+        ui.update_select("jump", selected="")
+
+    def period_days():
+        return int(input.period())
+
     @reactive.calc
     def period():
         st = ctx.upto()
-        return None if st is None else qc.last_days(st, ctx.period_days())
+        return None if st is None else qc.last_days(st, period_days())
+
+    @reactive.calc
+    def period_start():
+        p = period()
+        return None if p is None or not len(p) else p["date"].min()
 
     @reactive.calc
     def daily_calc():
@@ -266,8 +381,8 @@ def charts_server(input, output, session, ctx):
         if st is None:
             return None
         chart = qc.daily_xbar_s(st, input.zone(), ctx.priority(), ctx.base_days(), ctx.base_start())
-        start = qc.last_days(st, ctx.period_days())["date"].min()
-        out = chart[chart["date"] >= start].copy() if len(chart) else chart
+        start = period_start()
+        out = chart[chart["date"] >= start].copy() if len(chart) and start is not None else chart
         out.attrs.update(chart.attrs)
         return out
 
@@ -280,26 +395,51 @@ def charts_server(input, output, session, ctx):
         when = [pd.Timestamp(d) for d in acts[acts["zone"] == input.zone()]["date"]]
         return charts.daily_chart(chart, input.zone(), action_dates=when)
 
-
     @render.ui
-    def daily_note():
+    def daily_more():
         chart = daily_calc()
+        z = input.zone()
         if chart is None or not len(chart):
             return None
-        flagged = chart[chart["alarm"]]
-        parts = []
-        if len(flagged):
-            names = sorted({f[:-1] for fired in flagged["rules"] for f in fired if f.endswith("+")})
-            parts.append(f"{len(flagged)} flagged day(s): " +
-                         "; ".join(f"rule {r[1]}: {qc.RULE_TEXT[r]}" for r in names) + ".")
+        slow, fast = chart[chart["alarm"]], chart[chart["check"]]
+        if len(slow):
+            names = sorted({f[:-1] for fired in slow["rules"] for f in fired if f.endswith("+")})
+            says = (f"On {len(slow)} day(s), starting {slow['date'].min():%b %d}, Zone {z} was slower "
+                    f"than its normal range ({'; '.join(qc.RULE_TEXT[r] for r in names)}). That is too "
+                    "much to be bad luck: something changed in how this zone works. The stage "
+                    "breakdown below shows which part of the call got slower.")
         else:
-            parts.append("No flagged days in this period: the zone is behaving like its baseline.")
+            says = (f"Zone {z} stayed inside its normal range every day of this period: the ups and "
+                    "downs are just normal day-to-day variation, and nothing needs fixing.")
+        if len(fast):
+            says += (f" On {len(fast)} day(s) it was unusually fast (hollow amber circles): check "
+                     "those records before trusting them.")
         if chart.attrs.get("baseline_note"):
-            parts.append("Note: " + chart.attrs["baseline_note"] + ".")
-        parts.append("How to read it: a red dot is a day when this zone was slower than its own normal "
-                     "range. Limits widen on quiet days with few calls. The green line marks a logged "
-                     "action.")
-        return _note(" ".join(parts))
+            says += " Note: " + chart.attrs["baseline_note"] + "."
+        center = chart["x_center_min"].iloc[0]
+        lo, hi = chart["x_lcl_min"].iloc[0], chart["x_ucl_min"].iloc[0]
+        return _more(_p(says), _faq([
+            ("What is each dot?",
+             "One day: the typical (geometric average) response time of that day's calls."),
+            ("What is the center line (the mean)?",
+             f"Zone {z}'s normal level: the average of its daily dots during the baseline days, "
+             f"about {center:.1f} min."),
+            ("What are the dashed lines?",
+             f"The normal range, about {lo:.1f} to {hi:.1f} min. It comes from how much the "
+             "baseline days moved from one day to the next (3 standard deviations each side), so "
+             "almost every normal day falls inside. The lines stay fixed, so every day is judged "
+             "the same way."),
+            ("What does a red dot mean?",
+             "That day broke a rule: it was beyond the dashed line, or part of a run such as "
+             "8 days in a row above the center. A real change is likely. Investigate it."),
+            ("What is the bottom panel?",
+             "How spread out each day's calls were. A jump means some calls that day were much "
+             "slower than others."),
+            ("Why isn't the 9-minute target on this chart?",
+             "This chart asks whether the zone changed. The target is about single calls, so "
+             "it is on the I-MR chart."),
+            ("What is the green line?", "A logged action (a fix). Days after it should come down."),
+        ]))
 
     @reactive.calc
     def imr_calc():
@@ -307,8 +447,8 @@ def charts_server(input, output, session, ctx):
         if st is None:
             return None
         imr = qc.imr_chart(st, input.zone(), ctx.priority(), ctx.base_days(), ctx.base_start())
-        start = qc.last_days(st, ctx.period_days())["date"].min()
-        out = imr[imr["date"] >= start].reset_index(drop=True) if len(imr) else imr
+        start = period_start()
+        out = imr[imr["date"] >= start].reset_index(drop=True) if len(imr) and start is not None else imr
         out.attrs.update(imr.attrs)
         return out
 
@@ -320,16 +460,29 @@ def charts_server(input, output, session, ctx):
         return charts.imr_chart(data, input.zone(), ctx.target_min())
 
     @render.ui
-    def imr_note():
+    def imr_more():
         data = imr_calc()
         if data is None or not len(data):
             return None
         n = int(data["beyond"].sum())
         late = int((data["response_min"] > ctx.target_min()).sum())
-        return _note(f"{len(data)} calls. {n} beyond the upper control limit (extreme delays, "
-                     f"special causes worth investigating one by one); {late} over the "
-                     f"{ctx.target_min():.0f}-min target. The amber target line is a spec limit, "
-                     "set by the standard; the dashed control limits come from the process itself.")
+        says = (f"{len(data)} calls in this period. {n} were extreme delays (red dots, above the upper "
+                f"dashed line): each is worth looking at one by one. {late} calls took longer than the "
+                f"{ctx.target_min():.0f}-min target.")
+        return _more(_p(says), _faq([
+            ("What is each dot?", "One call, in the order the calls came in."),
+            ("What are the dashed lines?",
+             "The normal range for a single call, from the baseline calls. A call above the top "
+             "line is an extreme delay with a special cause (a breakdown, a wrong address...)."),
+            ("What is the amber line?",
+             f"The {ctx.target_min():.0f}-min target from the standard. It is a requirement, not "
+             "something the process decides. Calls above it missed the target."),
+            ("Why a log scale?",
+             "Response times have a long slow tail. The log scale makes the normal range fair "
+             "on both sides."),
+            ("What is the bottom panel?",
+             "The jump between one call and the next. A huge jump points to one unusual call."),
+        ]))
 
     @reactive.calc
     def breakdown():
@@ -347,34 +500,68 @@ def charts_server(input, output, session, ctx):
         return charts.empty(ctx.why()) if bd is None else charts.stage_breakdown(bd)
 
     @render.ui
+    def share_more():
+        bd = breakdown()
+        if bd is None or not len(bd):
+            return None
+        row = bd.set_index("zone").loc[input.zone()]
+        shares = {s: row[f"{s}_share"] for s in qc.STAGES}
+        top = max(shares, key=shares.get)
+        if row[f"{top}_excess_min"] > 0:
+            says = (f"In Zone {input.zone()}, {shares[top]:.0%} of the minutes over target come from "
+                    f"{STAGE_PLAIN[top]} ({STAGE_WORD[top].lower()}). That is where a fix would help most.")
+        else:
+            says = f"In Zone {input.zone()}, no stage is over its target in this period."
+        start = period_start()
+        span = f"{start:%b %d} to {ctx.as_of():%b %d}" if start is not None else ""
+        return _more(_p(says), _faq([
+            ("What are the three stages?",
+             "Processing: the call comes in until the dispatcher sends an ambulance (target 64 s). "
+             "Turnout: the crew gets the ambulance moving (target 60 s). Travel: the drive to the "
+             "scene (target = the response target minus 60 s)."),
+            ("What does a bar show?",
+             "Each zone's minutes over target, split by stage, so you can see which stage to fix."),
+            ("Which days are counted?", f"The chart period: {span}, priority {ctx.priority()}."),
+        ]))
+
+    @render.ui
     def capability():
         st = ctx.upto()
         if st is None:
             return _empty(ctx.why())
         cap = qc.zone_capability(st, ctx.priority(), ctx.targets(), ctx.base_days(), ctx.base_start(),
-                                 period_days=ctx.period_days())
-        head = ui.tags.tr(*[ui.tags.th(h) for h in ("Zone", "Ppk", "Cpk", "Expected on time",
-                                                     "Stable", "Shapiro p")])
-        trs = []
+                                 period_days=period_days())
+        rows, detail = [], []
         for r in cap.itertuples():
+            v = qc.capability_verdict(r, ctx.target_min())
+            tone = v["tone"] if v["tone"] in ("amber", "red") else None
+            rows.append(ui.div(ui.span(f"Zone {r.zone}", class_="rw-row-title"),
+                               ui.span(chip(v["label"], v["tone"] if v["tone"] != "grey" else None)),
+                               ui.span(v["text"], class_="rw-row-sub"), class_="rw-verdict"))
             pct = qc.ppk_to_pct(r.ppk)
-            trs.append(ui.tags.tr(
-                ui.tags.td(f"Zone {r.zone}"),
-                ui.tags.td(_num(r.ppk, 2) if r.shown else "–"),
-                ui.tags.td(_num(r.cpk, 2) if r.shown else "–"),
-                ui.tags.td(_num(pct, 1, "%") if r.shown else r.message),
-                ui.tags.td("yes" if r.stable else tag("no", "red")),
-                ui.tags.td(_num(r.shapiro_p, 3))))
-        return ui.div(
-            ui.div(ui.tags.table(ui.tags.thead(head), ui.tags.tbody(*trs), class_="rw-table"),
-                   class_="rw-table-wrap"),
-            _note("Upper side only: the target is an upper spec limit. Computed on log minutes. "
-                  "Ppk uses the overall spread of all calls (sigma total); Cpk uses the spread within "
-                  "each day, averaged over days (sigma short). Expected on time = Φ(3 × Ppk): Ppk 0.43 means about 90% "
-                  "on time, 1.0 means 99.87%. Capability is only meaningful for a stable zone, so it "
-                  "is hidden when the zone's chart has flags. Shapiro p above 0.05 means the log "
-                  "times look normal; with hundreds of calls the test also flags small departures, "
-                  "so check the probability plot under Tests too."))
+            detail.append(ui.tags.tr(ui.tags.td(f"Zone {r.zone}"),
+                                     ui.tags.td(_num(r.ppk, 2) if r.shown else "–"),
+                                     ui.tags.td(_num(r.cpk, 2) if r.shown else "–"),
+                                     ui.tags.td(_num(pct, 1, "%") if r.shown else "–"),
+                                     ui.tags.td(_num(r.shapiro_p, 3))))
+        numbers = ui.div(ui.tags.table(
+            ui.tags.thead(ui.tags.tr(*[ui.tags.th(h) for h in ("Zone", "Ppk", "Cpk", "Expected on time",
+                                                              "Shapiro p")])),
+            ui.tags.tbody(*detail), class_="rw-table"), class_="rw-table-wrap")
+        return ui.div(ui.div(*rows), _more(
+            _p("The reading is based on how spread out each zone's response times are compared with "
+               "the target: the narrower the spread below the target, the more reliably calls arrive "
+               "on time."),
+            _faq([
+                ("What does 'Can't judge yet' mean?",
+                 "The zone's times changed during the period, so a single reliability score would "
+                 "mislead. Fix the cause first, then judge again."),
+                ("For the curious: the numbers",
+                 "Ppk uses the spread of all calls; Cpk uses the spread within each day. Both are on "
+                 "log minutes, upper side only. Expected on time = Φ(3 × Ppk): 0.43 means about 90%, "
+                 "1.0 means 99.87%. Shapiro p above 0.05 means the log times look normal enough."),
+            ]),
+            numbers))
 
     @render.ui
     def tests():
@@ -383,17 +570,35 @@ def charts_server(input, output, session, ctx):
             return _empty(ctx.why())
         a = qc.zone_anova(p, ctx.priority())
         if not a["ok"]:
-            return _note(f"ANOVA: {a['message']}.")
-        verdict = ("Zones really do differ (p < 0.05)." if a["p"] < 0.05
-                   else "No evidence that zones differ (p ≥ 0.05).")
-        means = ", ".join(f"{z} {math.exp(m):.1f}" for z, m in a["means"].items())
+            return ui.div(ui.div(f"Not enough data to compare zones: {a['message']}.", class_="rw-answer"))
+        means = {z: math.exp(m) for z, m in a["means"].items()}
+        slowest = max(means, key=means.get)
+        fastest = min(means, key=means.get)
+        if a["p"] < 0.05:
+            answer = (f"Yes. Zone {slowest} is typically {means[slowest]:.1f} min against "
+                      f"{means[fastest]:.1f} min in Zone {fastest}: differences this big are very "
+                      "unlikely to be chance.")
+        else:
+            answer = ("No clear difference: the gaps between zones are small enough to be "
+                      "ordinary chance.")
+        calls = p[p["valid"] & (p["priority"] == ctx.priority()) & (p["zone"] == input.zone())]
+        norm = qc.normality(np.log(calls["response_min"]))
         return ui.div(
-            ui.div(_kpi("F statistic", _num(a["F"], 2)),
-                   _kpi("p-value", f"{a['p']:.2g}"),
-                   _kpi("df", f"{a['df_between']}, {a['df_within']}"), class_="rw-kpis rw-kpis-3"),
-            _note(f"One-way ANOVA of log response time across zones. {verdict} "
-                  f"Typical (geometric mean) minutes: {means}. Below: is the chosen zone's log "
-                  "response time close to normal?"))
+            ui.div(answer, class_="rw-answer"),
+            _more(
+                _p("Typical time per zone (geometric mean, minutes): "
+                   + ", ".join(f"{z} {m:.1f}" for z, m in means.items()) + "."),
+                _faq([
+                    ("How do we know it's not chance?",
+                     f"A one-way ANOVA compares the zones on log response time: F = {a['F']:.2f} "
+                     f"(df {a['df_between']}, {a['df_within']}), p = {a['p']:.2g}. A p below 0.05 means "
+                     "differences this large would almost never happen by chance."),
+                    ("Is the method fair for this data?",
+                     f"It assumes log times are roughly normal. For Zone {input.zone()} the "
+                     f"Shapiro-Wilk p is {_num(norm['p'], 3)} (the plot below should be close to a "
+                     "straight line)."),
+                ]),
+                ui.output_plot("normal", height="240px")))
 
     @render.plot(alt="Normal probability plot of log response times for the chosen zone")
     def normal():
@@ -441,7 +646,7 @@ def actions_server(input, output, session, ctx):
             return None
         alerts = qc.slip_back(st, ctx.actions_upto(), ctx.priority())
         if not alerts:
-            return _note("Slip-back watch: no zone is drifting back after a logged action.")
+            return None
         rows = [_row("red", [f"Zone {a['zone']}", tag("Slipping back", "red")], a["text"])
                 for a in alerts]
         return _card("Control", "Slip-back alerts", ui.div(*rows, class_="rw-rows"))
@@ -476,9 +681,16 @@ def actions_server(input, output, session, ctx):
                 ui.div(button, class_="rw-row-actions"),
                 class_="rw-row", **{"data-sev": "green" if logged else "amber"}))
         return _card("Improve", "Suggestions from the data", ui.div(*rows, class_="rw-rows"),
-                     _note("Each suggestion comes from a fixed if-then rule shown with its evidence. "
-                           "The impact is a best-case estimate. Every suggestion is for review by "
-                           "qualified staff; the tool decides nothing on its own."),
+                     _more(_faq([
+                         ("Where do suggestions come from?",
+                          "Fixed if-then rules on the numbers, each shown with its evidence: for example "
+                          "'turnout causes most of a flagged zone's delay → review crew readiness'."),
+                         ("What is the estimate?",
+                          "A best case: what % on time would be if that stage were as fast as the city's "
+                          "typical call. Real results will be smaller."),
+                         ("Who decides?",
+                          "You do. The tool flags and suggests; qualified staff decide what to change."),
+                     ])),
                      right=ui.span(str(len(items)), class_="rw-count"))
 
     def _action_modal(zone, stage, description, date):
@@ -534,9 +746,15 @@ def actions_server(input, output, session, ctx):
         acts = ctx.actions()
         if not len(acts):
             return _empty("No actions logged yet.")
-        rows = [_row("green", [a.action_id, tag("Citywide" if a.zone == "All" else f"Zone {a.zone}"),
-                               tag(STAGE_WORD.get(a.stage, a.stage))],
-                     f"{a.date}: {a.description} ({a.owner})") for a in acts.itertuples()]
+        when = ctx.as_of()
+        rows = []
+        for a in acts.itertuples():
+            later = when is not None and pd.Timestamp(a.date) > when
+            rows.append(_row("grey" if later else "green",
+                             [a.action_id, tag("Citywide" if a.zone == "All" else f"Zone {a.zone}"),
+                              tag(STAGE_WORD.get(a.stage, a.stage)),
+                              tag("After the as-of date") if later else None],
+                             f"{a.date}: {a.description} ({a.owner})"))
         return ui.div(*rows, class_="rw-rows")
 
     @render.ui
@@ -546,7 +764,9 @@ def actions_server(input, output, session, ctx):
         if not len(zoned):
             return _empty("Log a zone action to check its result.")
         choices = {a.action_id: f"{a.action_id}: Zone {a.zone}, {a.date}" for a in zoned.itertuples()}
-        return ui.input_select("which", "Action", choices, selected=list(choices)[-1])
+        when = ctx.as_of()
+        done = [a.action_id for a in zoned.itertuples() if when is None or pd.Timestamp(a.date) <= when]
+        return ui.input_select("which", "Action", choices, selected=(done or list(choices))[-1])
 
     @reactive.calc
     def chosen():
@@ -577,16 +797,24 @@ def actions_server(input, output, session, ctx):
             _kpi("On time before", _num(b["pct_on_time"], 0, "%")),
             _kpi("On time after", _num(a["pct_on_time"], 0, "%")),
             class_="rw-kpis rw-kpis-4")
+        stable = ("The new level is steady: the zone's chart after the action shows no warning signs."
+                  if ba["in_control_after"] else
+                  "The zone's chart after the action still shows warning signs, or there are too few "
+                  "days yet.")
         if t["ok"]:
-            detail = (f"Welch's t-test, one-sided, on log response time: t = {t['t']:.2f}, "
-                      f"df = {t['df']:.0f}, p = {t['p_one_sided']:.2g} ({t['n_before']} calls in the "
-                      f"14 days before, {t['n_after']} after). ")
+            test = (f"Welch's t-test, one-sided, on log response time: t = {t['t']:.2f}, df = "
+                    f"{t['df']:.0f}, p = {t['p_one_sided']:.2g} ({t['n_before']} calls in the 14 days "
+                    f"before, {t['n_after']} after).")
         else:
-            detail = f"Test not run: {t['message']}. "
-        control = ("After the action the zone's chart, with its own new limits, shows no flags: "
-                   "the new level is stable." if ba["in_control_after"] else
-                   "After the action the zone's chart still shows flags or has too few days yet.")
-        return ui.div(verdict, tiles, _note(detail + control))
+            test = f"Test not run: {t['message']}."
+        return ui.div(verdict, tiles, _more(_p(stable), _faq([
+            ("How do we know it really improved?",
+             "We compare the 14 days before the action with the days after it. 'Improved' means "
+             "the drop is too large to be chance. " + test),
+            ("What does 'steady' mean?",
+             "After a fix the chart gets new limits from the days after the action. If no rule "
+             "fires, the zone has settled at its new, better level. This is the Control step."),
+        ])))
 
     @render.plot(alt="Daily chart of the zone before and after the action")
     def ba_chart():
@@ -608,6 +836,11 @@ TABS = (
 @module.ui
 def supervisor_ui():
     return ui.div(
+        ui.tags.style(STYLE),
+        # Shiny skips hidden plots; opening a "More info..." toggle makes it look again.
+        ui.tags.script("document.addEventListener('toggle', function (e) {"
+                       " if (e.target.tagName === 'DETAILS' && e.target.open)"
+                       " window.dispatchEvent(new Event('resize')); }, true);"),
         _settings_ui(),
         ui.navset_pill(*[ui.nav_panel(label, ui_fn(mod_id)) for label, mod_id, ui_fn, _ in TABS],
                        id="tabs"),
@@ -644,6 +877,14 @@ def supervisor_server(input, output, session):
         return None if df is None else qc.stage_times(df, targets())
 
     @reactive.calc
+    def date_range():
+        df, _ = raw()
+        if df is None:
+            return None
+        days = df["call_received"].dropna().dt.normalize()
+        return days.min().date(), days.max().date()
+
+    @reactive.calc
     def priority():
         return int(input.priority())
 
@@ -654,6 +895,10 @@ def supervisor_server(input, output, session):
     @reactive.calc
     def as_of():
         return pd.Timestamp(input.as_of()).normalize() if input.as_of() else None
+
+    def set_as_of(value):
+        """Move the shared as-of date (used by the Charts tab's own date and jump menu)."""
+        ui.update_date("as_of", value=value, session=session)
 
     @reactive.calc
     def upto():
@@ -667,10 +912,6 @@ def supervisor_server(input, output, session):
     @reactive.calc
     def base_days():
         return int(_pos(input.base_days(), 14))
-
-    @reactive.calc
-    def period_days():
-        return int(input.period())
 
     actions = reactive.Value(_load_actions("demo"))
 
@@ -693,29 +934,16 @@ def supervisor_server(input, output, session):
     @reactive.event(input.dataset)
     def _dataset_changed():
         actions.set(_load_actions(input.dataset()))
-        df, _ = raw()
-        if df is None:
+        rng = date_range()
+        if rng is None:
             return
-        days = df["call_received"].dropna().dt.normalize()
-        first, last = days.min().date(), days.max().date()
+        first, last = rng
         ui.update_date("as_of", value=last, min=first, max=last)
         ui.update_date("base_start", value=first, min=first, max=last)
 
-    @reactive.effect
-    @reactive.event(input.jump_before)
-    def _jump_before():
-        ui.update_date("as_of", value=DEMO_BEFORE_FIX)
-
-    @reactive.effect
-    @reactive.event(input.jump_latest)
-    def _jump_latest():
-        df, _ = raw()
-        if df is not None:
-            ui.update_date("as_of", value=df["call_received"].max().date())
-
     ctx = SimpleNamespace(targets=targets, stages=stages, upto=upto, why=why, priority=priority,
-                          target_min=target_min, as_of=as_of, base_start=base_start,
-                          base_days=base_days, period_days=period_days, actions=actions,
-                          actions_upto=actions_upto, health=health)
+                          target_min=target_min, as_of=as_of, set_as_of=set_as_of,
+                          date_range=date_range, base_start=base_start, base_days=base_days,
+                          actions=actions, actions_upto=actions_upto, health=health)
     for _, mod_id, _, server_fn in TABS:
         server_fn(mod_id, ctx)

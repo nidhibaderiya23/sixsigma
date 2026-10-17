@@ -484,3 +484,50 @@ def test_dispatcher_tips_shift_rules():
     assert ("T4", "C") in got and "Reroute" in next(t["text"] for t in tips if t["rule"] == "T4")
     assert ("T5", "E") in got and ("T6", "All") in got
     assert not any(t["zone"] in "ABDF" and t["rule"] in ("T4", "T5") for t in tips)
+
+
+# ---- constant daily-chart limits (team decision, Oct 16, H-10) ------------------------------------
+
+def test_daily_limits_are_constant_and_come_from_baseline_daily_means():
+    rows = daily_calls("D", 21, 3, lambda d, k: 300 + WOBBLE[(d * 3 + k) % 10] + (250 if d >= 14 else 0))
+    st = qc.stage_times(make_calls(rows))
+    chart = qc.daily_xbar_s(st, "D", baseline_days=14)
+    assert chart["x_ucl"].nunique() == 1 and chart["x_lcl"].nunique() == 1      # constant
+    base_means = chart[chart["baseline"]]["mean_log"].to_numpy()
+    ref = qc.imr_limits(base_means)                     # center = mean, sigma = MR-bar / 1.128
+    assert chart["x_center"].iloc[0] == pytest.approx(ref["center"])
+    assert chart["x_ucl"].iloc[0] == pytest.approx(ref["ucl"])
+    assert chart.attrs["sigma_xbar"] == pytest.approx(ref["sigma"])
+    assert chart[~chart["baseline"]]["alarm"].all() and not chart[chart["baseline"]]["alarm"].any()
+
+
+def test_s_chart_limits_use_textbook_b4_for_n3():
+    # 3 calls a day -> n-bar = 3 -> B4 = 1 + 3 sqrt(1 - c4^2) / c4 = 2.568 (table value), B3 = 0
+    rows = daily_calls("D", 14, 3, lambda d, k: 300 + WOBBLE[(d * 3 + k) % 10])
+    chart = qc.daily_xbar_s(qc.stage_times(make_calls(rows)), "D")
+    assert chart.attrs["n_bar"] == 3
+    assert chart["s_ucl"].iloc[0] / chart["s_center"].iloc[0] == pytest.approx(2.568, abs=1e-3)
+    assert chart["s_lcl"].iloc[0] == 0.0 and chart["s_ucl"].nunique() == 1
+
+
+def test_capability_verdict_plain_language():
+    # Ppk 0.68 -> Phi(2.04) = 97.9% -> Reliable; 0.43 -> 90.2% -> Just meets; 0.3 -> 81.6% -> Below
+    assert qc.capability_verdict({"shown": True, "ppk": 0.68}, 9)["label"] == "Reliable"
+    assert qc.capability_verdict({"shown": True, "ppk": 0.43}, 9)["label"] == "Just meets the standard"
+    assert qc.capability_verdict({"shown": True, "ppk": 0.30}, 9)["tone"] == "red"
+    assert qc.capability_verdict({"shown": True, "ppk": 1.2}, 9)["label"] == "Very reliable"
+    assert "about 98 in 100" in qc.capability_verdict({"shown": True, "ppk": 0.68}, 9)["text"].lower()
+    unstable = {"shown": False, "message": "not stable: capability is not meaningful", "n": 200}
+    assert qc.capability_verdict(unstable, 9)["label"] == "Can't judge yet"
+    few = {"shown": False, "message": "too few calls for capability (n = 7; need 30)", "n": 7}
+    assert "Only 7 calls" in qc.capability_verdict(few, 9)["text"]
+
+
+def test_route_tip_needs_two_late_calls_to_name_a_cause():
+    rows = [{"zone": z, "received": f"2026-09-20 1{k}:00", "call_id": f"{z}{k}",
+             "travel": (520 if (z == "F" and k == 0) else 400 if z == "F" else 300),
+             "delay_reason": "traffic_or_road_closure" if (z == "F" and k == 0) else ""}
+            for z in "ABCDEF" for k in range(4)]
+    window = qc.shift_calls(qc.stage_times(make_calls(rows)), "2026-09-20 15:30")
+    t4 = [t for t in qc.dispatcher_tips(window, None, [], "2026-09-20 15:30") if t["rule"] == "T4"]
+    assert t4 and t4[0]["zone"] == "F" and "check the route" in t4[0]["text"]   # 1 late call: no cause named

@@ -45,9 +45,36 @@
     });
   }
 
+  // A scrolling list (.rw-scroll[data-rw-key]) keeps its scroll position when the server
+  // redraws it, so a reader halfway down the list is not thrown back to the top.
+  function keepScroll() {
+    window.jQuery(document).on("shiny:value", function (e) {
+      var host = e.target;
+      if (!host || !host.querySelectorAll) return;
+      var saved = {}, any = false;
+      host.querySelectorAll(".rw-scroll[data-rw-key]").forEach(function (el) {
+        saved[el.getAttribute("data-rw-key")] = el.scrollTop;
+        any = true;
+      });
+      if (!any) return;
+      var done = false;
+      var observer = new MutationObserver(function () {
+        host.querySelectorAll(".rw-scroll[data-rw-key]").forEach(function (el) {
+          var top = saved[el.getAttribute("data-rw-key")];
+          if (top) el.scrollTop = top;
+          done = true;
+        });
+        if (done) observer.disconnect();
+      });
+      observer.observe(host, { childList: true, subtree: true });
+      setTimeout(function () { observer.disconnect(); }, 3000);
+    });
+  }
+
   function register() {
-    if (window.Shiny && Shiny.addCustomMessageHandler) {
+    if (window.Shiny && Shiny.addCustomMessageHandler && window.jQuery) {
       Shiny.addCustomMessageHandler("rw_clock", function (msg) { paint(msg.now); });
+      keepScroll();
     } else {
       setTimeout(register, 50);
     }

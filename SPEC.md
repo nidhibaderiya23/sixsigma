@@ -72,18 +72,26 @@ Say the method in words before any code exists. Load the `stats-first-steering` 
   3. **I-MR chart** (individuals and moving range) per zone, on each call's **log** response time in
      call order. Center = mean of the logs; σ_short = MR̄ / 1.128 (d₂ for pairs); limits = center ± 3σ_short.
      Moving-range upper limit = 3.267 × MR̄ (D₄), lower = 0. Limits are shown back in minutes.
-  4. **Daily zone X̄-S chart** (average and standard deviation; the course's recommended pair). A
-     subgroup = one zone-day's calls, as log response times. x̄̄ = mean of the daily means;
-     σ_short = √(mean of the daily variances), the course formula. X̄ limits = x̄̄ ± 3σ_short/√nᵢ, so
-     limits widen on quiet days with few calls. S chart: center c₄(nᵢ)σ_short, limits
-     (c₄ ± 3√(1 - c₄²))σ_short, lower limit never below 0. Limits come from a baseline (default: the
-     first 14 days), not from the whole series.
+  4. **Daily zone X̄-S chart** (average and standard deviation; the course's recommended pair), with
+     **constant limits** (the team chose this on Oct 16). A subgroup = one zone-day's calls, as log
+     response times.
+     - X̄ chart: the center x̄̄ = the mean of the baseline days' daily means. σ_x̄ = MR̄/1.128 of
+       those daily means (consecutive baseline days). The limits x̄̄ ± 3σ_x̄ are the same for every day.
+     - S chart: the center s̄ = the mean of the baseline daily standard deviations. The limits are
+       B₄s̄ and B₃s̄ (lower ≥ 0), with B₃/B₄ = 1 ∓ 3√(1 - c₄²)/c₄ for n̄ = the average calls per
+       baseline day. For n̄ = 3, B₄ = 2.568 (the table value).
+     - Limits come from the baseline (default: the first 14 days), not from the days being judged.
+       Measured on the demo city, limits taken from the chart period itself hid Zone D's problem
+       (0 flagged days instead of 11).
+     - σ_short = √(mean of the daily variances) (the course formula) is still used for Cpk and for
+       the zones-as-subgroups chart.
   5. **Flag rules** on the daily X̄ points. A point on the slow side is an alarm; a point on the fast side
      only says "check the data". Rules: (1) 1 point beyond 3σ; (2) 2 of 3 beyond 2σ, same side; (3) 4 of
      5 beyond 1σ; (4) 8 in a row above the center line; (5) 6 in a row rising. Rules 1-4 are the
      Western Electric rules. Also: rule 1 on single calls in the I chart (an extreme delay), and a spec
      flag when a zone's rolling 7-day 90th percentile is over target.
-  6. **Capability**, upper side only (the target is an upper spec limit), on log times:
+  6. **Capability** (shown to the supervisor as a plain-language verdict such as "Reliable: about 98
+     in 100 calls within 9 min"; the numbers sit behind More info), upper side only (the target is an upper spec limit), on log times:
      Ppk = (ln USL - mean of ln x) / (3 × sd of ln x) using σ_total, and Cpk the same with σ_short.
      For Cpk, σ_short = √(mean of the daily variances) in the period. Capability is shown only when
      that zone's daily X̄-S chart has no slow-side flag in the period. Otherwise the tool says
@@ -181,12 +189,17 @@ Fixed for every team:
       chart signal and the 90th percentile is over target; amber means one of the two; green means
       neither (the team chose this stricter rule on Oct 16 to cut chance alarms). Then KPI tiles
       (average next to the 90th and 95th percentiles, and % on time); a history tile map.
-    - **Charts:** the I-MR and daily X̄-S charts with flagged points in red, the stage breakdown, and
-      capability with the tests.
+    - **Charts:** a control bar (a toggle between the X̄-S and I-MR charts, zone, as-of date kept in sync
+      with Settings, chart period, one "Jump to" menu). Then one chart at a time with flagged points in
+      red, the stage breakdown, capability as plain-language verdicts, and a plain answer to "do the
+      zones really differ?".
+    - Every explanation for a supervisor who is new to Six Sigma sits behind a "More info…" toggle
+      with short questions and answers. The F statistic, p-values, Ppk/Cpk numbers and the normal plot
+      are only in there.
     - **Actions:** suggestions with evidence and impact, an action log, a before/after check, and
       slip-back alerts.
-  - How to read the daily chart: "a red dot above the dashed line is a day when this zone was slower
-    than its own normal range. Open the stage breakdown to see which stage caused it."
+  - How to read the daily chart (in its More info): "a red dot is a day when this zone was slower than
+    its own normal range. Open the stage breakdown to see which stage caused it."
 
 ## 7. Test datasets and codebook (rubric: demo 10, datasets 5, codebook 5)
 2-3 small CSVs in `data/`, invented but shaped like real field data, each showing one behavior.

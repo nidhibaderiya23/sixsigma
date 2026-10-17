@@ -11,6 +11,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.dates as mdates  # noqa: E402
 import math  # noqa: E402
 
 import numpy as np  # noqa: E402
@@ -92,7 +93,7 @@ def daily_chart(chart, zone: str, action_dates=()):
         for ax in (ax1, ax2):
             ax.axvline(when, color=GREEN, linewidth=1.2)
         ax1.text(when, ax1.get_ylim()[1], " action", color=GREEN, fontsize=8, va="top")
-    _style(ax1, f"Zone {zone}: daily average response (geometric mean of the day's calls)",
+    _style(ax1, f"Zone {zone}: daily average response, limits from the baseline days",
            "minutes")
     _legend(ax1)
     s = chart.dropna(subset=["sd_log"])
@@ -102,6 +103,8 @@ def daily_chart(chart, zone: str, action_dates=()):
     sf = s[s["s_flag"]]
     ax2.scatter(sf["date"], sf["sd_log"], color=RED, s=30, zorder=5)
     _style(ax2, "Daily spread (standard deviation of log minutes)", "sd of ln(min)")
+    ax2.xaxis.set_major_locator(mdates.DayLocator(interval=5))     # a date label every 5 days
+    ax2.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
     fig.autofmt_xdate()
     fig.tight_layout()
     return fig
@@ -249,6 +252,10 @@ def zone_box_chart(sub, priority: int, target_min: float):
     ax.set_xlim(-0.6, len(zones) - 0.4)
     _style(ax, f"Priority {priority}: each zone's calls against the city's control limits",
            "minutes (log scale)")
-    _legend(ax)
+    ax.set_title(ax.get_title(loc="left"), color=FG, fontsize=11, loc="left", pad=36)
+    leg = ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), fontsize=8, frameon=False, ncol=3,
+                    borderaxespad=0.2, handlelength=1.6, columnspacing=1.2)
+    for text in leg.get_texts():
+        text.set_color(MUTED)
     fig.tight_layout()
     return fig

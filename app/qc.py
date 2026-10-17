@@ -415,46 +415,75 @@ def _baseline_window(stages: pd.DataFrame, baseline_days: int, baseline_start=No
 
 def daily_xbar_s(stages: pd.DataFrame, zone: str, priority: int = 1,
                  baseline_days: int = 14, baseline_start=None) -> pd.DataFrame:
-    """One row per day for a zone: the X-bar and S chart of log response minutes.
+    """One row per day for a zone: the X-bar and S chart of log response minutes,
+    with CONSTANT limits (the team's decision, Oct 16).
 
-    Limits come from the baseline days [baseline_start, + baseline_days), by
-    default the first 14 days of the data, and are applied to every day.
+    X-bar chart: each day's point is the mean of that day's log minutes. The
+    center line and limits come from the BASELINE days' daily means, treated as
+    individual values: center = mean of the baseline daily means; sigma_xbar =
+    MR-bar / 1.128 over consecutive baseline days; limits = center +/- 3
+    sigma_xbar, the same for every day. Using the variation between daily means
+    keeps the limits constant although days have different numbers of calls,
+    and counts ordinary day-to-day swings as normal. The baseline is
+    [baseline_start, + baseline_days), by default the first 14 days.
+    S chart: center s-bar = mean of the baseline daily standard deviations
+    (days with 2+ calls); limits B4 s-bar and B3 s-bar (lower >= 0), with
+    B3/B4 = 1 -/+ 3 sqrt(1 - c4^2) / c4 for n-bar = average calls per baseline day.
     Columns: date, n, mean_log, sd_log, x_center/x_ucl/x_lcl (log minutes) and
     the same back in minutes (_min, a geometric mean), s_center/s_ucl/s_lcl,
     s_flag, z, rules (list of rule ids), alarm (any slow-side rule), check (a
     fast-side rule only), baseline (the day is in the baseline).
-    attrs: xbbar, sigma_short, message.
+    attrs: xbbar (the center), sigma_xbar, mr_bar, sigma_short (the baseline's
+    within-day sigma, for reference; zone_capability computes its own), s_bar, n_bar,
+    message, baseline_note.
     """
     calls = _calls(stages, zone, priority)
     start, end = _baseline_window(stages, baseline_days, baseline_start)
     days = sorted(calls["date"].dropna().unique())
     groups = [np.log(calls.loc[calls["date"] == d, "response_min"].to_numpy()) for d in days]
-    base = [g for d, g in zip(days, groups) if start <= d < end]
-    params = xbar_s_limits(base)
+    means = [float(g.mean()) for g in groups]
+    sds = [float(g.std(ddof=1)) if g.size >= 2 else None for g in groups]
+    in_base = [bool(start <= d < end) for d in days]
     cols = ["date", "n", "mean_log", "sd_log", "x_center", "x_ucl", "x_lcl",
             "x_center_min", "x_ucl_min", "x_lcl_min", "s_center", "s_ucl", "s_lcl",
             "s_flag", "z", "rules", "alarm", "check", "baseline"]
-    if not params["ok"]:
+    lim = imr_limits([m for m, b in zip(means, in_base) if b])
+    if not lim["ok"]:
         out = pd.DataFrame(columns=cols)
-        out.attrs.update(xbbar=None, sigma_short=None,
-                         message="baseline: " + params["message"])
+        out.attrs.update(xbbar=None, sigma_xbar=None, mr_bar=None, sigma_short=None,
+                         s_bar=None, n_bar=None, message="baseline: " + lim["message"],
+                         baseline_note="")
         return out
-    lim = xbar_s_limits(groups, xbbar=params["xbbar"], sigma_short=params["sigma_short"])
-    rules = flag_rules([r["z"] for r in lim["subgroups"]],
-                       trend=[r["mean"] for r in lim["subgroups"]])
+    center, sig = lim["center"], lim["sigma"]
+    ucl, lcl = center + 3 * sig, center - 3 * sig
+    z = [(m - center) / sig for m in means]
+    rules = flag_rules(z, trend=means)
+
+    base_sds = [s for s, b in zip(sds, in_base) if b and s is not None]
+    base_ns = [g.size for g, b in zip(groups, in_base) if b]
+    s_bar = float(np.mean(base_sds)) if base_sds else None
+    n_bar = max(2, int(round(float(np.mean(base_ns))))) if base_ns else None
+    s_center = s_ucl = s_lcl = None
+    if s_bar is not None:
+        k = c4(n_bar)
+        w = 3 * math.sqrt(1 - k * k) / k
+        s_center, s_ucl, s_lcl = s_bar, (1 + w) * s_bar, max(0.0, (1 - w) * s_bar)
+    base_var = [g.var(ddof=1) for g, b in zip(groups, in_base) if b and g.size >= 2]
+    sigma_short = float(math.sqrt(np.mean(base_var))) if base_var else None
+
     rows = []
-    for d, r, fired in zip(days, lim["subgroups"], rules):
-        s_flag = r["sd"] is not None and r["sd"] > r["s_ucl"]
+    for d, g, m, sd, zz, fired, b in zip(days, groups, means, sds, z, rules, in_base):
         rows.append({
-            "date": d, "n": r["n"], "mean_log": r["mean"], "sd_log": r["sd"],
-            "x_center": lim["xbbar"], "x_ucl": r["x_ucl"], "x_lcl": r["x_lcl"],
-            "x_center_min": math.exp(lim["xbbar"]), "x_ucl_min": math.exp(r["x_ucl"]),
-            "x_lcl_min": math.exp(r["x_lcl"]),
-            "s_center": r["s_center"], "s_ucl": r["s_ucl"], "s_lcl": r["s_lcl"],
-            "s_flag": bool(s_flag), "z": r["z"], "rules": fired,
+            "date": d, "n": int(g.size), "mean_log": m, "sd_log": sd,
+            "x_center": center, "x_ucl": ucl, "x_lcl": lcl,
+            "x_center_min": math.exp(center), "x_ucl_min": math.exp(ucl),
+            "x_lcl_min": math.exp(lcl),
+            "s_center": s_center, "s_ucl": s_ucl, "s_lcl": s_lcl,
+            "s_flag": bool(sd is not None and s_ucl is not None and sd > s_ucl),
+            "z": zz, "rules": fired,
             "alarm": any(f.endswith("+") for f in fired),
             "check": bool(fired) and not any(f.endswith("+") for f in fired),
-            "baseline": bool(start <= d < end),
+            "baseline": b,
         })
     out = pd.DataFrame(rows, columns=cols)
     flagged_base = int((out["baseline"] & out["alarm"]).sum())
@@ -462,7 +491,8 @@ def daily_xbar_s(stages: pd.DataFrame, zone: str, priority: int = 1,
             if flagged_base else "")
     if out["baseline"].all():
         note = "all the data is baseline: limits come from the same days being judged"
-    out.attrs.update(xbbar=lim["xbbar"], sigma_short=lim["sigma_short"], message="",
+    out.attrs.update(xbbar=center, sigma_xbar=sig, mr_bar=lim["mr_bar"],
+                     sigma_short=sigma_short, s_bar=s_bar, n_bar=n_bar, message="",
                      baseline_note=note)
     return out
 
@@ -540,6 +570,44 @@ def ppk_to_pct(ppk: float | None) -> float | None:
         return None
     from statistics import NormalDist
     return NormalDist().cdf(3 * ppk) * 100.0
+
+
+def capability_verdict(row, target_min: float) -> dict:
+    """A plain-language reading of one zone_capability() row, for non-experts.
+
+    Uses the expected share of calls on time, Phi(3 * Ppk), against the 90%
+    standard: >= 99% "Very reliable", >= 95% "Reliable", >= 90% "Just meets the
+    standard", below 90% "Below the standard". A zone that is not stable, or has
+    too few calls, gets "Can't judge yet" / "Not enough calls" instead of a score.
+    Returns {"label", "tone" (green/amber/red/grey), "text"}.
+    """
+    get = row.get if isinstance(row, dict) else (lambda k, d=None: getattr(row, k, d))
+    if not get("shown"):
+        msg = get("message") or ""
+        if msg.startswith("too few calls"):
+            return {"label": "Not enough calls", "tone": "grey",
+                    "text": f"Only {get('n')} calls in this period: at least 30 are needed to judge."}
+        if msg.startswith("not stable"):
+            return {"label": "Can't judge yet", "tone": "amber",
+                    "text": "This zone's times changed during the period (see its control chart), "
+                            "so a reliability score would mislead. Fix the cause first."}
+        return {"label": "Can't judge", "tone": "grey", "text": msg or "No data."}
+    pct = ppk_to_pct(get("ppk"))
+    per100 = f"about {min(pct, 99.9):.0f} in 100" if pct < 99.5 else "almost every one of 100"
+    if pct >= 99:
+        return {"label": "Very reliable", "tone": "green",
+                "text": f"{per100.capitalize()} calls should arrive within {target_min:.0f} min."}
+    if pct >= 95:
+        return {"label": "Reliable", "tone": "green",
+                "text": f"{per100.capitalize()} calls should arrive within {target_min:.0f} min, "
+                        "comfortably above the 90% standard."}
+    if pct >= 90:
+        return {"label": "Just meets the standard", "tone": "amber",
+                "text": f"{per100.capitalize()} calls should arrive within {target_min:.0f} min: "
+                        "it meets the 90% standard with little room to spare."}
+    return {"label": "Below the standard", "tone": "red",
+            "text": f"Only {per100} calls should arrive within {target_min:.0f} min, below the "
+                    "90% standard. Look at the stage breakdown for the cause."}
 
 
 def normality(values) -> dict:
@@ -1073,7 +1141,8 @@ def dispatcher_tips(window: pd.DataFrame, board_calls: pd.DataFrame | None, flee
          to stand by (redistribute availability)
       T3 an ambulance is out of service -> ask a neighbour zone to cover
       T4 a zone's median travel this window >= 1.25 x the city's (3+ calls) ->
-         reroute (road works / traffic) or post a unit (calls from other zones)
+         reroute (road works / traffic) or post a unit (calls from other zones);
+         a cause is named only when 2+ late calls share that reason
       T5 a zone's median turnout this window is over the turnout target (3+ calls)
          -> alert that station's crews
       T6 the city's 90th percentile of processing is over target (5+ calls) ->
@@ -1132,7 +1201,7 @@ def dispatcher_tips(window: pd.DataFrame, board_calls: pd.DataFrame | None, flee
             if city_travel > 0 and travel >= 1.25 * city_travel:
                 late = zc[zc["late"] | zc["travel_late"]]
                 codes = late["delay_reason"][late["delay_reason"] != ""].value_counts()
-                cause = codes.index[0] if len(codes) else ""
+                cause = codes.index[0] if len(codes) and codes.iloc[0] >= 2 else ""   # 2+ calls to name a cause
                 if cause == "traffic_or_road_closure":
                     text = f"Reroute ambulances heading into Zone {z} around the traffic or road works."
                 elif cause == "unit_from_another_zone":

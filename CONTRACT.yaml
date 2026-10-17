@@ -177,3 +177,24 @@ tasks:
       the simulated clock and shows 3 charts and tips, no horizontal scroll at
       375 px.
     result: "70 pytest tests pass (incl. shift_window, shift_calls, zone_subgroup_chart, dispatcher_tips); browser-checked: banner gone, header sim controls, Reset to 0 0 0 0 / 12 free, manual 60x clock, Resolved merged, no alerts, History follows the sim clock with tips and 3 priority box-plot charts, no horizontal scroll at 375 px."
+
+  - id: H-10
+    title: Second round of team feedback (dispatcher + supervisor), Oct 16
+    points: "protects H-04/H-05/H-07: clearer screens for non-experts, valid constant control limits"
+    status: done
+    owner: "Claude (agent) + Claude helper (UI) + Nidhi Baderiya"
+    started_at: "2026-10-16 22:47"
+    owns: ["app/", "tests/", "SPEC.md", "README.md", "app/README.md", "demo/README.md"]
+    notes: >
+      Dispatcher: numbered process steps, ambulances in status columns,
+      scrolling Resolved list, History chart with a priority dropdown next to
+      condensed suggestions. Supervisor: constant X-bar/S limits from the
+      baseline days' daily means (team chose baseline over chart period after
+      seeing that period limits hid Zone D), 5-day date labels, no instruction
+      text, a Charts control bar (toggle, zone, synced as-of, period, jump),
+      More info toggles with plain-language Q&A, plain answers instead of F/p,
+      plain capability verdicts (qc.capability_verdict).
+    definition_of_done: >
+      pytest tests passes, the browser checks of every item pass, and the
+      README, app/README and demo/README describe the new screens.
+    result: "74 pytest tests pass (incl. constant-limit, B4 = 2.568, capability_verdict and route-tip tests); browser-checked all 5 dispatcher and 9 supervisor items with real clicks; README, app/README and demo/README re-measured and updated; manifest re-written."

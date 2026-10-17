@@ -26,7 +26,7 @@ import qc  # noqa: E402
 import simulator as sim  # noqa: E402
 
 #: How many cleared or on-scene calls the Resolved panel lists.
-RESOLVED_SHOWN = 30
+RESOLVED_SHOWN = 60
 
 #: Seconds between refreshes of the History tab (shift window, suggestions, charts).
 HISTORY_REFRESH_S = 5
@@ -72,9 +72,11 @@ def eyebrow(text: str):
     return ui.div(text, class_="rw-eyebrow")
 
 
-def card_head(label: str, title: str, right=None):
-    """Eyebrow label above a bold title, with an optional element on the right."""
-    return ui.div(ui.div(eyebrow(label), ui.div(title, class_="rw-title")), right,
+def card_head(label: str, title: str, right=None, step: int | None = None):
+    """Eyebrow label above a bold title, with an optional element on the right.
+    `step` puts a small numbered badge before the title (the steps of the call process)."""
+    badge = ui.span(str(step), class_="rw-step", **{"aria-label": f"Step {step}"}) if step else None
+    return ui.div(ui.div(eyebrow(label), ui.div(badge, ui.span(title), class_="rw-title")), right,
                   class_="rw-card-head")
 
 
@@ -194,10 +196,18 @@ def unit_picker(call, available: list[dict], selected: str | None):
                           **{"data-rw-call": call.call_id, "aria-label": "Unit to dispatch"})
 
 
-def list_card(label: str, title: str, rows: list, empty: str, host: dict, total: int | None = None):
+def list_card(label: str, title: str, rows: list, empty: str, host: dict, total: int | None = None,
+              step: int | None = None, scroll_key: str | None = None):
+    """A card with a count and a list of rows. With scroll_key the list scrolls (max 360 px) and
+    keeps its scroll position when it is redrawn; the header and count stay outside it."""
     count = ui.span(str(len(rows) if total is None else total), class_="rw-count")
-    body = ui.div(*rows, class_="rw-rows") if rows else ui.div(empty, class_="rw-empty")
-    return ui.div(card_head(label, title, count), body, class_="rw-card", **host)
+    if rows and scroll_key:
+        body = ui.div(*rows, class_="rw-rows rw-scroll", **{"data-rw-key": scroll_key})
+    elif rows:
+        body = ui.div(*rows, class_="rw-rows")
+    else:
+        body = ui.div(empty, class_="rw-empty")
+    return ui.div(card_head(label, title, count, step=step), body, class_="rw-card", **host)
 
 
 def _day_label(iso: str) -> str:
@@ -223,7 +233,7 @@ def sim_controls_ui():
 
 def _live_board_ui():
     log_call = ui.div(
-        card_head("New call", "Log a call"),
+        card_head("New call", "Log a call", step=1),
         ui.div(
             ui.input_select("new_zone", "Zone", choices=ZONE_CHOICES),
             ui.input_select("new_priority", "Priority", choices=PRIORITY_CHOICES),
@@ -590,7 +600,7 @@ def dispatcher_server(input, output, session, active):
             rows.append(row(c, f"Waiting for dispatch, target {sim.fmt_clock(tg['processing'])}",
                             actions=actions, sev=c.severity(t),
                             clocks=[clock_box("Waiting", c.call_received, tg["processing"], t)]))
-        return list_card("Queue", "Incoming calls", rows, "No calls waiting.", host())
+        return list_card("Queue", "Incoming calls", rows, "No calls waiting.", host(), step=2)
 
     @render.ui
     def dispatched():
@@ -605,7 +615,7 @@ def dispatcher_server(input, output, session, active):
                             actions=actions, sev=c.severity(t),
                             clocks=[clock_box("Turnout", c.dispatched, tg["turnout"], t)],
                             extra_tags=[tag("Breakdown", "red")] if c.breakdown else ()))
-        return list_card("Needs to roll", "Dispatched", rows, "No calls waiting to roll.", host())
+        return list_card("Needs to roll", "Dispatched", rows, "No calls waiting to roll.", host(), step=3)
 
     @render.ui
     def en_route():
@@ -622,7 +632,7 @@ def dispatcher_server(input, output, session, active):
                             clocks=[clock_box("Travel", c.en_route, tg["travel"], t),
                                     clock_box("Total", c.dispatched, tg["response"], t)],
                             extra_tags=[tag("Breakdown", "red")] if c.breakdown else ()))
-        return list_card("Travelling", "En route", rows, "No units on the road.", host())
+        return list_card("Travelling", "En route", rows, "No units on the road.", host(), step=4)
 
     @render.ui
     def resolved():
@@ -650,7 +660,7 @@ def dispatcher_server(input, output, session, active):
             clocks = [final_box("Response", resp, tg["response"])] if resp is not None else []
             rows.append(row(c, sub, live=False, sev=sev, actions=actions, clocks=clocks))
         card = list_card("At the scene and after", "Resolved", rows, "No calls on scene yet.", host(),
-                         total=len(done))
+                         total=len(done), step=5, scroll_key="resolved")
         if len(done) > RESOLVED_SHOWN:
             card.children.append(ui.div(f"Showing the latest {RESOLVED_SHOWN} of {len(done)}. "
                                         "Download the calls to see all of them.", class_="rw-more"))
@@ -682,30 +692,50 @@ def dispatcher_server(input, output, session, active):
 
     @render.ui
     def fleet():
+        """Ambulances in status columns: Available, Responding (dispatched + en route),
+        On scene and Out of service. Each unit shows its home zone and its one action."""
         version()
         units = board.fleet()
-        rows = []
+        columns = [("available", "Available", "green"), ("responding", "Responding", "amber"),
+                   ("on_scene", "On scene", "amber"), ("out_of_service", "Out of service", "red")]
+        column_of = {"available": "available", "dispatched": "responding", "en_route": "responding",
+                     "on_scene": "on_scene", "out_of_service": "out_of_service"}
+        groups = {key: [] for key, _, _ in columns}
         for u in units:
+            groups[column_of[u["state"]]].append(u)
+
+        def chip_for(u):
             state = u["state"]
-            tone = {"available": "green", "out_of_service": "red"}.get(state, "amber")
-            sub = f"Zone {u['home_zone']} · {sim.UNIT_LABEL[state]}"
-            if u["call_id"]:
-                sub += f" · {u['call_id']}"
             if state == "out_of_service":
                 button = ui.tags.button("Back in service", type="button", class_="rw-btn",
                                         **{"data-rw-action": "back", "data-rw-unit": u["unit_id"]})
             else:
                 button = ui.tags.button("Out of service", type="button", class_="rw-btn rw-btn-ghost",
                                         **{"data-rw-action": "oos", "data-rw-unit": u["unit_id"]})
-            rows.append(ui.div(
-                ui.span(class_="rw-dot", **{"data-tone": tone}),
-                ui.div(ui.div(u["unit_id"], class_="rw-row-title"), ui.div(sub, class_="rw-row-sub"),
-                       class_="rw-row-main"),
-                button, class_="rw-unit"))
-        free = sum(1 for u in units if u["state"] == "available")
-        return ui.div(card_head("Fleet", "Ambulances", ui.span(f"{free} of {len(units)} free",
-                                                                  class_="rw-count")),
-                      ui.div(*rows, class_="rw-fleet"), class_="rw-card", **host())
+            which = ui.div(sim.UNIT_LABEL[state], class_="rw-u-state") \
+                if state in ("dispatched", "en_route") else None
+            title = f"{u['unit_id']}, home zone {u['home_zone']}" + (f", call {u['call_id']}" if u["call_id"] else "")
+            return ui.div(
+                ui.div(ui.span(u["unit_id"], class_="rw-u-id"),
+                       ui.span(f"Zone {u['home_zone']}", class_="rw-u-zone"), class_="rw-u-top"),
+                which, button, class_="rw-u", title=title)
+
+        cols, weights = [], []
+        for key, label, tone in columns:
+            members = groups[key]
+            body = ui.div(*[chip_for(u) for u in members], class_="rw-ucol-body") if members \
+                else ui.div("None", class_="rw-ucol-none")
+            cols.append(ui.div(
+                ui.div(ui.span(class_="rw-dot", **{"data-tone": tone}), ui.span(label, class_="rw-ucol-label"),
+                       ui.tags.b(str(len(members))), class_="rw-ucol-head"),
+                body, class_="rw-ucol"))
+            weights.append(max(1, -(-len(members) // 6)))     # a long column gets double width
+        free = len(groups["available"])
+        return ui.div(
+            card_head("Fleet", "Ambulances", ui.span(f"{free} of {len(units)} free", class_="rw-count")),
+            ui.div(*cols, class_="rw-ucols",
+                   style="grid-template-columns:" + " ".join(f"minmax(0,{w}fr)" for w in weights)),
+            class_="rw-card", **host())
 
     @render.download_button(
         filename=lambda: f"response_watch_calls_{datetime.now():%Y%m%d_%H%M%S}.csv",
@@ -725,7 +755,7 @@ def _zone_words(zones: list[str]) -> str:
     return "Zones " + ", ".join(zones[:-1]) + f" and {zones[-1]}"
 
 
-def chart_note(sub: pd.DataFrame) -> str:
+def chart_note_text(sub: pd.DataFrame) -> str:
     """One line under a zone chart: qc's message when there is nothing to chart, else the flags."""
     message = sub.attrs.get("message") or ""
     if message:
@@ -742,20 +772,22 @@ def chart_note(sub: pd.DataFrame) -> str:
 
 @module.ui
 def history_ui():
-    def chart_card(p: int):
-        return ui.div(
-            card_head(f"Priority {p}", "Response time by zone"),
-            ui.output_plot(f"chart_p{p}", height="340px"),
-            ui.output_ui(f"note_p{p}"),
-            class_="rw-card", style="margin-top:16px")
+    chart_card = ui.div(
+        card_head("Control chart", "Response time by zone",
+                  ui.div(ui.input_select("priority", "Priority",
+                                         choices={"1": "Priority 1", "2": "Priority 2", "3": "Priority 3"},
+                                         selected="1"),
+                         class_="rw-compact")),
+        ui.output_plot("chart", height="340px"),
+        ui.output_ui("chart_note"),
+        class_="rw-card")
 
     return ui.div(
         ui.div(ui.div(eyebrow("History"), ui.h2("Current and previous shift", class_="rw-page-title")),
                class_="rw-page-head"),
         ui.output_ui("shift_line"),
-        ui.output_ui("tips"),
         ui.output_ui("shift_kpis"),
-        chart_card(1), chart_card(2), chart_card(3))
+        ui.div(chart_card, ui.output_ui("tips"), class_="rw-hist-grid"))
 
 
 @module.server
@@ -787,21 +819,55 @@ def history_server(input, output, session, visible, board, now):
             tips_val.set(tips)
 
     @reactive.calc
-    def subs():
+    def chosen():
+        """(priority, qc.zone_subgroup_chart for it) for the selected priority."""
         w = req(win_val())
-        return {p: qc.zone_subgroup_chart(w["window"], p) for p in qc.PRIORITIES}
+        p = int(input.priority())
+        return p, qc.zone_subgroup_chart(w["window"], p)
 
     @render.ui
     def shift_line():
         w = win_val()
         if w is None:
-            return ui.div("Loading the shift data…", class_="rw-muted rw-small")
+            return ui.div("Loading the shift data\u2026", class_="rw-muted rw-small")
         extra = [ui.div(w["missing"] + ": only the calls you log by hand are shown.",
                         class_="rw-muted rw-small", style="margin-top:4px")] if w["missing"] else []
         return ui.div(ui.div(w["label"], class_="rw-shiftline"), *extra, style="margin-bottom:16px")
 
     @render.ui
+    def shift_kpis():
+        w = win_val()
+        if w is None:
+            return None
+        window = w["window"]
+        n = len(window)
+        if n:
+            s = qc.summary(window["response_min"], qc.TARGETS["response"][1] / 60.0)
+            median, p90 = f"{s['median']:.1f}", f"{s['p90']:.1f}"
+            on_time = f"{100 * (1 - window['late'].mean()):.0f}%"
+        else:
+            median = p90 = on_time = "\u2013"
+        items = [("Calls", str(n)), ("Median (min)", median), ("90th percentile (min)", p90),
+                 ("On time", on_time)]
+        return ui.div(
+            ui.div(*[ui.div(ui.div(value, class_="rw-kpi-num"), ui.div(label, class_="rw-kpi-label"),
+                            class_="rw-kpi") for label, value in items],
+                   class_="rw-kpis rw-kpis-4"),
+            ui.p("All priorities, calls that reached the scene. On time means within each call's own target.",
+                 class_="rw-muted rw-small", style="margin:8px 0 0"))
+
+    @render.plot(alt="Box plot of response time for each zone against the city's control limits")
+    def chart():
+        p, sub = chosen()
+        return charts.zone_box_chart(sub, p, qc.TARGETS["response"][p] / 60.0)
+
+    @render.ui
+    def chart_note():
+        return ui.p(chart_note_text(chosen()[1]), class_="rw-muted rw-small", style="margin:8px 0 0")
+
+    @render.ui
     def tips():
+        """The dispatcher's suggestions, condensed: tags and short text, evidence in a small line."""
         items = tips_val()
         if items is None:
             return None
@@ -818,58 +884,8 @@ def history_server(input, output, session, visible, board, now):
         body = ui.div(*rows, class_="rw-rows") if rows else \
             ui.div("No suggestions right now.", class_="rw-empty")
         return ui.div(
-            card_head("Real time", "Suggestions for the dispatcher",
-                      ui.span(str(len(rows)), class_="rw-count")),
+            card_head("Real time", "Suggestions", ui.span(str(len(rows)), class_="rw-count")),
             body,
-            ui.p("Suggestions for the dispatcher's judgment; the tool decides nothing on its own.",
-                 class_="rw-muted rw-small", style="margin:12px 0 0"),
-            class_="rw-card", style="margin-bottom:16px")
-
-    @render.ui
-    def shift_kpis():
-        w = win_val()
-        if w is None:
-            return None
-        window = w["window"]
-        n = len(window)
-        if n:
-            s = qc.summary(window["response_min"], qc.TARGETS["response"][1] / 60.0)
-            median, p90 = f"{s['median']:.1f}", f"{s['p90']:.1f}"
-            on_time = f"{100 * (1 - window['late'].mean()):.0f}%"
-        else:
-            median = p90 = on_time = "–"
-        items = [("Calls", str(n)), ("Median (min)", median), ("90th percentile (min)", p90),
-                 ("On time", on_time)]
-        return ui.div(
-            ui.div(*[ui.div(ui.div(value, class_="rw-kpi-num"), ui.div(label, class_="rw-kpi-label"),
-                            class_="rw-kpi") for label, value in items],
-                   class_="rw-kpis rw-kpis-4"),
-            ui.p("All priorities, calls that reached the scene. On time means within each call's own target.",
-                 class_="rw-muted rw-small", style="margin:8px 0 0"))
-
-    def draw(p: int):
-        return charts.zone_box_chart(subs()[p], p, qc.TARGETS["response"][p] / 60.0)
-
-    @render.plot(alt="Box plot of response time for each zone against the city's control limits, priority 1")
-    def chart_p1():
-        return draw(1)
-
-    @render.plot(alt="Box plot of response time for each zone against the city's control limits, priority 2")
-    def chart_p2():
-        return draw(2)
-
-    @render.plot(alt="Box plot of response time for each zone against the city's control limits, priority 3")
-    def chart_p3():
-        return draw(3)
-
-    @render.ui
-    def note_p1():
-        return ui.p(chart_note(subs()[1]), class_="rw-muted rw-small", style="margin:8px 0 0")
-
-    @render.ui
-    def note_p2():
-        return ui.p(chart_note(subs()[2]), class_="rw-muted rw-small", style="margin:8px 0 0")
-
-    @render.ui
-    def note_p3():
-        return ui.p(chart_note(subs()[3]), class_="rw-muted rw-small", style="margin:8px 0 0")
+            ui.p("For the dispatcher's judgment; the tool decides nothing on its own.",
+                 class_="rw-muted", style="margin:10px 0 0;font-size:11.5px"),
+            class_="rw-card rw-tips")

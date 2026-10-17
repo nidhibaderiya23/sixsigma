@@ -26,13 +26,13 @@
       "checksum": "61939823fbcc7e8de3b61ab105331baf"
     },
     "README.md": {
-      "checksum": "29ac09a13f5fb8fb23eaefde39a08f60"
+      "checksum": "b918b7f772a448a75367e50a9ad10498"
     },
     "app.py": {
       "checksum": "ed02114a6741e3be2eafbdbbd7dc679b"
     },
     "charts.py": {
-      "checksum": "3787d217695c5f47ba86e9d3b8f85900"
+      "checksum": "df1a877fcdbfed0c789b7bdde9d90eb3"
     },
     "data/actions_demo.csv": {
       "checksum": "bcfa33f71f65c7990137ef7c800ee15f"
@@ -56,7 +56,7 @@
       "checksum": "014e4528353180ede3db3e3fb1bf464e"
     },
     "qc.py": {
-      "checksum": "5c1ae23fdc52c95e974de789fa7e45c4"
+      "checksum": "d6f1e1e749a68d469f94b405aac83173"
     },
     "simulator.py": {
       "checksum": "41f2686d988ed6ae36fd9fad8dbb02c2"
@@ -65,16 +65,16 @@
       "checksum": "4baff5dca2b66fb1428db643e07cd02c"
     },
     "ui_dispatcher.py": {
-      "checksum": "058596374d64fffb4c3f0e86ab84ada6"
+      "checksum": "ea7ab1c67f6e5d1792d0b04a831d0328"
     },
     "ui_supervisor.py": {
-      "checksum": "32cdac9899d702005387bc86b493c71b"
+      "checksum": "db16ac4a85e7ac1d31dc7351d3e340a0"
     },
     "www/rw.css": {
-      "checksum": "52f57e48e101a65dafb7ad1e9887f683"
+      "checksum": "aef51c9a52bbf3664034406007e02699"
     },
     "www/rw.js": {
-      "checksum": "0e34af9151042d1dcf0fd762d349e44c"
+      "checksum": "50e633d40a78f59209e25854f6a3b412"
     }
   }
 }
