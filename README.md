@@ -455,7 +455,7 @@ The app follows the course's **four-script contract**. All four files are in [`a
 - **Assumptions behind the statistics:** log response times are roughly normal (the Zone comparison card has a probability plot in More info). Calls in time order are roughly independent (stated, not tested). The chart period is mostly normal days. Capability needs stability, so it is hidden for flagged zones.
 - **A better time after a fix does not prove the fix caused it.** The check shows an apparent change. Staff judge the cause.
 - **Button-press timing is not validated.** A crew may press "on scene" a little after arriving. The times are only as good as the pressing habit.
-- **Out of scope:** logins, a database, real maps or GPS, forecasting, AI-written suggestions, per-person dispatcher rankings, and a board shared across browsers (each browser session has its own).
+- **Out of scope:** logins, a database, GPS or official EMS districts (the Ithaca zones are illustrative), forecasting, AI-written suggestions, per-person dispatcher rankings, and a board shared across browsers (each browser session has its own).
 
 More on assumptions and limits: [`docs/six_sigma.md`](docs/six_sigma.md), section 8.
 
