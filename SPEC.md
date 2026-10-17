@@ -228,7 +228,8 @@ What we will NOT build, so nobody (human or agent) builds it by accident.
   suggests for qualified staff.
 - No real patient data, addresses or names. No hospital, on-scene care or pre-arrival instruction times.
 - No board shared across browsers: each browser session has its own live board.
-- No real street map or GPS: zones are a schematic grid of 6 tiles.
+- No GPS or official EMS districts. Version 1 shows the zones as a schematic grid of 6 tiles; from
+  version 2 they are illustrative areas drawn on an interactive map of Ithaca, NY (`app/zonemap.py`).
 - No per-person dispatcher rankings. The ID is stored; stats are shown by shift and workload.
 - No AI-written suggestions, no forecasting.
 - No Pareto, fishbone or stratification screens (the team dropped them on Oct 16).
