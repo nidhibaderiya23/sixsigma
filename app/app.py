@@ -18,6 +18,7 @@ import qc  # noqa: E402  (all numbers on screen come from qc.py)
 from ui_dispatcher import (chip, dispatcher_server, dispatcher_ui, icon,  # noqa: E402
                            sim_controls_ui)
 from ui_supervisor import supervisor_server, supervisor_ui  # noqa: E402
+import ui_help  # noqa: E402
 import zonemap  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
@@ -68,13 +69,19 @@ header = ui.tags.header(
         ui.div(
             # the simulation controls live in the dispatcher module's namespace ("dispatcher")
             ui.panel_conditional("input.page === 'dispatcher'", sim_controls_ui("dispatcher")),
-            ui.tags.a("Manual", href="manual.html", target="_blank", rel="noopener",
-                      title="ERGent User Manual (opens in a new tab)", class_="rw-linkbtn"),
+            ui.input_action_link("nav_help", "How to use", class_="rw-linkbtn"),
+            ui.input_action_link("nav_about", "About", class_="rw-linkbtn"),
             ui.panel_conditional("input.page !== 'start'",
                                  ui.input_action_link("switch_role", "Switch role", class_="rw-linkbtn")),
             class_="rw-header-end"),
         class_="rw-header"),
     class_="rw-masthead")
+
+def info_page(back_id: str, body):
+    """A How to use or About page, with a Back link to wherever the reader came from."""
+    return ui.div(ui.div(ui.input_action_link(back_id, "\u2190 Back", class_="rw-linkbtn"),
+                         class_="rw-page-back"), body)
+
 
 app_ui = ui.page_fluid(
     ui.head_content(
@@ -84,6 +91,7 @@ app_ui = ui.page_fluid(
         ui.tags.link(rel="stylesheet", href=FONTS),
         ui.tags.link(rel="icon", href=FAVICON),
         ui.include_css(WWW / "rw.css", method="inline"),
+        ui.include_css(WWW / "help.css", method="inline"),
         ui.include_js(WWW / "rw.js", method="inline"),
         zonemap.head()),
     header,
@@ -92,6 +100,8 @@ app_ui = ui.page_fluid(
             ui.nav_panel(None, start_page, value="start"),
             ui.nav_panel(None, dispatcher_ui("dispatcher"), value="dispatcher"),
             ui.nav_panel(None, supervisor_ui("supervisor"), value="supervisor"),
+            ui.nav_panel(None, info_page("help_back", ui_help.help_page()), value="help"),
+            ui.nav_panel(None, info_page("about_back", ui_help.about_page()), value="about"),
             id="page", selected="start"),
         class_="rw-shell"),
     title="ERGent")
@@ -107,8 +117,16 @@ def server(input, output, session):
     mode = dispatcher_server("dispatcher", active=dispatcher_active)
     supervisor_server("supervisor")
 
+    page_now = reactive.Value("start")   # the page on screen
+    back_to = reactive.Value("start")    # where Back on How to use / About returns to
+
     def go(name):
-        role.set(name)
+        if name in ("help", "about"):
+            if page_now() not in ("help", "about"):
+                back_to.set(page_now())
+        else:
+            role.set(name)
+        page_now.set(name)
         ui.update_navset("page", selected=name)
 
     @reactive.effect
@@ -125,6 +143,21 @@ def server(input, output, session):
     @reactive.event(input.switch_role)
     def _switch_role():
         go("start")
+
+    @reactive.effect
+    @reactive.event(input.nav_help)
+    def _nav_help():
+        go("help")
+
+    @reactive.effect
+    @reactive.event(input.nav_about)
+    def _nav_about():
+        go("about")
+
+    @reactive.effect
+    @reactive.event(input.help_back, input.about_back)
+    def _back():
+        go(back_to())
 
     @render.ui
     def header_chips():

@@ -24,6 +24,7 @@ This folder holds ERGent (version 1): a Shiny for Python dashboard for a city 91
 | [`ui_dispatcher.py`](ui_dispatcher.py) | Dispatcher screens (live board, History tab), the simulation controls for the page header, and the building blocks both roles share. |
 | [`ui_supervisor.py`](ui_supervisor.py) | Supervisor screens: the Charts and Actions tabs, with short "More info" toggles. |
 | [`app.py`](app.py) | The Shiny app: start page, role picker, header. Wires the two roles together. |
+| [`ui_help.py`](ui_help.py), `www/help.css` | The **How to use** and **About** pages (static), opened from the header. |
 | [`zonemap.py`](zonemap.py), `www/zonemap.js` | The interactive Ithaca, NY zone map (Leaflet) both roles use. See [section 5a](#5a-zonemappy-and-wwwzonemapjs-the-ithaca-map). |
 | `www/rw.css`, `www/rw.js` | The look (each version has its own), and a small script that repaints the running clocks once a second and opens a view from a link. |
 | `requirements.txt` | Pinned dependencies (`==`). |

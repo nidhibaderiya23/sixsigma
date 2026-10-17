@@ -27,7 +27,8 @@ GREEN, AMBER, RED = "#1b7f45", "#a57c00", "#c21f32"    # amber is a deep gold he
 LINE = "#1f4e8c"        # the data series, civic navy-blue
 BOX = "#e3eaf3"         # box-plot fill, a pale navy
 # the three stages as one blue family (light to dark in call order), never a status colour
-STAGE_COLORS = {"processing": "#a9bcd6", "turnout": "#5b82b5", "travel": "#1b365d"}
+# three clearly different hues (and lightness), none of them a status colour
+STAGE_COLORS = {"processing": "#8a72d1", "turnout": "#2f8fd8", "travel": "#1b365d"}
 
 # SVG text stays text, so the browser draws it in the page's own font (Public Sans);
 # PNG charts fall back to DejaVu Sans, which matplotlib always has.
@@ -130,7 +131,9 @@ def daily_chart(chart, zone: str, action_dates=(), target_min: float | None = No
 def individuals_chart(imr, zone: str, target_min: float):
     """A plain control chart of every call (from qc.imr_chart()): each call's
     response time in order, the center line, the upper and lower control limits
-    (UCL, LCL) and the target as the spec limit. Log scale, labelled in minutes."""
+    (UCL, LCL) and the target as the spec limit, on a plain minutes axis. The limits
+    are computed on log minutes (qc.imr_chart) and shown back in minutes, so they are not
+    symmetric around the center."""
     if imr is None or not len(imr) or imr["ucl"].isna().all():
         msg = imr.attrs.get("message", "no data") if imr is not None else "no data"
         return empty(f"Zone {zone}: {msg}")
@@ -145,13 +148,8 @@ def individuals_chart(imr, zone: str, target_min: float):
     bad = imr[imr["beyond"]]
     ax1.scatter(np.flatnonzero(imr["beyond"]), bad["response_min"], color=RED, s=30,
                 zorder=5, label="beyond UCL")
-    ax1.set_yscale("log")
-    lo, hi = ax1.get_ylim()
-    ticks = [t for t in (1, 2, 3, 5, 8, 10, 15, 20, 30, 45, 60) if lo <= t <= hi]
-    ax1.set_yticks(ticks)
-    ax1.yaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter("%g"))
-    ax1.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
-    _style(ax1, f"Zone {zone}: every call", "minutes (log scale)")
+    ax1.set_ylim(bottom=0)
+    _style(ax1, f"Zone {zone}: every call", "minutes")
     ax1.set_xlabel("call number, in order", color=MUTED, fontsize=9)
     _legend(ax1, ncol=3)
     ax1.set_title(ax1.get_title(loc="left"), color=FG, fontsize=11, loc="left", pad=36)

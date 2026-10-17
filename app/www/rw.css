@@ -689,3 +689,46 @@ label, .control-label {
 
 /* the map tooltip keeps its natural width (up to its max-width), so it never squeezes near the map edge */
 .leaflet-tooltip.rw-map-tip { width: max-content; }
+
+/* ---- Charts tab, final layout -----------------------------------------------------------
+   Statistics and the zone map share the control chart's row: the side column stretches to the
+   chart's height and the map fills what the compact statistics leave. */
+.rw-sup-grid { align-items: stretch; }
+.rw-sup-grid > .rw-card { display: flex; flex-direction: column; }
+.rw-sup-side { display: flex; flex-direction: column; gap: 16px; }
+.rw-sup-side .rw-map-card { flex: 1 1 auto; display: flex; min-height: 0; }
+.rw-sup-side .rw-map-card > .rw-card { flex: 1 1 auto; display: flex; flex-direction: column; }
+.rw-sup-side .rw-map-card .rw-leaflet { flex: 1 1 auto; height: auto !important; min-height: 210px; }
+.rw-sup-side .rw-stats .rw-kpi { padding: 8px 12px 9px; }
+.rw-sup-side .rw-stats .rw-kpi-num { font-size: 22px; }
+.rw-sup-side .rw-stats .rw-kpi-icon { display: none; }
+.rw-sup-side .rw-stats .rw-kpi-label { margin-right: 0; }
+.rw-sup-side .rw-card .rw-subtitle { margin-bottom: 6px; }
+
+/* Zone comparison behind a button */
+.rw-collapse { margin-top: 16px; padding: 0; }
+.rw-collapse > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 16px 20px; }
+.rw-collapse > summary::-webkit-details-marker { display: none; }
+.rw-collapse-title { font: 600 18px/1.2 var(--sign); color: var(--ink); margin-right: auto; }
+.rw-collapse-show, .rw-collapse-hide {
+  font: 600 13px/1 var(--font); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 4px;
+  padding: 8px 12px; background: var(--panel);
+}
+.rw-collapse > summary:hover .rw-collapse-show, .rw-collapse > summary:hover .rw-collapse-hide { background: var(--inset); }
+.rw-collapse-hide { display: none; }
+.rw-collapse[open] .rw-collapse-show { display: none; }
+.rw-collapse[open] .rw-collapse-hide { display: inline-block; }
+.rw-collapse > summary:focus-visible { outline: 2px solid var(--navy-700); outline-offset: -2px; }
+.rw-collapse-body { padding: 0 20px 18px; border-top: 1px solid var(--line-soft); padding-top: 14px; }
+
+/* Chart hover text: a styled box that appears at once (see rw.js) */
+.rw-hover-tip {
+  position: fixed; z-index: 2000; max-width: 320px; pointer-events: none;
+  padding: 8px 11px; border-radius: 4px; background: var(--navy-950); color: var(--on-navy);
+  font: 13px/1.45 "Public Sans", system-ui, sans-serif; box-shadow: 0 6px 18px rgba(12, 35, 64, 0.25);
+}
+
+/* Back link above the How to use and About pages */
+.rw-page-back { margin: 4px 0 12px; }
+.rw-page-back .rw-linkbtn { color: var(--ink); background: var(--panel); border: 1px solid var(--line-strong); }
+.rw-page-back .rw-linkbtn:hover, .rw-page-back .rw-linkbtn:focus-visible { background: var(--inset); color: var(--ink); }

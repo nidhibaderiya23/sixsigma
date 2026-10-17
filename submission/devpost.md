@@ -37,7 +37,7 @@ ERGent is a Shiny for Python dashboard for the 911 EMS dispatch center of **Itha
 
 **The supervisor (start of every shift)**
 - An interactive map of Ithaca's six zones, coloured by health (green, amber, red). Hover a zone for the reasons; click it to drill in.
-- A daily **X̄-S control chart** per zone on log response times, with Western Electric rules, plus an individuals chart for every call.
+- A daily **X̄-S control chart** per zone on log response times, with Western Electric rules, plus a chart of every single call.
 - 90th and 95th percentiles and % on time, instead of only an average.
 - **Delay by stage:** is it the dispatcher (processing), the crew getting out the door (turnout), or the drive (travel)?
 - **Zone comparison:** one-way ANOVA on log times. **Capability:** Ppk turned into "about 89 in 100 calls within 9 minutes".
@@ -73,7 +73,7 @@ The tool flags and suggests. Qualified staff decide.
 - The tool finds all four planted problems in the demo data, and confirms that Zone D's fix worked.
 - The dispatcher needs no statistics: clocks, colours and one-line tips.
 - Fully reproducible: one command to run, pinned packages, a seeded data script, and 77 tests.
-- A user manual for both roles that explains every statistic in plain words.
+- Built-in **How to use** and **About** pages, so a new user can learn every feature and statistic inside the app.
 
 ### What we learned
 
@@ -99,7 +99,6 @@ python, shiny, shiny-for-python, pandas, numpy, scipy, matplotlib, leaflet, pyte
 
 - GitHub repo: https://github.com/nidhibaderiya23/sixsigma
 - Live app: **[LIVE URL from Posit Connect, after deploy]**
-- User manual (PDF): https://github.com/nidhibaderiya23/sixsigma/blob/main/docs/manual/ERGent-Manual.pdf
 
 ## Video demo link
 
@@ -113,6 +112,8 @@ Upload the PNGs in [`screenshots/`](screenshots/), in this order:
 3. `03_actions.png`: the suggested actions and the before/after check.
 4. `04_dispatcher.png`: the live board during a shift replay.
 5. `05_history.png`: the dispatcher's History tab.
+6. `06_how_to_use.png`: the How to use page.
+7. `07_about.png`: the About page.
 
 ## Team members (add them on Devpost)
 

@@ -107,7 +107,7 @@ The test data is committed in `data/`. To rebuild it, run `.venv/bin/python data
 
 ## 4. What you see
 
-The start page has two buttons: **I'm a dispatcher** and **I'm a supervisor**. Each role gets its own screens. A **Switch role** link in the header takes you back.
+The start page has two buttons: **I'm a dispatcher** and **I'm a supervisor**. Each role gets its own screens. A **Switch role** link in the header takes you back. The header also has **How to use** (every feature and statistic, for a new user) and **About** (the website and the team), so the app explains itself.
 
 ### 4.1 Dispatcher (secondary user)
 

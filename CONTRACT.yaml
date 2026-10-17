@@ -242,7 +242,7 @@ tasks:
   - id: H-13
     title: ERGent User Manual (About us template first)
     points: "protects H-07: users and graders can learn the tool and its statistics without us"
-    status: in_progress
+    status: done
     owner: "Claude helper (docs) + Team ERG (About us content)"
     started_at: "2026-10-17 01:45"
     owns: ["docs/manual/"]
@@ -253,7 +253,7 @@ tasks:
     definition_of_done: >
       The manual builds; every statistic matches app/qc.py; the team has
       filled in About us.
-    result: "Built: 6 chapters, 40 pages (HTML + PDF), served in the app at /manual.html with a Manual link; statistics checked against qc.py. Open: the team fills in About us."
+    result: "Built: 6 chapters, 40 pages (HTML + PDF), served in the app at /manual.html with a Manual link; statistics checked against qc.py. Replaced on Oct 17 (H-17) by the in-app How to use and About tabs; the PDF manual is retired."
 
   - id: H-14
     title: Versions 2-7 - six UI designs with impeccable
@@ -286,11 +286,30 @@ tasks:
   - id: H-16
     title: Class presentation (two decks and a live-demo cue card)
     points: "protects H-04/H-05: the showcase pitch"
-    status: in_progress
+    status: done
     owner: "Claude (agent) + Team ERG (presents)"
     started_at: "2026-10-17 02:10"
     owns: ["docs/presentation/"]
     definition_of_done: >
       Two decks (patient story; DMAIC walkthrough) and a cue card are ready;
       the team rehearses once.
-    result: "Ready: deck 1 (patient story) and deck 2 (DMAIC), cue card, role-play, lightning talk, Q&A prep. Open: share decks with teammates, rehearse."
+    result: "Dropped on Oct 17 at the team's request: the team presents the website itself. The kit stays in the v2-v7 tags."
+
+  - id: H-17
+    title: Final version (v4) and the fourth round of team feedback (Oct 17)
+    points: "protects H-04/H-05/H-07/H-08: the version the team submits and presents"
+    status: done
+    owner: "Claude (agent) + Claude helper (pages) + Nidhi Baderiya"
+    started_at: "2026-10-17 11:58"
+    owns: ["app/", "submission/", "VERSIONS.md", "README.md", "CONTRACT.yaml", "docs/"]
+    notes: >
+      v4 is the final version on main; v1 and the other versions are kept in
+      ERGent-versions/ on their own branches and tags. Changes: instant hover
+      text on the SVG charts; Charts tab with Capability next to Delay by stage,
+      Zone comparison behind a button, Statistics and the map aligned with the
+      control chart; Every call chart in plain minutes; distinct stage colours;
+      fuller Cpk/Ppk text; How to use and About tabs replace the PDF manual;
+      presentations removed; submission/ folder prepared.
+    definition_of_done: >
+      pytest passes; every change checked in the browser; committed locally.
+    result: "77 pytest tests pass; browser-checked the hover tooltip, the new Charts layout, the minutes axis, the stage colours, How to use, About and Back; submission/ has the Devpost text, checklist and 7 screenshots; committed locally, nothing pushed."

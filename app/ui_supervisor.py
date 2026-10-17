@@ -123,18 +123,25 @@ def charts_ui():
         ui.div(
             _card("Control chart", ui.output_ui("chart_area"), ui.output_ui("chart_more")),
             ui.div(_card("Statistics", ui.output_ui("stats")),
-                   _card("Zone map", zonemap.map_div(resolve_id("ithaca_map"),
+                   ui.div(_card("Zone map", zonemap.map_div(resolve_id("ithaca_map"),
                                                      click_input=resolve_id("map_click"),
                                                      height="300px"),
-                         ui.output_ui("zone_map_more")),
+                         ui.output_ui("zone_map_more")), class_="rw-map-card"),
                    ui.output_ui("issues"), class_="rw-sup-side"),
             class_="rw-sup-grid"),
         ui.div(
             _card("Delay by stage", ui.output_ui("share_range"), ui.output_ui("share_svg"),
                   ui.output_ui("share_more")),
-            _card("Zone comparison", ui.output_ui("tests")),
+            _card("Capability", ui.output_ui("capability")),
             class_="rw-two rw-two-wide"),
-        _card("Capability", ui.output_ui("capability")))
+        # zone comparison opens from a button, under the two cards
+        ui.tags.details(
+            ui.tags.summary(ui.span("Zone comparison", class_="rw-collapse-title"),
+                            ui.span("Show", class_="rw-collapse-show"),
+                            ui.span("Hide", class_="rw-collapse-hide"),
+                            class_="rw-collapse-btn"),
+            ui.div(ui.output_ui("tests"), class_="rw-collapse-body"),
+            class_="rw-card rw-collapse"))
 
 
 @module.server
@@ -364,8 +371,13 @@ def charts_server(input, output, session, ctx):
             ui.tags.thead(ui.tags.tr(*[ui.tags.th(h) for h in ("Zone", "Ppk", "Cpk", "Expected on time")])),
             ui.tags.tbody(*nums), class_="rw-table"), class_="rw-table-wrap")
         return ui.div(ui.div(*rows, class_="rw-verdicts"), _more(
-            _p("How reliably each zone's calls arrive within the target. Ppk uses the spread of all "
-               "calls and Cpk the spread within each day; Ppk 0.43 means about 90% on time."),
+            _p("Capability asks whether a zone can reliably meet the target. Ppk compares the gap between "
+               "the target and the zone's average with the spread of all its calls (on log minutes), so it "
+               "shows how the zone is doing now, day-to-day drift included."),
+            _p("Cpk uses only the spread within each day, so it shows what the zone could do if it stayed "
+               "steady. A Cpk well above the Ppk means the zone drifts from day to day."),
+            _p("Ppk 1.0 means about 99.9 in 100 calls on time and 0.43 about 90 in 100; the verdict turns "
+               "Ppk into calls per 100 with \u03a6(3 \u00d7 Ppk). A zone needs about 90 in 100 to meet the standard."),
             table))
 
 

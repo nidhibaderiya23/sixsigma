@@ -26,13 +26,13 @@
       "checksum": "61939823fbcc7e8de3b61ab105331baf"
     },
     "README.md": {
-      "checksum": "b5eb75f83f258c221d96707ffd22c729"
+      "checksum": "ec9662033804df01bd25052df44a1eac"
     },
     "app.py": {
-      "checksum": "e3605aeacbd43a5571980caae0e46a8b"
+      "checksum": "2dd4dc5e7dbb69d09781b3b33b78be3a"
     },
     "charts.py": {
-      "checksum": "009cad5ef2c2200c497ce6c690765755"
+      "checksum": "37b91cdddfc12cd12dd9bcea8f0e4c19"
     },
     "data/actions_demo.csv": {
       "checksum": "bcfa33f71f65c7990137ef7c800ee15f"
@@ -67,17 +67,20 @@
     "ui_dispatcher.py": {
       "checksum": "017d652d2e9a98623bba9b8fa2a11dd6"
     },
-    "ui_supervisor.py": {
-      "checksum": "ff09f1a2c165c3fde0da825929c5b1aa"
+    "ui_help.py": {
+      "checksum": "2f2815b7104b31ae04521a76ff6c0d16"
     },
-    "www/manual.html": {
-      "checksum": "5e8301f0bef0792036b459b4f6631986"
+    "ui_supervisor.py": {
+      "checksum": "a57344ea12506fa8ab0ee26d84fd681a"
+    },
+    "www/help.css": {
+      "checksum": "24b88d9f71c670055120a111b1b46fff"
     },
     "www/rw.css": {
-      "checksum": "e8a2bf121691042371ce14b77c93014e"
+      "checksum": "339918e047773a70ce8b960dd3de726b"
     },
     "www/rw.js": {
-      "checksum": "a099c3682b8ab2037f0db9d50cc83ed7"
+      "checksum": "ecf124c14a011618848d12d77970ab06"
     },
     "www/zonemap.js": {
       "checksum": "fdc280620eaaf41d1b814ade8b4c7599"

@@ -135,6 +135,45 @@
       { call: sel.getAttribute("data-rw-call"), unit: sel.value }, { priority: "event" });
   });
 
+  // Chart hover text. SVG chart parts with class rw-tip carry a <title>; show it at once in a
+  // styled box that follows the pointer (the browser's own title tooltip is slow and unreliable).
+  var hoverTip = null;
+  function tipText(el) {
+    var t = el.querySelector(":scope > title");
+    if (t) { el.setAttribute("data-tip", t.textContent); t.remove(); }
+    return el.getAttribute("data-tip");
+  }
+  function placeTip(e) {
+    var x = e.clientX + 14, y = e.clientY + 16;
+    var w = hoverTip.offsetWidth, h = hoverTip.offsetHeight;
+    if (x + w > window.innerWidth - 8) x = e.clientX - w - 14;
+    if (y + h > window.innerHeight - 8) y = e.clientY - h - 16;
+    hoverTip.style.left = Math.max(8, x) + "px";
+    hoverTip.style.top = Math.max(8, y) + "px";
+  }
+  document.addEventListener("mouseover", function (e) {
+    var el = e.target.closest ? e.target.closest(".rw-tip") : null;
+    if (!el) return;
+    var text = tipText(el);
+    if (!text) return;
+    if (!hoverTip) {
+      hoverTip = document.createElement("div");
+      hoverTip.className = "rw-hover-tip";
+      hoverTip.setAttribute("role", "tooltip");
+      document.body.appendChild(hoverTip);
+    }
+    hoverTip.textContent = text;
+    hoverTip.hidden = false;
+    placeTip(e);
+  });
+  document.addEventListener("mousemove", function (e) {
+    if (hoverTip && !hoverTip.hidden) placeTip(e);
+  });
+  document.addEventListener("mouseout", function (e) {
+    var el = e.target.closest ? e.target.closest(".rw-tip") : null;
+    if (el && hoverTip && !el.contains(e.relatedTarget)) hoverTip.hidden = true;
+  });
+
   // The working area is light; keep Bootstrap's own parts (modals, selects) light too.
   document.documentElement.setAttribute("data-bs-theme", "light");
 })();
