@@ -32,7 +32,7 @@
       "checksum": "9ee5ce14a33d1660a5a06201f561186d"
     },
     "charts.py": {
-      "checksum": "1b74636fcdaa4538381cd296bc7b02a6"
+      "checksum": "69fbe68a18490b09ebcfc7a03a17c2df"
     },
     "data/actions_demo.csv": {
       "checksum": "bcfa33f71f65c7990137ef7c800ee15f"
@@ -80,7 +80,7 @@
       "checksum": "36bb1a3b4844103c874d00336062dcd1"
     },
     "www/zonemap.js": {
-      "checksum": "4dd9c78a87dfc21edc76d4c26a745cf5"
+      "checksum": "c6f1bbf0963b31e4d96b791fcda13e9e"
     },
     "zonemap.py": {
       "checksum": "c080e5d0e30a6acd63068ecd1ffd1e44"
