@@ -66,6 +66,8 @@ header = ui.div(
     ui.div(
         # the simulation controls live in the dispatcher module's namespace ("dispatcher")
         ui.panel_conditional("input.page === 'dispatcher'", sim_controls_ui("dispatcher")),
+        ui.tags.a("Manual", href="manual.html", target="_blank", rel="noopener",
+                  title="ERGent User Manual (opens in a new tab)", class_="rw-linkbtn"),
         ui.panel_conditional("input.page !== 'start'",
                              ui.input_action_link("switch_role", "Switch role", class_="rw-linkbtn")),
         class_="rw-header-end"),
