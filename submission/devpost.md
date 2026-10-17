@@ -98,7 +98,7 @@ python, shiny, shiny-for-python, pandas, numpy, scipy, matplotlib, leaflet, pyte
 ## "Try it out" links
 
 - GitHub repo: https://github.com/nidhibaderiya23/sixsigma
-- Live app: **[LIVE URL from Posit Connect, after deploy]**
+- Live app: https://connect.systems-apps.com/content/0bfdba33-58e1-4b6e-91c0-17452a4a3a9e/
 
 ## Video demo link
 

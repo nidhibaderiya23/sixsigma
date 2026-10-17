@@ -50,7 +50,7 @@ The Define and Measure work (problem statement, goal, SIPOC, process map, data-q
 
 ## 2. Live app
 
-LIVE URL: (added after deploy)
+**Live app:** <https://connect.systems-apps.com/content/0bfdba33-58e1-4b6e-91c0-17452a4a3a9e/>
 
 No login is needed. The data is synthetic. Each browser tab has its own live board.
 

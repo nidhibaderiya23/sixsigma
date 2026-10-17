@@ -27,7 +27,7 @@ cd /Users/nidhibaderiya/sixsigma && git push origin v1 v2 v3 v4 v5 v6 v7
    `CONNECT_SERVER` and `CONNECT_API_KEY` (from the event). Never put them in a file.
 3. The push starts **Deploy Shiny (Python) app to Posit Connect** (Actions tab). If it ran before the
    secrets existed, click **Run workflow**. When it is green, open the app URL from the log.
-4. Put that URL in `README.md` ("LIVE URL: (added after deploy)") and in `devpost.md`, commit, push.
+4. Done: the live app is https://connect.systems-apps.com/content/0bfdba33-58e1-4b6e-91c0-17452a4a3a9e/ (in `README.md` and `devpost.md`). In Posit Connect, set Settings → Access to "Anyone - no login required".
 
 ## Devpost
 
