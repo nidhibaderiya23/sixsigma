@@ -801,3 +801,6 @@ body > #shiny-notification-panel:has(.shiny-notification-error) { z-index: 1060 
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; scroll-behavior: auto !important; }
   .rw-board .rw-card > .rw-rows, .rw-board .rw-card > .rw-ucols { animation-duration: auto !important; }
 }
+
+/* the map tooltip keeps its natural width (up to its max-width), so it never squeezes near the map edge */
+.leaflet-tooltip.rw-map-tip { width: max-content; }
