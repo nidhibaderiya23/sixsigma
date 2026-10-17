@@ -26,10 +26,10 @@
       "checksum": "61939823fbcc7e8de3b61ab105331baf"
     },
     "README.md": {
-      "checksum": "52d4bc033cbf9ce2643cbf5747c72598"
+      "checksum": "b5eb75f83f258c221d96707ffd22c729"
     },
     "app.py": {
-      "checksum": "b7e516e55672bade3fa2afad7ff7554c"
+      "checksum": "9ee5ce14a33d1660a5a06201f561186d"
     },
     "charts.py": {
       "checksum": "1b74636fcdaa4538381cd296bc7b02a6"
@@ -56,7 +56,7 @@
       "checksum": "014e4528353180ede3db3e3fb1bf464e"
     },
     "qc.py": {
-      "checksum": "57e2e34db797063a959fd19648ed22fc"
+      "checksum": "2183c09a2bc9cf7c25c6a20ec94858f0"
     },
     "simulator.py": {
       "checksum": "2fb6fbc0afa0b919c5bd1984ccbf148a"
@@ -65,16 +65,22 @@
       "checksum": "a579c10a4ebde3d3d56e3493f43eb243"
     },
     "ui_dispatcher.py": {
-      "checksum": "24e5380bdc98198028a81b7da0e6fb8c"
+      "checksum": "6a36df5fe3da620e1ca090d15f937166"
     },
     "ui_supervisor.py": {
-      "checksum": "d410c379b7ae1206aef79bd240140482"
+      "checksum": "54eaea69b98663e0965fde8d593b9a70"
     },
     "www/rw.css": {
-      "checksum": "9b922f768d4559eab64d83c9090fe730"
+      "checksum": "4c253f331c7dfd9f130cbbea5260c00f"
     },
     "www/rw.js": {
-      "checksum": "f54c236b1314198f478e5dedf9b133e5"
+      "checksum": "36bb1a3b4844103c874d00336062dcd1"
+    },
+    "www/zonemap.js": {
+      "checksum": "4dd9c78a87dfc21edc76d4c26a745cf5"
+    },
+    "zonemap.py": {
+      "checksum": "c080e5d0e30a6acd63068ecd1ffd1e44"
     }
   }
 }

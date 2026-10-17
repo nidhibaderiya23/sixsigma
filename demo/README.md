@@ -32,7 +32,7 @@ Every card has one plain title. A **More info** toggle under it opens a short ex
 | On time | 93% |
 | Zones flagged | 1 / 6 |
 
-- **Zone map:** **Zone D is amber ("Worth a look")**, labelled "Crew turnout". Hover the tile: "90th
+- **Zone map:** **Zone D is amber ("Worth a look")**, on the map of Ithaca (West End & Southwest). Hover it: "Main delay: crew turnout", then "90th
   percentile 10.2 min vs. 9 min target; turnout causes 99% of minutes over target". Every other zone is
   green ("On track").
 
@@ -166,7 +166,7 @@ source (the dispatcher's buttons) stops most of it from happening at all.
 ## 5. The dispatcher: live board and History
 
 Click **Switch role**, then **I'm a dispatcher**. The header shows **ERGent** with the subtitle "Team
-ERG · City EMS dispatch · v1". The simulation controls sit in the header, to the left of **Switch
+ERG · Ithaca, NY EMS dispatch · v2" (the last part names the version you run). The simulation controls sit in the header, to the left of **Switch
 role**: **Day** (default Sep 20), **Speed** (30x, 60x, 120x), **Start** (00:00, 06:00, 14:00, 22:00), a
 coral **Simulate a shift** button and **Reset**. A chip shows the clock mode. Right now it says
 `LIVE 1x` (real time).
@@ -181,8 +181,8 @@ coral **Simulate a shift** button and **Reset**. A chip shows the clock mode. Ri
    - The cards are numbered in call order: **1 Log a call**, **2 Incoming calls**, **3 Dispatched**,
      **4 En route**, **5 Resolved**. Calls appear in card 2, then move to cards 3 and 4 at the times in
      the file. Replayed rows carry a **Replay** tag and no buttons: they are read-only.
-   - Each running clock is green, turns amber above 80% of its stage target, and red past it. The
-     **Zone map** tile of a zone takes the worst clock colour in it.
+   - Each running clock is green, turns amber above 80% of its stage target, and red past it. On the
+     **Zone map** of Ithaca, each zone takes the worst clock colour in it (hover it for its open calls and free units; click it to pick it in Log a call).
    - **Ambulances** are grouped in four status columns with counts: **Available**, **Responding**
      (dispatched or en route), **On scene** and **Out of service**.
    - A call that reaches the scene moves to **5 Resolved** (full width, scrolls, latest 60) with its
