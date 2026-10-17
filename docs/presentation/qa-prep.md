@@ -10,6 +10,13 @@ chart, ANOVA, Welch and Ppk all assume roughly normal data, and ln(minutes) is c
 The app checks this with Shapiro-Wilk and a normal probability plot (Zone comparison, More info).
 Results are shown back in minutes.
 
+**The Shapiro-Wilk p is small for some zones. Is the normal assumption broken?**
+With a few hundred calls, Shapiro-Wilk flags even tiny departures from normal (Zone D over the demo's
+42 days: p ≈ 0.004). Look at the normal probability plot instead: the points sit close to the line, with
+slightly heavy tails. The X̄ chart plots daily means, which are closer to normal than single calls
+(central limit theorem). The capability numbers are the most sensitive to the tails, which is one
+reason ERGent also shows the plain 90th percentile.
+
 **Why X̄-S and not X̄-R or a p-chart?**
 The subgroup is one zone-day, and its size changes from day to day (about 5 to 10 calls). S uses
 every value and handles unequal sizes; R gets less efficient as n grows. A p-chart (share of late
