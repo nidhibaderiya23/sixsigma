@@ -1,0 +1,2010 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ERGent User Manual · Team ERG · Version 2+</title>
+<style>
+@page { size: Letter; margin: 18mm 16mm 20mm 16mm;
+  @bottom-center { content: counter(page); font: 9pt -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color: #6b7280; } }
+@page :first { @bottom-center { content: ""; } }
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { font: 10.5pt/1.55 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color: #1f2933;
+  max-width: 190mm; margin: 0 auto; padding: 0 4mm; }
+h1, h2, h3, h4 { color: #0f2540; line-height: 1.25; }
+h1 { font-size: 24pt; margin: 0 0 6mm; padding-bottom: 3mm; border-bottom: 2px solid #e8604c; }
+h1 .chnum { display: block; font-size: 10pt; letter-spacing: .12em; text-transform: uppercase;
+  color: #e8604c; margin-bottom: 2mm; }
+h2 { font-size: 15pt; margin: 8mm 0 3mm; break-after: avoid; }
+h3 { font-size: 12pt; margin: 6mm 0 2mm; break-after: avoid; }
+h4 { font-size: 10.5pt; margin: 4mm 0 1mm; break-after: avoid; }
+p, ul, ol, table, pre, blockquote { margin: 0 0 3.5mm; }
+ul, ol { padding-left: 6mm; }
+li { margin-bottom: 1mm; }
+a { color: #1d4ed8; text-decoration: none; }
+code { font: 9pt "SF Mono", Menlo, Consolas, monospace; background: #f1f3f5; padding: 0 1.2mm; border-radius: 1mm; }
+pre { background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 2mm; padding: 3mm; overflow-x: auto;
+  white-space: pre-wrap; break-inside: avoid; }
+pre code { background: none; padding: 0; font-size: 8.8pt; line-height: 1.45; }
+blockquote { border-left: 3px solid #e8604c; background: #fff6f4; padding: 2.5mm 4mm; color: #3a4552;
+  break-inside: avoid; }
+blockquote p:last-child { margin-bottom: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 9.3pt; }
+th, td { border: 1px solid #d5dbe1; padding: 1.6mm 2.4mm; text-align: left; vertical-align: top; }
+th { background: #eef2f7; color: #0f2540; }
+tr { break-inside: avoid; }
+thead { display: table-header-group; }
+hr { border: 0; border-top: 1px solid #d5dbe1; margin: 6mm 0; }
+.chapter { break-before: page; }
+.cover { min-height: 235mm; display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
+  padding: 0 8mm; border-left: 6px solid #e8604c; }
+.cover-mark { font-size: 16pt; letter-spacing: .25em; color: #e8604c; font-weight: 700; }
+.cover-title { font-size: 40pt; border: 0; margin: 6mm 0 2mm; padding: 0; }
+.cover-sub { font-size: 16pt; color: #3a4552; margin: 0 0 8mm; }
+.cover-tag { font-size: 12pt; color: #52606d; max-width: 120mm; }
+.cover-date { margin-top: 30mm; font-size: 10pt; color: #6b7280; }
+.toc { break-before: page; }
+.toc-title { border-bottom: 2px solid #e8604c; }
+.toc-list, .toc-list ul { list-style: none; padding-left: 0; }
+.toc-ch { margin: 4mm 0 1mm; font-weight: 700; font-size: 11.5pt; }
+.toc-ch ul { margin: 1mm 0 0 5mm; font-weight: 400; font-size: 9.8pt; }
+.toc-ch ul li { margin: 0; break-inside: avoid; }
+@media screen { body { padding: 10mm 6mm; } .chapter, .toc { border-top: 1px dashed #cbd2d9; padding-top: 8mm; margin-top: 8mm; } }
+</style></head>
+<body>
+<section class="cover">
+  <div class="cover-mark">ERGent</div>
+  <h1 class="cover-title">ERGent User Manual</h1>
+  <p class="cover-sub">Team ERG · Version 2+</p>
+  <p class="cover-tag">A control-chart dashboard for 911 EMS dispatch in Ithaca, NY</p>
+  <p class="cover-date">Cornell Six Sigma Hackathon &middot; Built October 17, 2026</p>
+</section>
+<nav class="toc"><h1 class="toc-title">Contents</h1><ul class="toc-list"><li class="toc-ch"><a href="#chapter-0-about-us">About us</a><ul><li><a href="#team-erg">Team ERG</a></li><li><a href="#why-we-built-ergent">Why we built ERGent</a></li><li><a href="#meet-the-team">Meet the team</a></li><li><a href="#thanks">Thanks</a></li></ul></li><li class="toc-ch"><a href="#chapter-1-getting-started">1. Getting started</a><ul><li><a href="#what-ergent-is">What ERGent is</a></li><li><a href="#why-we-built-it-this-way">Why we built it this way</a></li><li><a href="#who-it-is-for">Who it is for</a></li><li><a href="#how-to-start-it">How to start it</a></li><li><a href="#choose-a-role">Choose a role</a></li><li><a href="#the-data-is-synthetic">The data is synthetic</a></li><li><a href="#the-six-zones">The six zones</a></li><li><a href="#what-the-screens-look-like">What the screens look like</a></li><li><a href="#targets-used-everywhere">Targets used everywhere</a></li></ul></li><li class="toc-ch"><a href="#chapter-2-dispatcher-guide">2. Dispatcher guide</a><ul><li><a href="#the-screen-at-a-glance">The screen at a glance</a></li><li><a href="#how-to-read-a-clock">How to read a clock</a></li><li><a href="#the-top-row-counts">The top row: counts</a></li><li><a href="#1-log-a-call">1. Log a call</a></li><li><a href="#2-incoming-calls">2. Incoming calls</a></li><li><a href="#3-dispatched">3. Dispatched</a></li><li><a href="#4-en-route">4. En route</a></li><li><a href="#ambulances">Ambulances</a></li><li><a href="#zone-map">Zone map</a></li><li><a href="#5-resolved">5. Resolved</a></li><li><a href="#the-delay-reason-dialog">The delay-reason dialog</a></li><li><a href="#the-rules-that-protect-you-mistake-proofing">The rules that protect you (mistake-proofing)</a></li><li><a href="#clock-speed">Clock speed</a></li><li><a href="#simulate-a-shift">Simulate a shift</a></li><li><a href="#reset">Reset</a></li><li><a href="#download-calls">Download calls</a></li><li><a href="#history-tab">History tab</a></li><li><a href="#what-to-do-when">What to do when...</a></li></ul></li><li class="toc-ch"><a href="#chapter-3-supervisor-guide">3. Supervisor guide</a><ul><li><a href="#the-charts-tab">The Charts tab</a></li><li><a href="#the-actions-tab">The Actions tab</a></li><li><a href="#the-targets-dialog">The Targets dialog</a></li></ul></li><li class="toc-ch"><a href="#chapter-4-statistics-explained">4. Statistics explained</a><ul><li><a href="#where-each-statistic-appears">Where each statistic appears</a></li><li><a href="#three-ideas-to-know-first">Three ideas to know first</a></li><li><a href="#1-stage-times-and-data-checks">1. Stage times and data checks</a></li><li><a href="#2-mean-standard-deviation-percentiles-and-on-time">2. Mean, standard deviation, percentiles and % on time</a></li><li><a href="#3-checking-that-logs-behave-normality">3. Checking that logs behave (normality)</a></li><li><a href="#4-the-daily-x-s-chart">4. The daily X̄-S chart</a></li><li><a href="#5-the-every-call-chart-individuals-chart">5. The every-call chart (individuals chart)</a></li><li><a href="#6-the-flag-rules-and-what-makes-a-zone-amber-or-red">6. The flag rules, and what makes a zone amber or red</a></li><li><a href="#7-zones-as-subgroups-the-dispatcher-s-history-chart">7. Zones as subgroups (the dispatcher&#x27;s History chart)</a></li><li><a href="#8-delay-by-stage">8. Delay by stage</a></li><li><a href="#9-capability">9. Capability</a></li><li><a href="#10-zone-comparison-anova">10. Zone comparison (ANOVA)</a></li><li><a href="#11-welch-s-t-test-and-the-before-after-check">11. Welch&#x27;s t-test and the before/after check</a></li><li><a href="#12-impact-estimate">12. Impact estimate</a></li><li><a href="#13-suggested-actions-for-the-supervisor-rules-s1-to-s6">13. Suggested actions for the supervisor (rules S1 to S6)</a></li><li><a href="#14-dispatcher-tips-rules-t1-to-t6">14. Dispatcher tips (rules T1 to T6)</a></li><li><a href="#15-slip-back">15. Slip-back</a></li><li><a href="#quick-reference-the-formulas-on-one-page">Quick reference: the formulas on one page</a></li></ul></li><li class="toc-ch"><a href="#chapter-5-glossary-and-faq">5. Glossary and FAQ</a><ul><li><a href="#glossary">Glossary</a></li><li><a href="#frequently-asked-questions">Frequently asked questions</a></li></ul></li></ul></nav>
+<section class="chapter">
+<h1 id="chapter-0-about-us"><span class="chnum">Welcome</span>About us</h1>
+<blockquote>
+<p><strong>This page is a template.</strong> Every line in square brackets, like <strong>[TO FILL IN: ...]</strong>, is a
+placeholder. Team ERG: replace each one with your own words, then rebuild the manual (see the
+<code>README.md</code> in this folder). Delete this box when you are done.</p>
+</blockquote>
+<h2 id="team-erg">Team ERG</h2>
+<p><strong>[TO FILL IN: one short paragraph about the team. Who you are, what class and program you are in,
+and how you worked together during the Cornell Six Sigma Hackathon. Two to four sentences.]</strong></p>
+<h2 id="why-we-built-ergent">Why we built ERGent</h2>
+<p><strong>[TO FILL IN: the "why". Why did your team pick the emergency response prompt? What problem did you
+want to solve for the people who work in a 911 center? What do you hope a supervisor or a dispatcher
+will feel when they use ERGent? Three to five sentences.]</strong></p>
+<h2 id="meet-the-team">Meet the team</h2>
+<h3>Nidhi Baderiya</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Your answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Photo</strong></td>
+<td><strong>[Photo placeholder: add a square photo, about 400 x 400 pixels]</strong></td>
+</tr>
+<tr>
+<td><strong>Role on the team</strong></td>
+<td><strong>[TO FILL IN: role on the team]</strong></td>
+</tr>
+<tr>
+<td><strong>Program</strong></td>
+<td><strong>[TO FILL IN: program, for example "Cornell M.Eng. Systems Engineering"]</strong></td>
+</tr>
+<tr>
+<td><strong>Bio</strong></td>
+<td><strong>[TO FILL IN: two-sentence bio]</strong></td>
+</tr>
+<tr>
+<td><strong>What I built</strong></td>
+<td><strong>[TO FILL IN: what I built]</strong></td>
+</tr>
+<tr>
+<td><strong>Contact</strong></td>
+<td><strong>[TO FILL IN: LinkedIn and/or email]</strong></td>
+</tr>
+</tbody>
+</table>
+<h3>Zeba Haq</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Your answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Photo</strong></td>
+<td><strong>[Photo placeholder: add a square photo, about 400 x 400 pixels]</strong></td>
+</tr>
+<tr>
+<td><strong>Role on the team</strong></td>
+<td><strong>[TO FILL IN: role on the team]</strong></td>
+</tr>
+<tr>
+<td><strong>Program</strong></td>
+<td><strong>[TO FILL IN: program, for example "Cornell M.Eng. Systems Engineering"]</strong></td>
+</tr>
+<tr>
+<td><strong>Bio</strong></td>
+<td><strong>[TO FILL IN: two-sentence bio]</strong></td>
+</tr>
+<tr>
+<td><strong>What I built</strong></td>
+<td><strong>[TO FILL IN: what I built]</strong></td>
+</tr>
+<tr>
+<td><strong>Contact</strong></td>
+<td><strong>[TO FILL IN: LinkedIn and/or email]</strong></td>
+</tr>
+</tbody>
+</table>
+<h3>Dhruv Bhandari</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Your answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Photo</strong></td>
+<td><strong>[Photo placeholder: add a square photo, about 400 x 400 pixels]</strong></td>
+</tr>
+<tr>
+<td><strong>Role on the team</strong></td>
+<td><strong>[TO FILL IN: role on the team]</strong></td>
+</tr>
+<tr>
+<td><strong>Program</strong></td>
+<td><strong>[TO FILL IN: program, for example "Cornell M.Eng. Systems Engineering"]</strong></td>
+</tr>
+<tr>
+<td><strong>Bio</strong></td>
+<td><strong>[TO FILL IN: two-sentence bio]</strong></td>
+</tr>
+<tr>
+<td><strong>What I built</strong></td>
+<td><strong>[TO FILL IN: what I built]</strong></td>
+</tr>
+<tr>
+<td><strong>Contact</strong></td>
+<td><strong>[TO FILL IN: LinkedIn and/or email]</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="thanks">Thanks</h2>
+<p><strong>[TO FILL IN: thank-yous. For example your professor, mentors, classmates, and anyone who tested
+ERGent. Optional.]</strong></p>
+<p><em>Built with an AI coding agent, as the hackathon encourages. The team reviewed the work and can
+explain every number ERGent prints.</em></p>
+</section>
+<section class="chapter">
+<h1 id="chapter-1-getting-started"><span class="chnum">Chapter 1</span>Getting started</h1>
+<h2 id="what-ergent-is">What ERGent is</h2>
+<p>ERGent is a dashboard for a city 911 ambulance (EMS) dispatch center. Here, the city is <strong>Ithaca, NY</strong>.
+It records the five times of every call: when the call arrived, when an ambulance was dispatched, when
+it left, when it reached the scene, and when it cleared. From those times it works out how long each
+part of a call took. It then shows a supervisor <strong>which zone</strong> is slow, <strong>which part of the call</strong> is
+slow, and <strong>since when</strong>. It flags zones that need attention, suggests a fix with its evidence, and
+later checks whether the fix worked. For the dispatcher on shift, it shows live clocks, so a late call
+is hard to miss.</p>
+<p>ERGent only <strong>flags and suggests</strong>. It never dispatches an ambulance or changes staffing. People decide.</p>
+<h2 id="why-we-built-it-this-way">Why we built it this way</h2>
+<ul>
+<li>A monthly average hides the slow calls. So ERGent also shows the 90th and 95th percentiles and uses
+  control charts.</li>
+<li>Splitting each call into <strong>stages</strong> shows <em>why</em> a call was slow: dispatch, crew turnout, or travel.</li>
+<li>A chart for each <strong>zone</strong> shows <em>where</em> the problem is, and <em>since when</em>.</li>
+<li>A <strong>before and after</strong> check shows whether a fix really worked.</li>
+</ul>
+<h2 id="who-it-is-for">Who it is for</h2>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>When they use it</th>
+<th>What they decide</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Supervisor</strong> (the main user)</td>
+<td>At the start of each shift, and whenever a flag appears</td>
+<td>Which zone needs attention, which stage causes it, which fix to try, and later whether the fix worked</td>
+</tr>
+<tr>
+<td><strong>Dispatcher</strong> (the second user)</td>
+<td>In real time, during a shift</td>
+<td>Which open call is running late right now</td>
+</tr>
+</tbody>
+</table>
+<h2 id="how-to-start-it">How to start it</h2>
+<p>You need Python 3.12. The first time only, make a virtual environment and install the packages. Run
+these in the project folder:</p>
+<pre><code class="language-bash">python3.12 -m venv .venv
+.venv/bin/pip install -r app/requirements.txt
+</code></pre>
+<p>Then start the app with one command:</p>
+<pre><code class="language-bash">cd app &amp;&amp; ./testme.sh
+</code></pre>
+<p>Open <strong>http://localhost:8000</strong> in your browser. Stop the app with Ctrl+C in the terminal.</p>
+<p><strong>Live version:</strong> LIVE URL: (added after deploy). If your team has deployed ERGent, open that address
+instead. You do not need to log in.</p>
+<blockquote>
+<p><strong>Internet needed.</strong> The Ithaca map and its tiles load from the internet. If the map area is blank,
+check your connection.</p>
+</blockquote>
+<h2 id="choose-a-role">Choose a role</h2>
+<p>The start page has two buttons:</p>
+<ul>
+<li><strong>I'm a dispatcher</strong> opens the live board and the History tab. Read chapter 2.</li>
+<li><strong>I'm a supervisor</strong> opens the Charts and Actions tabs. Read chapter 3.</li>
+</ul>
+<p>You can change role at any time. Click <strong>Switch role</strong> in the top right corner. Each browser tab keeps
+its own board, so two people can try ERGent at once without affecting each other.</p>
+<h2 id="the-data-is-synthetic">The data is synthetic</h2>
+<p>All the data in ERGent is <strong>invented</strong>. It was made by a script with a fixed random seed, so it is the
+same every time. It is shaped like real field data, but it contains <strong>no real patients, addresses or
+names</strong>. Nothing here describes real Ithaca emergency calls.</p>
+<p>There are three data sets in the Dataset menu (the supervisor view):</p>
+<table>
+<thead>
+<tr>
+<th>Data set</th>
+<th>What it is for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Demo</strong> (42 days)</td>
+<td>Has planted problems, so the tool has something to find. Zone D's crew turnout gets slow from Sep 15 and a fix is logged on Sep 29. Zone C slows in the weekday rush hour from Sep 20.</td>
+</tr>
+<tr>
+<td><strong>Baseline</strong> (28 days)</td>
+<td>A stable city. A quiet dashboard is the right answer.</td>
+</tr>
+<tr>
+<td><strong>Messy file</strong> (3 days)</td>
+<td>Has planted data errors: missing times, out-of-order times, a duplicate call ID. ERGent lists them and leaves them out.</td>
+</tr>
+</tbody>
+</table>
+<p>The dispatcher's <strong>Simulate a shift</strong> button replays one day of the demo data.</p>
+<h2 id="the-six-zones">The six zones</h2>
+<p>ERGent splits Ithaca into six zones. The outlines on the map are <strong>illustrative</strong>. They are not the
+official EMS districts.</p>
+<table>
+<thead>
+<tr>
+<th>Zone</th>
+<th>Name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A</strong></td>
+<td>West Hill</td>
+</tr>
+<tr>
+<td><strong>B</strong></td>
+<td>Northside &amp; Fall Creek</td>
+</tr>
+<tr>
+<td><strong>C</strong></td>
+<td>Cornell &amp; Collegetown</td>
+</tr>
+<tr>
+<td><strong>D</strong></td>
+<td>West End &amp; Southwest</td>
+</tr>
+<tr>
+<td><strong>E</strong></td>
+<td>Downtown &amp; South Hill</td>
+</tr>
+<tr>
+<td><strong>F</strong></td>
+<td>East Hill &amp; Belle Sherman</td>
+</tr>
+</tbody>
+</table>
+<p>On the map, A, B and C run west to east along the north side. D, E and F run west to east along the
+south side. Zones that touch each other are neighbors. ERGent uses that when it suggests which zone
+should cover for another.</p>
+<h2 id="what-the-screens-look-like">What the screens look like</h2>
+<p>The colors and layout can change between versions of ERGent. This manual describes screens by their
+<strong>titles and controls</strong>, so it still works if the look changes.</p>
+<h2 id="targets-used-everywhere">Targets used everywhere</h2>
+<p>Each call must meet these targets in <strong>90% of calls</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Part of the call</th>
+<th>Priority 1</th>
+<th>Priority 2</th>
+<th>Priority 3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dispatch (call received to dispatched)</td>
+<td>64 s</td>
+<td>64 s</td>
+<td>64 s</td>
+</tr>
+<tr>
+<td>Turnout (dispatched to en route)</td>
+<td>60 s</td>
+<td>60 s</td>
+<td>60 s</td>
+</tr>
+<tr>
+<td>Travel (en route to on scene)</td>
+<td>8:00</td>
+<td>14:00</td>
+<td>19:00</td>
+</tr>
+<tr>
+<td><strong>Response</strong> (dispatched to on scene)</td>
+<td><strong>9 min</strong></td>
+<td>15 min</td>
+<td>20 min</td>
+</tr>
+</tbody>
+</table>
+<p>The priority 1 numbers come from NFPA 1710, a US fire and EMS standard. <strong>The priority 2 and 3 targets
+are our own assumptions</strong>, because the standard does not set them. A supervisor can change every target
+(see chapter 3).</p>
+</section>
+<section class="chapter">
+<h1 id="chapter-2-dispatcher-guide"><span class="chnum">Chapter 2</span>Dispatcher guide</h1>
+<p>This chapter is for the dispatcher on shift. It walks through every part of the dispatcher screen, in
+the same order as the numbers on the screen. Click <strong>I'm a dispatcher</strong> on the start page to begin.</p>
+<h2 id="the-screen-at-a-glance">The screen at a glance</h2>
+<ul>
+<li>The <strong>header</strong> holds the simulation controls (Day, Speed, Start, <strong>Simulate a shift</strong>, <strong>Reset</strong>), a
+  chip that shows the clock mode (such as <code>LIVE 1x</code> or <code>SIM 120x</code>), and <strong>Switch role</strong>.</li>
+<li>Two tabs sit under the header: <strong>Live board</strong> and <strong>History</strong>.</li>
+<li><strong>Live board</strong> is for the calls happening right now. <strong>History</strong> looks back over the current shift
+  and the one before it.</li>
+</ul>
+<h2 id="how-to-read-a-clock">How to read a clock</h2>
+<p>Every open call has a running clock. Each clock has a target:</p>
+<table>
+<thead>
+<tr>
+<th>Clock</th>
+<th>Target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Waiting</strong> (call received to dispatched)</td>
+<td>1:04</td>
+</tr>
+<tr>
+<td><strong>Turnout</strong> (dispatched to en route)</td>
+<td>1:00</td>
+</tr>
+<tr>
+<td><strong>Travel</strong> (en route to on scene)</td>
+<td>8:00 for priority 1, 14:00 for priority 2, 19:00 for priority 3</td>
+</tr>
+<tr>
+<td><strong>Total</strong> (dispatched to on scene)</td>
+<td>9:00 for priority 1, 15:00 for priority 2, 20:00 for priority 3</td>
+</tr>
+</tbody>
+</table>
+<p>A clock gives you a <strong>warning at 80% of its target</strong>. It changes again when it is <strong>past the target</strong>.
+Past the target means the call is late in that stage. A supervisor can change the targets (chapter 3).</p>
+<h2 id="the-top-row-counts">The top row: counts</h2>
+<p>Five counters show the workload: <strong>Waiting</strong>, <strong>Dispatched</strong>, <strong>En route</strong>, <strong>On scene</strong> and <strong>Units
+available</strong>. They update by themselves.</p>
+<h2 id="1-log-a-call">1. Log a call</h2>
+<p>Use this card to enter a call by hand. In a real center, the call-taker's system would do this for you.</p>
+<ol>
+<li>Choose the <strong>Zone</strong>. The zone letters match the Ithaca map (A West Hill, B Northside &amp; Fall Creek,
+   C Cornell &amp; Collegetown, D West End &amp; Southwest, E Downtown &amp; South Hill, F East Hill &amp; Belle
+   Sherman).</li>
+<li>Choose the <strong>Priority</strong>: <strong>1: Life-threatening</strong>, <strong>2: Urgent</strong> or <strong>3: Non-urgent</strong>.</li>
+<li>Optionally choose the <strong>Clock speed</strong> (see "Clock speed" below). Leave it at 1x for real time.</li>
+<li>Click <strong>Add call</strong>.</li>
+</ol>
+<p>The call gets an ID like <code>LIVE-20261016-001</code>. Its <strong>received time is stamped from the board clock</strong>.
+You do not type any time.</p>
+<h2 id="2-incoming-calls">2. Incoming calls</h2>
+<p>New calls wait here until you dispatch an ambulance. Each row shows the call ID, the zone, the priority,
+and a <strong>Waiting</strong> clock.</p>
+<ol>
+<li>Look at the unit menu on the row. It lists only <strong>available</strong> ambulances. Ambulances from the call's
+   own zone come first. Ambulances from other zones are marked with their home zone.</li>
+<li>Pick the ambulance you want.</li>
+<li>Click <strong>Dispatch</strong>.</li>
+</ol>
+<p>If no ambulance is free, the row says <strong>No unit free</strong>. Wait for one to clear, or bring one back into
+service (see "Ambulances").</p>
+<p>If the call has waited longer than its 1:04 target, ERGent asks for a delay reason first (see "The
+delay-reason dialog").</p>
+<h2 id="3-dispatched">3. Dispatched</h2>
+<p>The call is assigned and the crew must get moving. The row shows the unit and a <strong>Turnout</strong> clock.
+When the crew leaves, click <strong>En route</strong>. If turnout ran past 1:00, ERGent asks why.</p>
+<h2 id="4-en-route">4. En route</h2>
+<p>The ambulance is on the road. The row shows two clocks: <strong>Travel</strong> and <strong>Total</strong>. When the crew
+arrives, click <strong>On scene</strong>. If travel ran past its target, or the total response ran past its target,
+ERGent asks why.</p>
+<p>If the ambulance comes from another zone, the row says so, for example "(from zone A)".</p>
+<h2 id="ambulances">Ambulances</h2>
+<p>This card shows all 12 ambulances in four columns. Each column has a count:</p>
+<ul>
+<li><strong>Available</strong>: free to be dispatched.</li>
+<li><strong>Responding</strong>: dispatched or en route. The chip says which.</li>
+<li><strong>On scene</strong>: at the scene, not yet cleared.</li>
+<li><strong>Out of service</strong>: not usable.</li>
+</ul>
+<p>Each ambulance shows its ID and home zone, and one button.</p>
+<ul>
+<li><strong>Out of service</strong> takes an ambulance out of use, for example after a breakdown. If it was rolling
+  to a call you logged, that call is flagged <strong>Breakdown</strong>. ERGent records "ambulance breakdown" as the
+  reason when the call reaches the scene, so you do not have to.</li>
+<li><strong>Back in service</strong> returns an ambulance to the <strong>Available</strong> column.</li>
+</ul>
+<h2 id="zone-map">Zone map</h2>
+<p>The map shows Ithaca with the six zones. The outlines are <strong>illustrative</strong>, not official EMS districts.</p>
+<ul>
+<li><strong>Hover</strong> over a zone to see its name, its status, how many calls are open there and how many
+  ambulances are available.</li>
+<li><strong>Click</strong> a zone to pick it in <strong>Log a call</strong>.</li>
+<li>The status comes from the clocks of that zone's open calls. A zone shows <strong>On track</strong> when all its
+  clocks are comfortable, <strong>Watch</strong> when a clock is above 80% of its target, and <strong>Past target</strong> when a
+  clock is late.</li>
+<li>The map needs an internet connection to draw.</li>
+</ul>
+<h2 id="5-resolved">5. Resolved</h2>
+<p>A call moves here <strong>when it reaches the scene</strong>. "On scene" counts as resolved. The list shows the
+latest 60 calls and scrolls.</p>
+<p>Each row shows the unit, the time, the delay reason (if any), and the <strong>final response time</strong>. The
+response time is marked as late when it passed its target.</p>
+<ul>
+<li>A call that you logged by hand, and that is still at the scene, has a <strong>Clear</strong> button. Click it,
+  then confirm "Clear call ...?". The row changes to <strong>Cleared</strong> and the ambulance becomes available.</li>
+<li>Replayed calls (from <strong>Simulate a shift</strong>) show <strong>At the scene</strong> and <strong>Replay</strong>. They are
+  read-only.</li>
+</ul>
+<h2 id="the-delay-reason-dialog">The delay-reason dialog</h2>
+<p>When you press a button that ends a stage that ran <strong>past its target</strong>, ERGent will not accept the
+press until you say why. A dialog titled <strong>Why was this late?</strong> opens. It tells you how long the stage
+took and what the target was.</p>
+<ol>
+<li>Choose one reason from the list:<ul>
+<li>Traffic or road closure</li>
+<li>Ambulance breakdown</li>
+<li>Unit from another zone</li>
+<li>Unclear address</li>
+<li>Weather</li>
+<li>Crew not ready</li>
+</ul>
+</li>
+<li>Click <strong>Save reason and continue</strong>.</li>
+</ol>
+<p><strong>The time you pressed the button is kept</strong>, not the time you chose the reason. If you click
+<strong>Cancel</strong>, the dialog closes and the press is not recorded.</p>
+<p>The reason is saved with the call. The supervisor's suggested actions use these reasons.</p>
+<h2 id="the-rules-that-protect-you-mistake-proofing">The rules that protect you (mistake-proofing)</h2>
+<p>ERGent is built so that wrong entries are hard to make:</p>
+<ul>
+<li>Only the <strong>next valid button</strong> works: <strong>Dispatch</strong>, then <strong>En route</strong>, then <strong>On scene</strong>, then
+  <strong>Clear</strong>. Any other press is refused with a message.</li>
+<li>You can only dispatch an <strong>available</strong> ambulance.</li>
+<li>A <strong>late</strong> stage needs a <strong>reason</strong>. The reason is one of six fixed codes, so it can be counted.</li>
+<li><strong>Clear</strong> asks for confirmation first.</li>
+<li>Times come from the clock. You never type a time.</li>
+</ul>
+<h2 id="clock-speed">Clock speed</h2>
+<p>The <strong>Clock speed</strong> menu on the <strong>1 Log a call</strong> card sets how fast the board clock runs when <strong>no
+simulation is running</strong>. The choices are <strong>1x</strong>, <strong>10x</strong>, <strong>30x</strong> and <strong>60x</strong>.</p>
+<ul>
+<li>At <strong>1x</strong> the board clock is real time.</li>
+<li>At <strong>60x</strong>, one real second is one minute on the board. This is good for practice, because clocks
+  turn late in seconds.</li>
+<li>Changing the speed <strong>continues from the current board time</strong>. The clock never jumps.</li>
+<li>At a high speed the board clock runs ahead of real time. The shift label in <strong>History</strong> follows the
+  board clock.</li>
+</ul>
+<p>The header chip shows the speed, for example <code>LIVE 60x</code>.</p>
+<h2 id="simulate-a-shift">Simulate a shift</h2>
+<p>The header controls replay one day of the demo data on a fast clock. This is the best way to learn
+ERGent.</p>
+<ol>
+<li>Choose the <strong>Day</strong> (the default is Sep 20).</li>
+<li>Choose the <strong>Speed</strong>: <strong>30x</strong>, <strong>60x</strong> or <strong>120x</strong>.</li>
+<li>Choose where to <strong>Start</strong>: <strong>00:00</strong>, <strong>06:00</strong>, <strong>14:00</strong> or <strong>22:00</strong>.</li>
+<li>Click <strong>Simulate a shift</strong>.</li>
+</ol>
+<p>The chip changes to <code>SIM 120x</code> (or the speed you chose). Calls appear and move through cards 2, 3, 4
+and 5 at the times in the data. The button becomes <strong>Pause</strong>. Then it becomes <strong>Resume</strong>, and <strong>Run
+again</strong> when the day ends.</p>
+<p>Good to know:</p>
+<ul>
+<li>Replayed calls are <strong>read-only</strong>. You can still add your own calls, and they use the same clock.</li>
+<li>Calls that were already cleared before the start time are left out.</li>
+<li>You can change the <strong>Speed</strong> while it runs.</li>
+<li>To change the day or the start time, click <strong>Reset</strong> first.</li>
+</ul>
+<h2 id="reset">Reset</h2>
+<p><strong>Reset</strong> clears everything back to zero:</p>
+<ul>
+<li>All replayed and hand-logged calls disappear.</li>
+<li><strong>Waiting</strong>, <strong>Dispatched</strong>, <strong>En route</strong> and <strong>On scene</strong> all show 0.</li>
+<li>All 12 ambulances are <strong>Available</strong> again.</li>
+<li><strong>Resolved</strong> is empty.</li>
+<li>The clock goes back to real time, at the clock speed you last chose.</li>
+</ul>
+<h2 id="download-calls">Download calls</h2>
+<p><strong>Download calls (CSV)</strong> saves this session's calls as a spreadsheet file. The columns are the same as
+the data files in the project, so you can open it in Excel or load it back into ERGent's tools.</p>
+<h2 id="history-tab">History tab</h2>
+<p>History looks back over the <strong>current shift and the one before it</strong>. A shift is eight hours: <strong>day</strong>
+06:00 to 14:00, <strong>evening</strong> 14:00 to 22:00, <strong>night</strong> 22:00 to 06:00. History follows the board clock,
+so during a simulation it follows the simulated time. It refreshes about every 5 seconds while you look
+at it.</p>
+<p>From top to bottom:</p>
+<ol>
+<li><strong>The shift label.</strong> For example: "Current: day shift 06:00-14:00, Sep 16 · Previous: night shift
+   22:00-06:00, Sep 15".</li>
+<li><strong>Four numbers:</strong> <strong>Calls</strong>, <strong>Mean (min)</strong>, <strong>Standard deviation (min)</strong> and <strong>On time</strong>. They
+   cover all priorities and only calls that have reached the scene. "On time" means within each call's
+   own target. The mean is the average response time. The standard deviation shows how spread out the
+   times are.</li>
+<li><strong>Response time by zone</strong> (the chart). Use the <strong>Priority</strong> menu to switch between <strong>Priority 1:
+   Life-threatening</strong>, <strong>Priority 2: Urgent</strong> and <strong>Priority 3: Non-urgent</strong>. Each zone has a box that
+   shows where most of its calls fall, and a diamond for its average. A line shows the city's center,
+   short dashed lines show each zone's limits, and a line shows the target.<ul>
+<li>A <strong>red diamond</strong> is a zone that is <strong>slower than the whole city</strong>. <strong>Hover over it</strong> to see why.
+ For example: "Zone D is slower than the city: 9.3 min typical vs. 6.3 min. Main cause: crew
+ turnout (100% of minutes over target). Top reason: crew not ready (2 of 2 late calls)."</li>
+<li>A zone marked <strong>faster than the city</strong> is shown as "check the data". Be careful: very fast times
+ can be a data mistake.</li>
+<li>Under the chart, a note names the slower zones, or says "No zone is slower than the city as a
+ whole."</li>
+<li>The number under each zone letter (such as <code>n=5</code>) is how many calls it has. A zone with few calls
+ has wide limits, so be careful with it.</li>
+</ul>
+</li>
+<li><strong>Suggested actions</strong> (on the right). ERGent's live tips for you. See below.</li>
+</ol>
+<p>Right after you start ERGent in real time, History is empty, because the demo data is from the past.
+It fills up when you log calls or run <strong>Simulate a shift</strong>.</p>
+<h3>Suggested actions (tips T1 to T6)</h3>
+<p>Each tip has a short name, a zone tag, a plain sentence, and the evidence in small type. A note reminds
+you: "For the dispatcher's judgment; the tool decides nothing on its own."</p>
+<table>
+<thead>
+<tr>
+<th>Tip</th>
+<th>When it appears</th>
+<th>What it suggests</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>T1 Dispatch now</strong></td>
+<td>A call on the board has waited longer than 64 s for dispatch</td>
+<td>Dispatch it now. It names the nearest free ambulance: one from the call's own zone first, then one from a neighboring zone. If none is free, it says so.</td>
+</tr>
+<tr>
+<td><strong>T2 Rebalance</strong></td>
+<td>A zone has no free ambulance and a neighboring zone has two or more</td>
+<td>Move one ambulance to stand by in the empty zone.</td>
+</tr>
+<tr>
+<td><strong>T3 Cover</strong></td>
+<td>An ambulance is out of service</td>
+<td>Ask the neighboring zones to cover that zone's calls.</td>
+</tr>
+<tr>
+<td><strong>T4 Route</strong></td>
+<td>A zone's typical travel time is at least 1.25 times the city's (needs 3 or more calls in the two shifts)</td>
+<td>Check the route. If two or more late calls share a reason, the tip names it: reroute around traffic or road works, or keep an ambulance posted in that zone.</td>
+</tr>
+<tr>
+<td><strong>T5 Station alert</strong></td>
+<td>A zone's typical crew turnout is over 60 s (needs 3 or more calls)</td>
+<td>Alert that zone's station: crews are slow to get rolling.</td>
+</tr>
+<tr>
+<td><strong>T6 Dispatcher load</strong></td>
+<td>Fewer than 9 in 10 calls were dispatched within 64 s over the two shifts (the 90th percentile of dispatch time is over 64 s; needs 5 or more calls)</td>
+<td>Ask the supervisor for a second dispatcher.</td>
+</tr>
+</tbody>
+</table>
+<p>If there is nothing to suggest, the card says "No suggestions right now."</p>
+<h2 id="what-to-do-when">What to do when...</h2>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A call has waited too long</td>
+<td>Pick an ambulance in <strong>2 Incoming calls</strong> and click <strong>Dispatch</strong>. The <strong>T1 Dispatch now</strong> tip in History names the nearest free one.</td>
+</tr>
+<tr>
+<td>The row says <strong>No unit free</strong></td>
+<td>Wait for an ambulance to clear. If one is out of service and ready again, click <strong>Back in service</strong>.</td>
+</tr>
+<tr>
+<td>An ambulance breaks down</td>
+<td>Click <strong>Out of service</strong> on it. Its call is flagged <strong>Breakdown</strong>, and the reason is recorded for you.</td>
+</tr>
+<tr>
+<td>A button you expect is missing</td>
+<td>Only the next valid button is shown. Check which card the call is in.</td>
+</tr>
+<tr>
+<td>ERGent asks "Why was this late?"</td>
+<td>Choose the real reason and click <strong>Save reason and continue</strong>. Your press time is kept.</td>
+</tr>
+<tr>
+<td>You pressed a button by mistake before the dialog</td>
+<td>Click <strong>Cancel</strong> in the dialog. The press is not recorded.</td>
+</tr>
+<tr>
+<td>You want to practice</td>
+<td>Click <strong>Simulate a shift</strong>, or add calls and set <strong>Clock speed</strong> to 60x.</td>
+</tr>
+<tr>
+<td>You want to start again</td>
+<td>Click <strong>Reset</strong>.</td>
+</tr>
+<tr>
+<td>You want to see how the shift is going</td>
+<td>Open <strong>History</strong>.</td>
+</tr>
+<tr>
+<td>A zone is red in History</td>
+<td>Hover over the red diamond to read why. Look at the <strong>Suggested actions</strong> next to it.</td>
+</tr>
+<tr>
+<td>A zone has no free ambulance</td>
+<td>Look for <strong>T2 Rebalance</strong> in History.</td>
+</tr>
+<tr>
+<td>You want to keep a record</td>
+<td>Click <strong>Download calls (CSV)</strong>.</td>
+</tr>
+<tr>
+<td>The map is blank</td>
+<td>Check your internet connection. The map loads from the internet.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section class="chapter">
+<h1 id="chapter-3-supervisor-guide"><span class="chnum">Chapter 3</span>Supervisor guide</h1>
+<p>This chapter is for the EMS operations supervisor. The supervisor view helps you answer four
+questions, in this order:</p>
+<ol>
+<li><strong>Which zone</strong> needs attention?</li>
+<li><strong>Which part of the call</strong> (dispatch, crew turnout or travel) is slow?</li>
+<li><strong>What should we try?</strong></li>
+<li><strong>Did the fix work?</strong></li>
+</ol>
+<p>Click <strong>I'm a supervisor</strong> on the start page. You get two tabs: <strong>Charts</strong> and <strong>Actions</strong>. Charts
+answers questions 1 and 2. Actions answers questions 3 and 4.</p>
+<p><strong>Every card has one plain title.</strong> Under most cards, a <strong>More info</strong> toggle opens a short explanation
+of the card in two or three sentences. Use it whenever you want to know what you are looking at.</p>
+<h2 id="the-charts-tab">The Charts tab</h2>
+<h3>The control bar</h3>
+<p>The control bar at the top of Charts sets what <strong>both tabs</strong> show.</p>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>Choices</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Chart</strong></td>
+<td><strong>Daily chart</strong>, <strong>Every call</strong></td>
+<td>Which control chart to show (one at a time)</td>
+</tr>
+<tr>
+<td><strong>Zone</strong></td>
+<td>Zone A to F, with its name</td>
+<td>Which zone the control chart shows. You can also click a zone on the map.</td>
+</tr>
+<tr>
+<td><strong>Priority</strong></td>
+<td><strong>1: Life-threatening</strong>, <strong>2: Urgent</strong>, <strong>3: Non-urgent</strong></td>
+<td>Which calls to look at. Each priority has its own target.</td>
+</tr>
+<tr>
+<td><strong>Dataset</strong></td>
+<td>Demo, Baseline, Messy file</td>
+<td>Which data to look at (see chapter 1)</td>
+</tr>
+<tr>
+<td><strong>As of</strong></td>
+<td>A date in the data</td>
+<td>The "today" for every card. Later calls are ignored. It moves to the last day of the data when you change the dataset.</td>
+</tr>
+<tr>
+<td><strong>Chart period</strong></td>
+<td>Last 14, 28 or 42 days</td>
+<td>How much history every card uses. <strong>It also sets the control limits</strong> (see below).</td>
+</tr>
+<tr>
+<td><strong>Targets</strong></td>
+<td>A button</td>
+<td>Opens the Targets dialog (see the end of this chapter)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Tip.</strong> To follow the demo story, choose the <strong>Demo</strong> data set and set <strong>As of</strong> to <strong>2026-09-28</strong>.
+That is the day before the fix. Then set it to <strong>2026-10-12</strong> to see the result.</p>
+</blockquote>
+<h3>Control chart</h3>
+<p>The control chart is the main picture. It shows whether a zone is behaving the way it normally does.
+Choose <strong>Daily chart</strong> or <strong>Every call</strong>.</p>
+<h4>Daily chart</h4>
+<p>The Daily chart has two panels.</p>
+<p><strong>Top panel: "Zone X: daily average response."</strong></p>
+<ul>
+<li>Each <strong>dot</strong> is <strong>one day</strong>. Its height is that day's typical response time in minutes. ("Typical" is
+  a geometric average. It is a fair average for times with a long slow tail.)</li>
+<li>The <strong>center line</strong> is the zone's normal level. It is the average of the daily dots in the chart
+  period.</li>
+<li>The two <strong>dashed lines</strong> are the <strong>control limits</strong>. They are the upper control limit (<strong>UCL</strong>) and
+  the lower control limit (<strong>LCL</strong>). They mark the normal range. They are the same for every day.</li>
+<li>A <strong>red dot</strong> is a day that broke a flag rule (see below). Something probably changed.</li>
+<li>A <strong>hollow ring</strong> is a "check the data" day: unusually <em>fast</em>. Check the records before you trust it.</li>
+<li>The <strong>amber line</strong> is the <strong>target</strong> (the specification limit). It is a requirement from the
+  standard. It is not part of the control limits.</li>
+<li>A <strong>green vertical line</strong> marks a logged action (a fix).</li>
+</ul>
+<p><strong>Bottom panel: "Daily spread."</strong> It shows how spread out that day's calls were. A red dot means some
+calls that day were much slower than others.</p>
+<p><strong>What makes a dot red?</strong> One of these rules fired on the slow side:</p>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>A red dot appears when...</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1</td>
+<td>one day is far outside the normal range (beyond 3 sigma)</td>
+</tr>
+<tr>
+<td>R2</td>
+<td>2 of the last 3 days are well above normal (beyond 2 sigma)</td>
+</tr>
+<tr>
+<td>R3</td>
+<td>4 of the last 5 days are above normal (beyond 1 sigma)</td>
+</tr>
+<tr>
+<td>R4</td>
+<td>8 days in a row are above the center line</td>
+</tr>
+<tr>
+<td>R5</td>
+<td>6 days in a row are getting slower</td>
+</tr>
+</tbody>
+</table>
+<p>A day on the <em>fast</em> side only says "check the data". It is not an alarm.</p>
+<blockquote>
+<p><strong>Important: limits come from the chart period.</strong> The control limits are worked out from the days in
+the <strong>chart period</strong> you selected. That is simple, and it keeps the chart, the map, the suggestions
+and the capability card all in agreement. But there is a trade-off. If a problem lasts for most of
+the period, it <strong>widens the limits</strong> and can <strong>hide itself</strong>. Example: in the demo data, as of Sep
+28 with a 28-day period, Zone D's daily chart shows <strong>no red dots</strong>, because D's slowdown (from Sep
+15) is inside the window. The other cards still show the problem: the <strong>Zone map</strong> is amber for D,
+<strong>Delay by stage</strong> blames crew turnout, and <strong>Capability</strong> says D is below the standard. <strong>Always
+read the daily chart together with those cards.</strong></p>
+</blockquote>
+<h4>Every call</h4>
+<p><strong>Every call</strong> shows each call, in the order the calls came in. The height is the response time in
+minutes. The scale is a log scale, so the slow tail does not squash the rest.</p>
+<ul>
+<li>The <strong>center line</strong> is the typical call.</li>
+<li>The dashed <strong>UCL</strong> and <strong>LCL</strong> are the normal range for a <em>single</em> call.</li>
+<li>A <strong>red dot</strong> is a call <strong>above the UCL</strong>: an unusual delay worth looking at one by one.</li>
+<li>The <strong>amber line</strong> is the target. Calls above it missed the target.</li>
+</ul>
+<h3>Statistics</h3>
+<p>The <strong>Statistics</strong> card sums up the chart period for <strong>all zones</strong>, for the priority you chose. The
+line under the title shows the dates and the number of calls.</p>
+<table>
+<thead>
+<tr>
+<th>Number</th>
+<th>What it means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Average</strong></td>
+<td>The mean response time in minutes</td>
+</tr>
+<tr>
+<td><strong>Standard deviation</strong></td>
+<td>How spread out the response times are. A big number means less predictable service.</td>
+</tr>
+<tr>
+<td><strong>On time</strong></td>
+<td>The share of calls within the target. The goal is <strong>at least 90%</strong>.</td>
+</tr>
+<tr>
+<td><strong>Zones flagged</strong></td>
+<td>How many zones are amber or red on the map, out of 6</td>
+</tr>
+</tbody>
+</table>
+<h3>Zone map</h3>
+<p>The <strong>Zone map</strong> shows Ithaca in six zones. The outlines are <strong>illustrative</strong>, not the official EMS
+districts. Each zone is colored by its status over the <strong>last 7 days</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>On track</strong></td>
+<td>Nothing to worry about</td>
+</tr>
+<tr>
+<td><strong>Worth a look</strong> (amber)</td>
+<td>One warning sign, either a real change on the chart or a 90th percentile over the target</td>
+</tr>
+<tr>
+<td><strong>Act now</strong> (red)</td>
+<td>Both warning signs together</td>
+</tr>
+<tr>
+<td><strong>Not enough data</strong></td>
+<td>Too few calls to judge</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Hover</strong> over a zone to see its status and the reasons, such as "90th percentile 10.2 min vs. 9
+  min target" and "turnout causes 99% of minutes over target".</li>
+<li><strong>Click</strong> a zone to select it. The <strong>Zone</strong> menu and the control chart switch to that zone.</li>
+<li>A zone that is slipping back after a logged fix is at least amber.</li>
+<li>A single weak sign (for example, one rule fired once) does not turn a zone amber. It is mentioned
+  in the zone's reasons: "one weak signal ... keep watching". This keeps false alarms rare.</li>
+</ul>
+<h3>Data quality</h3>
+<p>This card appears <strong>only when some calls were left out</strong> of the statistics. It lists each call and why:
+a missing time, times in the wrong order, a duplicate call ID, a zero response time, or an unknown zone
+or priority. These calls are never counted, so one bad record cannot distort a chart. The <strong>Messy
+file</strong> data set shows this card.</p>
+<h3>Delay by stage</h3>
+<p>A call has three stages: <strong>dispatch processing</strong>, <strong>crew turnout</strong> and <strong>travel</strong>. This card shows
+<strong>which stage causes the minutes over target</strong> in each zone. The line under the title shows the dates
+and the priority.</p>
+<ul>
+<li>Each zone has one bar. The bar is split into three parts. Each part is that stage's <strong>share of the
+  zone's minutes over target</strong>. The bar adds up to 100%.</li>
+<li>The last bar, <strong>City</strong>, is all zones together.</li>
+<li><strong>Hover</strong> over a part of a bar to see its share, the total minutes over target, and the median time
+  of that stage.</li>
+</ul>
+<p><strong>How to read it:</strong> the biggest part of a zone's bar is the stage to fix first. In the demo data, Zone
+D's bar is almost all crew turnout. Most other zones are mostly travel.</p>
+<h3>Zone comparison</h3>
+<p>This card answers "<strong>do the zones really differ?</strong>" in a sentence. For example: "Yes. Zone D is
+typically 6.0 min against 4.9 min in Zone A; a gap this big is very unlikely to be chance." If the
+gaps are small, it says "No clear difference: the gaps between zones could be chance."</p>
+<p>Open <strong>More info</strong> for the test result (the F value and p-value) and a probability plot. See chapter 4
+if you want the details.</p>
+<h3>Capability</h3>
+<p>The <strong>Capability</strong> card asks: "<strong>Can each zone meet the target, reliably?</strong>" It gives one plain verdict
+for each zone.</p>
+<table>
+<thead>
+<tr>
+<th>Verdict</th>
+<th>What it means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Very reliable</strong></td>
+<td>99 or more calls in 100 arrive within the target</td>
+</tr>
+<tr>
+<td><strong>Reliable</strong></td>
+<td>95 to 98 calls in 100 arrive within the target</td>
+</tr>
+<tr>
+<td><strong>Just meets the standard</strong></td>
+<td>90 to 94 in 100. There is little margin.</td>
+</tr>
+<tr>
+<td><strong>Below the standard</strong></td>
+<td>Under 90 in 100</td>
+</tr>
+<tr>
+<td><strong>Can't judge yet</strong></td>
+<td>The zone's times changed during the period, so a score would mislead. Fix the cause first.</td>
+</tr>
+<tr>
+<td><strong>Not enough calls</strong></td>
+<td>Fewer than 30 calls in the period</td>
+</tr>
+</tbody>
+</table>
+<p>Open <strong>More info</strong> for the Ppk and Cpk numbers behind the verdicts. The standard asks for at least 90
+calls in 100 to be on time.</p>
+<h2 id="the-actions-tab">The Actions tab</h2>
+<p>Actions answers "<strong>what should we try, and did it work?</strong>" A line at the top reminds you of the data
+set, priority and date. Change them on the <strong>Charts</strong> tab.</p>
+<h3>Slip-back alerts</h3>
+<p>This card appears <strong>only when a zone is slipping back</strong> after a logged action. It names the zone and
+the warning sign. A zone that slips back is at least amber on the map.</p>
+<h3>Suggested actions</h3>
+<p>This card lists fixes ERGent suggests. Each one has:</p>
+<ul>
+<li>a <strong>tag</strong> for the kind of fix: <strong>Crew readiness</strong>, <strong>Coverage</strong>, <strong>Routes</strong>, <strong>Dispatcher cover</strong>,
+  <strong>Maintenance</strong> or <strong>Address checks</strong>;</li>
+<li>a <strong>zone tag</strong> (or <strong>Citywide</strong>);</li>
+<li>the <strong>suggestion</strong>, in plain words;</li>
+<li>the <strong>evidence</strong>, so you can see why;</li>
+<li>an <strong>estimate</strong>, such as "on time 78% → 97%". This is a best case: what the on-time share would be if
+  that stage were as fast as the city's typical call.</li>
+</ul>
+<p>Every suggestion is "for review by qualified staff". ERGent decides nothing. See chapter 4 for the
+rules behind S1 to S6.</p>
+<p><strong>To log a suggestion as an action:</strong></p>
+<ol>
+<li>Click <strong>Log this action</strong> on the suggestion.</li>
+<li>A dialog <strong>Log an action</strong> opens, already filled in: the <strong>Zone</strong>, the <strong>Stage</strong>, a <strong>Start date</strong>
+   (the day after the as-of date), <strong>What was done</strong> and the <strong>Owner</strong>. Edit anything you like.</li>
+<li>Click <strong>Save action</strong>.</li>
+</ol>
+<p>If that same action is already in the log, ERGent says "Already in the log as A1" and does not add it
+twice. Once logged, the suggestion shows its status, for example "Action logged on 2026-09-29".</p>
+<h3>Actions taken</h3>
+<p>This is the action log. Each row has an ID (A1, A2...), the zone, the stage, the date, what was done
+and who owns it. An action dated after the as-of date is tagged <strong>After the as-of date</strong>.</p>
+<p>Click <strong>Log an action</strong> to add one by hand, without a suggestion. The demo data already holds one
+action: <strong>A1</strong>, a night crew readiness review at Zone D's station, dated 2026-09-29. Actions are only
+kept for the length of your session.</p>
+<h3>Before and after</h3>
+<p>This card shows the <strong>daily chart</strong> for the action's zone, with the action marked by a green line. You
+can see whether the days after the fix stay in the normal range.</p>
+<h3>Result</h3>
+<p>The <strong>Result</strong> card tells you whether the fix worked.</p>
+<ol>
+<li>Choose the action in the menu (the latest action on or before the as-of date is chosen for you).</li>
+<li>Read the <strong>verdict chip</strong>:<ul>
+<li><strong>Improved</strong>: the drop is too large to be chance.</li>
+<li><strong>Got worse</strong>: the times got slower, and too much to be chance.</li>
+<li><strong>No clear change yet</strong>: the change could be chance.</li>
+<li><strong>Not enough data</strong>: there are not yet enough calls after the action. For example, if the as-of
+ date is before the action.</li>
+</ul>
+</li>
+<li>Read the table. It compares the <strong>14 days before</strong> the action with the <strong>days after it</strong> (up to 14):</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Row</th>
+<th>Before</th>
+<th>After</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Mean</strong></td>
+<td>average response time</td>
+<td>average response time</td>
+</tr>
+<tr>
+<td><strong>Standard deviation</strong></td>
+<td>spread of the times</td>
+<td>spread of the times</td>
+</tr>
+<tr>
+<td><strong>On time</strong></td>
+<td>share within the target</td>
+<td>share within the target</td>
+</tr>
+<tr>
+<td><strong>Calls</strong></td>
+<td>number of calls</td>
+<td>number of calls</td>
+</tr>
+</tbody>
+</table>
+<p>Open <strong>More info</strong> for the test numbers and to see whether the new level is <strong>steady</strong>: whether the
+days after the action stay inside the normal range.</p>
+<blockquote>
+<p><strong>Watch out.</strong> A better time after a fix does not <em>prove</em> the fix caused it. Other things may have
+changed. The check shows an apparent change. Staff judge the cause.</p>
+</blockquote>
+<h2 id="the-targets-dialog">The Targets dialog</h2>
+<p>Click <strong>Targets</strong> in the control bar to see and change the targets. The dialog has five numbers:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Priority 1 target (min)</strong></td>
+<td>9</td>
+</tr>
+<tr>
+<td><strong>Priority 2 target (min)</strong></td>
+<td>15</td>
+</tr>
+<tr>
+<td><strong>Priority 3 target (min)</strong></td>
+<td>20</td>
+</tr>
+<tr>
+<td><strong>Processing target (s)</strong></td>
+<td>64</td>
+</tr>
+<tr>
+<td><strong>Turnout target (s)</strong></td>
+<td>60</td>
+</tr>
+</tbody>
+</table>
+<p>Click <strong>Save</strong> to apply them, or <strong>Cancel</strong> to close the dialog. The new targets change every card.</p>
+<p>The defaults come from NFPA 1710, a US standard, for priority 1: 64 seconds to dispatch, 60 seconds for
+the crew to get moving, and 8 minutes to travel, which makes 9 minutes from dispatch to arrival. <strong>The
+priority 2 and 3 targets are our own assumptions.</strong> The travel target is always the response target
+minus the 60-second turnout target.</p>
+</section>
+<section class="chapter">
+<h1 id="chapter-4-statistics-explained"><span class="chnum">Chapter 4</span>Statistics explained</h1>
+<p>Every number ERGent shows comes from <strong>one file of plain, tested functions</strong> (<code>app/qc.py</code>). The screens
+only draw those results. This chapter explains each statistic <strong>in plain words first</strong>, then gives the
+formula. Each one has four parts:</p>
+<ul>
+<li><strong>What it tells you</strong></li>
+<li><strong>How to read it</strong></li>
+<li><strong>The formula</strong></li>
+<li><strong>Watch out for</strong></li>
+</ul>
+<p>You do not need this chapter to use ERGent. It is here so you can <strong>explain every number</strong>.</p>
+<h2 id="where-each-statistic-appears">Where each statistic appears</h2>
+<table>
+<thead>
+<tr>
+<th>Statistic</th>
+<th>Where you see it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Stage times and data checks</td>
+<td>Behind everything. Data quality card.</td>
+</tr>
+<tr>
+<td>Mean, standard deviation, percentiles, % on time</td>
+<td>Statistics card, History numbers, Result table</td>
+</tr>
+<tr>
+<td>Daily X̄-S chart</td>
+<td>Charts tab, Control chart (Daily chart)</td>
+</tr>
+<tr>
+<td>Every-call chart</td>
+<td>Charts tab, Control chart (Every call)</td>
+</tr>
+<tr>
+<td>Flag rules and zone health</td>
+<td>Red dots, Zone map (both views)</td>
+</tr>
+<tr>
+<td>Zones-as-subgroups box chart</td>
+<td>Dispatcher History, Response time by zone</td>
+</tr>
+<tr>
+<td>Delay by stage</td>
+<td>Charts tab, Delay by stage</td>
+</tr>
+<tr>
+<td>Capability</td>
+<td>Charts tab, Capability</td>
+</tr>
+<tr>
+<td>ANOVA</td>
+<td>Charts tab, Zone comparison</td>
+</tr>
+<tr>
+<td>Welch's t-test and before/after</td>
+<td>Actions tab, Result</td>
+</tr>
+<tr>
+<td>Impact estimate and suggestion rules S1 to S6</td>
+<td>Actions tab, Suggested actions</td>
+</tr>
+<tr>
+<td>Dispatcher tips T1 to T6</td>
+<td>Dispatcher History, Suggested actions</td>
+</tr>
+<tr>
+<td>Slip-back</td>
+<td>Actions tab, Slip-back alerts</td>
+</tr>
+</tbody>
+</table>
+<h2 id="three-ideas-to-know-first">Three ideas to know first</h2>
+<p><strong>1. Times are in seconds inside the data and in minutes on screen.</strong> A response of 540 seconds is 9
+minutes.</p>
+<p><strong>2. Control charts and capability use the logarithm of the time.</strong> Response times are <em>skewed</em>: most
+calls are quick, and a few are very slow. The log (written <code>ln</code>) pulls in that slow tail. After the
+math is done, ERGent turns the results back into minutes (with <code>exp</code>). So a "typical" time on a chart is
+a <em>geometric</em> average: <code>exp(mean of ln minutes)</code>.</p>
+<p><strong>3. Control limits are not the target.</strong> A <strong>control limit</strong> (UCL and LCL) comes from the process
+itself. It says what is <em>normal for this zone</em>. A <strong>specification limit</strong> (the 9-minute target) comes
+from a standard. It says what is <em>required</em>. A zone can be inside its control limits and still miss the
+target, and the other way round. ERGent draws the target as a separate line, so you never confuse the
+two.</p>
+<h2 id="1-stage-times-and-data-checks">1. Stage times and data checks</h2>
+<p><strong>What it tells you.</strong> How long each part of a call took, so you can say <em>why</em> a call was slow.</p>
+<p><strong>How to read it.</strong> A call has three stages. The prompt's metric, <strong>response</strong>, is turnout plus travel.</p>
+<p><strong>The formula.</strong></p>
+<pre><code>processing = dispatched  - call_received      (dispatch: the call waits for an ambulance)
+turnout    = en_route    - dispatched          (the crew gets moving)
+travel     = on_scene    - en_route            (the drive)
+response   = on_scene    - dispatched          (= turnout + travel)
+</code></pre>
+<p>A call is <strong>late</strong> when its response is greater than its priority's target. A <strong>stage</strong> is late when it
+is greater than that stage's target. The travel target is the response target minus the turnout target:
+for priority 1, 540 − 60 = 480 seconds.</p>
+<p><strong>Data checks.</strong> A call is <strong>left out of every statistic</strong> and listed, with its reason, if:</p>
+<ol>
+<li>its call ID is a <strong>duplicate</strong> (the repeat is left out; the first is kept);</li>
+<li>a needed time is <strong>missing</strong> (call received, dispatched, en route or on scene);</li>
+<li>a time is <strong>earlier than the one before it</strong>;</li>
+<li>its response time is <strong>zero</strong>;</li>
+<li>its <strong>zone or priority is unknown</strong>.</li>
+</ol>
+<p><strong>Watch out for.</strong> Processing happens <em>before</em> dispatch, so it sits outside the prompt's metric. ERGent
+still measures it, because a delay there also hurts the patient. Also, a crew might press "on scene" a
+little after arriving, so the times are only as good as the pressing habit.</p>
+<h2 id="2-mean-standard-deviation-percentiles-and-on-time">2. Mean, standard deviation, percentiles and % on time</h2>
+<p><strong>What it tells you.</strong> The <strong>mean</strong> is the average. The <strong>standard deviation (SD)</strong> says how spread out
+the times are. The <strong>median</strong> is the middle call. The <strong>90th percentile</strong> is the time that 9 in 10 calls
+beat. The <strong>95th percentile</strong> is the time that 19 in 20 calls beat. <strong>On time</strong> is the share of calls
+within the target.</p>
+<p><strong>How to read it.</strong> Look at the percentiles, not just the mean. The danger in emergency response is the
+slow tail, and the mean hides it. The standard says 90% of calls should be on time. That is the same
+as saying the 90th percentile should be at or under the target.</p>
+<p><strong>The formula.</strong></p>
+<pre><code>mean        = (x1 + x2 + ... + xn) / n
+SD          = sqrt( sum of (x - mean)^2 / (n - 1) )          (sample SD, n - 1)
+on time (%) = 100 x (number of calls with x &lt;= target) / n
+percentile  : sort the values; position h = (n - 1) x p, counting from 0
+              result = x[floor h] + (h - floor h) x ( x[floor h + 1] - x[floor h] )
+</code></pre>
+<p>This is the "type 7" percentile. It is the same as R's default and Excel's <code>PERCENTILE.INC</code>.</p>
+<p><strong>Worked example.</strong> Ten response times in minutes: 4, 5, 6, 7, 8, 9, 10, 11, 12, 20, with a 9-minute
+target.</p>
+<table>
+<thead>
+<tr>
+<th>Number</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mean</td>
+<td>9.2</td>
+</tr>
+<tr>
+<td>Median</td>
+<td>8.5</td>
+</tr>
+<tr>
+<td>90th percentile</td>
+<td>12.8 (h = 9 × 0.9 = 8.1, so 12 + 0.1 × (20 − 12))</td>
+</tr>
+<tr>
+<td>95th percentile</td>
+<td>16.4</td>
+</tr>
+<tr>
+<td>On time</td>
+<td>6 of 10 = 60%</td>
+</tr>
+</tbody>
+</table>
+<p>The mean (9.2) looks close to the 9-minute target. But only 60% of the calls were on time, and one
+patient waited 20 minutes. That is why ERGent does not rely on the mean.</p>
+<p><strong>Watch out for.</strong> With one call, the percentiles equal that value and the SD cannot be worked out. With
+no calls, ERGent shows a dash.</p>
+<h2 id="3-checking-that-logs-behave-normality">3. Checking that logs behave (normality)</h2>
+<p><strong>What it tells you.</strong> Whether the log of the response times is close to a bell curve. Several tests
+assume it is.</p>
+<p><strong>How to read it.</strong> Open <strong>More info</strong> on the <strong>Zone comparison</strong> card. A probability plot shows the
+points. If they sit close to a straight line, the log times look normal. The <strong>Shapiro-Wilk</strong> test gives
+a number <code>p</code>. A <code>p</code> above 0.05 means "no sign of a problem".</p>
+<p><strong>The formula.</strong> The Shapiro-Wilk W statistic and its p-value (from the SciPy library), on <code>ln(minutes)</code>.</p>
+<p><strong>Watch out for.</strong> With hundreds of calls, even a tiny bend can give a small <code>p</code>. Judge by the plot as
+well. ERGent needs at least 3 values that are not all the same.</p>
+<h2 id="4-the-daily-x-s-chart">4. The daily X̄-S chart</h2>
+<p><strong>What it tells you.</strong> Whether a zone is behaving the way it normally does. Each dot is <strong>one day</strong>. A
+red dot is a day when the zone was slower than its own normal range.</p>
+<p><strong>How to read it.</strong> The top panel (X̄) shows each day's typical response time. The center line is the
+normal level. The dashed lines are the UCL and LCL. The bottom panel (S) shows how spread out the day's
+calls were. A red dot means something changed. Open <strong>Delay by stage</strong> to see which stage.</p>
+<p><strong>The formula.</strong> The subgroup is one zone-day. Work on <code>ln(minutes)</code>:</p>
+<pre><code>daily point     = mean of ln(minutes) for that day's calls
+center          = mean of the daily points in the chart period
+sigma_xbar      = standard deviation of the daily points in the chart period (n - 1)
+UCL, LCL        = center +/- 3 x sigma_xbar         (the same for every day)
+
+S chart:
+s_bar           = mean of the daily standard deviations (days with 2 or more calls)
+n_bar           = average number of calls per day in the period (rounded, at least 2)
+c4(n)           = sqrt( 2 / (n - 1) ) x Gamma(n / 2) / Gamma( (n - 1) / 2 )
+B4 = 1 + 3 x sqrt(1 - c4^2) / c4        B3 = 1 - 3 x sqrt(1 - c4^2) / c4   (never below 0)
+S limits        = B4 x s_bar (upper) and B3 x s_bar (lower)
+</code></pre>
+<p>Here are some values of the constants (they match the standard tables):</p>
+<table>
+<thead>
+<tr>
+<th>Calls per day (n̄)</th>
+<th>c4</th>
+<th>B3</th>
+<th>B4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>0.7979</td>
+<td>0</td>
+<td>3.267</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0.8862</td>
+<td>0</td>
+<td>2.568</td>
+</tr>
+<tr>
+<td>5</td>
+<td>0.9400</td>
+<td>0</td>
+<td>2.089</td>
+</tr>
+<tr>
+<td>7</td>
+<td>0.9594</td>
+<td>0.118</td>
+<td>1.882</td>
+</tr>
+<tr>
+<td>10</td>
+<td>0.9727</td>
+<td>0.284</td>
+<td>1.716</td>
+</tr>
+</tbody>
+</table>
+<p>The limits are then shown back in minutes (<code>exp</code>). The chart is judged with the <strong>flag rules</strong> in section
+6.</p>
+<p><strong>Watch out for: the chart period sets the limits.</strong> In ERGent, the limits come from the <strong>chart period
+you select</strong> (14, 28 or 42 days). The team chose this on purpose. It is simple, and it keeps the chart,
+the zone map, the suggestions and the capability card in agreement. But there is a cost. <strong>If a problem
+lasts for most of the period, it widens the limits and can hide itself.</strong></p>
+<p>For example, in the demo data, Zone D's crew turnout got slow on Sep 15. As of Sep 28 with a 28-day
+period, the period includes both normal days and slow days. The limits stretch to about 3.3 to 10.5
+minutes, and <strong>no day breaks them</strong>. Zone D's chart shows <strong>no red dots</strong>. If the limits were taken
+from the first 14 days instead (before the problem), the same chart would flag Zone D on 11 days.</p>
+<p>So: <strong>read the daily chart together with the Zone map, Delay by stage and Capability.</strong> In this
+example, the Zone map is amber for D (its 90th percentile is 10.2 min against a 9-min target), Delay by
+stage says 92% of its overrun is crew turnout, and Capability says D is below the standard.</p>
+<p>Also watch out for days with very few calls. Their dots are noisy, and a one-call day has no spread, so
+it has no point on the S chart.</p>
+<h2 id="5-the-every-call-chart-individuals-chart">5. The every-call chart (individuals chart)</h2>
+<p><strong>What it tells you.</strong> Whether a <em>single call</em> was unusually slow. It looks at each call, in the order
+the calls came in.</p>
+<p><strong>How to read it.</strong> Each dot is one call. The dashed lines (UCL and LCL) are the normal range for a
+single call. A red dot above the UCL is an unusual delay worth checking one by one: a breakdown, a wrong
+address, a closed road. The amber line is the target. The scale is a log scale.</p>
+<p><strong>The formula.</strong> This is the course's I-MR (individuals and moving range) method, on <code>ln(minutes)</code>:</p>
+<pre><code>moving range   MR_i = abs( x_i - x_(i-1) )            (jump from one call to the next)
+MR_bar         = mean of the moving ranges
+center         = mean of ln(minutes)
+sigma          = MR_bar / 1.128                         (1.128 is the constant d2 for pairs)
+UCL, LCL       = center +/- 3 x sigma
+MR upper limit = 3.267 x MR_bar                         (computed, not drawn)
+</code></pre>
+<p><strong>Worked example.</strong> Five values 10, 12, 11, 15, 12. The moving ranges are 2, 1, 4, 3, so MR̄ = 2.5. The
+center is 12 and σ = 2.5 / 1.128 = 2.216. The limits are 5.351 and 18.649.</p>
+<p><strong>Watch out for.</strong> It needs at least 2 calls. If every call is the same, there is no spread, so there are
+no limits ("no variation"). The calls are assumed to be roughly independent, which is stated but not
+tested. As on the daily chart, the limits come from the calls in the chart period.</p>
+<h2 id="6-the-flag-rules-and-what-makes-a-zone-amber-or-red">6. The flag rules, and what makes a zone amber or red</h2>
+<p><strong>What it tells you.</strong> The rules decide which dots on the daily chart turn red. The stricter <strong>zone
+health</strong> rule decides whether a zone on the map is on track, worth a look, or act now.</p>
+<p><strong>How to read it.</strong> A dot <strong>above</strong> the center line is on the <strong>slow side</strong>. That is an <strong>alarm</strong>. A dot
+<strong>below</strong> the center line is on the <strong>fast side</strong>. That only says "check the data".</p>
+<p><strong>The formula.</strong> Let <code>z = (daily point - center) / sigma_xbar</code>. So "1 sigma" means one <code>sigma_xbar</code>. The
+rules are:</p>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>A flag fires at a day when...</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>R1</strong></td>
+<td>that day's point is beyond 3 sigma</td>
+</tr>
+<tr>
+<td><strong>R2</strong></td>
+<td>2 of the last 3 points are beyond 2 sigma, on the same side</td>
+</tr>
+<tr>
+<td><strong>R3</strong></td>
+<td>4 of the last 5 points are beyond 1 sigma, on the same side</td>
+</tr>
+<tr>
+<td><strong>R4</strong></td>
+<td>8 points in a row are on the same side of the center line</td>
+</tr>
+<tr>
+<td><strong>R5</strong></td>
+<td>6 points in a row are steadily rising (or falling)</td>
+</tr>
+</tbody>
+</table>
+<p>R1 to R4 are the <strong>Western Electric rules</strong>. R5 is a trend rule. Together they catch both sudden jumps
+and slow drifts.</p>
+<p><strong>Zone health.</strong> On the map, each zone looks at the <strong>last 7 days</strong>. First, ERGent decides if there is a
+<strong>chart signal</strong>:</p>
+<pre><code>chart signal = rule R1 fired in the last 7 days,
+               OR 2 or more DIFFERENT slow-side rules fired in the last 7 days
+
+red    (&quot;Act now&quot;)       = chart signal AND the 90th percentile of the last 7 days is over the target
+amber  (&quot;Worth a look&quot;)  = exactly one of those two
+green  (&quot;On track&quot;)      = neither
+unknown                  = not enough data to set limits
+</code></pre>
+<p>A zone that is <strong>slipping back</strong> after a logged fix (section 18) is at least amber.</p>
+<p><strong>Why stricter?</strong> One weak rule on its own is drawn on the chart but does not count. It appears in the
+zone's reasons as "one weak signal ... keep watching". The team tested this. On pure-noise simulations,
+a stable zone-week shows amber by chance about <strong>2.5%</strong> of the time with this rule, against about
+<strong>7.7%</strong> if any single rule counted.</p>
+<p><strong>Watch out for.</strong> Even so, <strong>some false alarms are expected</strong>. Amber means "worth a look", not "something
+is broken". Red means act. A zone can also be amber only because its 90th percentile is just over the
+target, with no change on the chart.</p>
+<h2 id="7-zones-as-subgroups-the-dispatcher-s-history-chart">7. Zones as subgroups (the dispatcher's History chart)</h2>
+<p><strong>What it tells you.</strong> Which zones are slower than the city as a whole, in the current and previous
+shift.</p>
+<p><strong>How to read it.</strong> Each zone is drawn as a <strong>box plot</strong> (the box holds the middle half of its calls)
+with a <strong>diamond</strong> for its average. The grey line is the city's center. The short dashed lines are that
+zone's limits. A <strong>red diamond</strong> is a zone beyond its upper limit: slower than the city. A hollow ring is
+a zone beyond its lower limit: faster, so check the data. <strong>Hover</strong> over a red diamond to read why.</p>
+<p><strong>The formula.</strong> Each zone is <strong>one subgroup</strong> of <code>ln(minutes)</code> (calls that reached the scene, for the
+priority you chose):</p>
+<pre><code>center      = mean of the six zone averages
+sigma_short = sqrt( mean of the zone variances )         (zones with 2 or more calls)
+limits      = center +/- 3 x sigma_short / sqrt(n_zone)  (wider for zones with few calls)
+z           = (zone average - center) / ( sigma_short / sqrt(n_zone) )
+flag        = &quot;above&quot; if z &gt; 3, &quot;below&quot; if z &lt; -3
+</code></pre>
+<p>Zones have <strong>no time order</strong>, so only the "beyond the limit" rule is used. This is like an <em>analysis of
+means</em>.</p>
+<p>The hover text for a red zone says: its typical time against the city's, the stage causing the most
+minutes over target, and the most common delay reason among its late calls.</p>
+<p><strong>Watch out for.</strong> A zone with few calls has wide limits, so it is hard to flag. A zone with no calls
+shows nothing. The two shifts together can be a small sample early in a shift.</p>
+<h2 id="8-delay-by-stage">8. Delay by stage</h2>
+<p><strong>What it tells you.</strong> Which stage (dispatch, crew turnout or travel) causes the minutes over target.</p>
+<p><strong>How to read it.</strong> For each zone, the three parts of the bar add up to 100%. The biggest part is the
+stage to fix first. <strong>Hover</strong> over a part to see its share, the minutes over target, and the stage's
+median time.</p>
+<p><strong>The formula.</strong></p>
+<pre><code>stage excess = max( 0, stage time - stage target )         for each call, in minutes
+share        = a stage's total excess / the sum of the three stages' total excess
+</code></pre>
+<p><strong>Watch out for.</strong> A share is only about <strong>minutes over target</strong>. A stage that stays under target has
+no share, even if it is slow compared with other stages. If nothing is over target, all shares are 0.</p>
+<h2 id="9-capability">9. Capability</h2>
+<p><strong>What it tells you.</strong> Whether a zone can meet the target <strong>reliably</strong>, not just on average.</p>
+<p><strong>How to read it.</strong> ERGent turns the result into a plain verdict.</p>
+<table>
+<thead>
+<tr>
+<th>Verdict</th>
+<th>Expected calls on time (rounded)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Very reliable</td>
+<td>99 in 100 or more</td>
+</tr>
+<tr>
+<td>Reliable</td>
+<td>95 to 98 in 100</td>
+</tr>
+<tr>
+<td>Just meets the standard</td>
+<td>90 to 94 in 100</td>
+</tr>
+<tr>
+<td>Below the standard</td>
+<td>under 90 in 100</td>
+</tr>
+<tr>
+<td>Can't judge yet</td>
+<td>The zone is not stable (see below)</td>
+</tr>
+<tr>
+<td>Not enough calls</td>
+<td>Fewer than 30 calls</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The formula.</strong> The target is an <strong>upper limit</strong> only (a response cannot be "too fast"), so ERGent uses
+the <strong>upper side</strong> of the capability indices, on <code>ln(minutes)</code>:</p>
+<pre><code>USL        = ln( target in minutes )
+Ppk        = ( USL - mean of ln x ) / ( 3 x SD of ln x )              uses the overall spread (sigma_total)
+Cpk        = ( USL - mean of ln x ) / ( 3 x sigma_short )              uses the spread within each day
+sigma_short = sqrt( mean of the daily variances )
+expected on time (%) = 100 x Phi( 3 x Ppk )                            Phi = the standard normal curve
+</code></pre>
+<p>Some handy values:</p>
+<table>
+<thead>
+<tr>
+<th>Ppk</th>
+<th>Expected on time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.33</td>
+<td>83.9%</td>
+</tr>
+<tr>
+<td>0.43</td>
+<td>90.1% (the standard's 90% line)</td>
+</tr>
+<tr>
+<td>0.50</td>
+<td>93.3%</td>
+</tr>
+<tr>
+<td>0.67</td>
+<td>97.8%</td>
+</tr>
+<tr>
+<td>0.80</td>
+<td>99.2%</td>
+</tr>
+<tr>
+<td>1.00</td>
+<td>99.9%</td>
+</tr>
+</tbody>
+</table>
+<p>The verdict is judged on the <strong>rounded</strong> percentage, so the label always agrees with the number in the
+text.</p>
+<p><strong>Stable only.</strong> A capability score only makes sense for a <strong>stable</strong> zone. ERGent shows a score only
+when the zone's daily chart has <strong>no slow-side flag in the chart period</strong> <em>and</em> the zone has <strong>at least
+30 calls</strong>. Otherwise it says "Can't judge yet" or "Not enough calls".</p>
+<p><strong>Watch out for.</strong> Cpk and Ppk differ when a zone drifts between days. Ppk includes the drift; Cpk does
+not. The numbers sit behind <strong>More info</strong>. The score assumes the log times are roughly normal. Because
+the daily chart's limits come from the chart period, a long problem can hide on the chart (section 4).
+In that case capability may still say "Below the standard", as it does for Zone D in the demo.</p>
+<h2 id="10-zone-comparison-anova">10. Zone comparison (ANOVA)</h2>
+<p><strong>What it tells you.</strong> Whether the zones <strong>really differ</strong>, or whether the gaps could be chance.</p>
+<p><strong>How to read it.</strong> ERGent answers in a sentence: "Yes. Zone D is typically 6.0 min against 4.9 min in
+Zone A ..." or "No clear difference ...". The typical times are geometric averages.</p>
+<p><strong>The formula.</strong> A one-way <strong>analysis of variance</strong> (ANOVA) on <code>ln(minutes)</code> of each zone's calls:</p>
+<pre><code>SSB = sum over zones of  n_zone x ( zone mean - grand mean )^2      (between zones)
+SSW = sum over zones of  sum of ( x - zone mean )^2                   (within zones)
+F   = ( SSB / (k - 1) ) / ( SSW / (N - k) )                           k zones, N calls
+p   = the chance of an F this big if the zones were really the same  (from the F distribution)
+</code></pre>
+<p>ERGent says "Yes" when <code>p &lt; 0.05</code>.</p>
+<p><strong>Worked example.</strong> Zone A = [1, 2, 3] and zone B = [4, 5, 6]. SSB = 13.5 and SSW = 4, so
+F = 13.5 / (4 / 4) = 13.5 with 1 and 4 degrees of freedom.</p>
+<p><strong>Watch out for.</strong> A zone with fewer than 2 calls is left out. If every call in each zone is identical,
+the test cannot run. ANOVA says <em>that</em> zones differ, not <em>which</em> one. Look at the typical times for that.
+A "Yes" with hundreds of calls can come from a small gap, so check that the gap is large enough to
+matter.</p>
+<h2 id="11-welch-s-t-test-and-the-before-after-check">11. Welch's t-test and the before/after check</h2>
+<p><strong>What it tells you.</strong> Whether response times really dropped after an action.</p>
+<p><strong>How to read it.</strong> The <strong>Result</strong> card shows a verdict: <strong>Improved</strong>, <strong>Got worse</strong>, <strong>No clear change
+yet</strong> or <strong>Not enough data</strong>.</p>
+<p><strong>The formula.</strong> ERGent compares the <strong>14 days before</strong> the action date with the <strong>days from the action
+date on</strong> (up to 14), using <strong>Welch's one-sided t-test</strong> on <code>ln(minutes)</code>. Welch's test does not assume
+both groups have the same spread.</p>
+<pre><code>t  = ( mean_before - mean_after ) / sqrt( s_before^2 / n_before + s_after^2 / n_after )
+df = Welch-Satterthwaite degrees of freedom
+p  = chance of a t this big if nothing changed (one-sided: &quot;after is lower&quot;)
+
+Improved            if p &lt; 0.05
+Got worse           if p &gt; 0.95     (it got slower, and too much to be chance)
+No clear change yet otherwise
+Not enough data     if either side has fewer than 2 calls, or there is no variation at all
+</code></pre>
+<p><strong>Worked example.</strong> Before = [10, 12, 14] and after = [6, 8, 10]. The means are 12 and 8. Each variance
+is 4, so t = 4 / √(4/3 + 4/3) = 2.449 with 4 degrees of freedom.</p>
+<p><strong>Steady.</strong> ERGent also checks whether the new level is <strong>steady</strong>. It draws the zone's daily chart after
+the action, with limits from the first 14 days after the action, and looks for a slow-side flag.</p>
+<p><strong>Watch out for.</strong> A better time after a fix does <strong>not prove</strong> the fix caused it. Other things may have
+changed. The check shows an <em>apparent</em> change. Staff judge the cause. If the after period is 14 days
+or shorter, the "steady" check judges those days against limits made from the same days.</p>
+<h2 id="12-impact-estimate">12. Impact estimate</h2>
+<p><strong>What it tells you.</strong> A best-case guess of how much better on-time performance could be if one stage
+were fixed. For example "on time 78% → 97%".</p>
+<p><strong>How to read it.</strong> It answers: "if this zone's slow stage were as fast as the city's typical call, how
+many more calls would be on time?" It is an <strong>estimate, not a promise</strong>.</p>
+<p><strong>The formula.</strong> Take the flagged stage (turnout or travel). Cap each call's stage time at the <strong>city's
+median</strong> for that stage (priority and last 14 days). Then recount.</p>
+<pre><code>new response = response - stage time + min( stage time, cap )
+on time      = new response &lt;= the call's response target
+</code></pre>
+<p>For the dispatch stage, "on time" means dispatch time at or under the processing target (64 s by
+default).</p>
+<p><strong>Worked example.</strong> Turnout [3, 1, 4, 1] minutes and travel [7, 7, 6, 9] minutes, target 9, city median
+turnout 1 minute. Responses are 10, 8, 10, 10, so 1 of 4 is on time (25%). With turnout capped at 1 minute
+they become 8, 8, 7, 10, so 3 of 4 are on time (75%).</p>
+<p><strong>Watch out for.</strong> Real results are usually smaller. A fix rarely brings every call down to the median.</p>
+<h2 id="13-suggested-actions-for-the-supervisor-rules-s1-to-s6">13. Suggested actions for the supervisor (rules S1 to S6)</h2>
+<p><strong>What they tell you.</strong> Fixed "if this, then suggest that" rules turn the numbers into something to try.
+Each suggestion shows its <strong>evidence</strong> and says "for review by qualified staff".</p>
+<p><strong>How to read them.</strong> The rules look at the <strong>last 14 days</strong> up to the as-of date. A stage's <strong>share</strong> is
+its excess divided by the zone's total excess (section 8). Rules S1 to S3 only apply to zones that are
+<strong>amber or red</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Tag</th>
+<th>If</th>
+<th>Then suggest</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>S1</strong></td>
+<td>Crew readiness</td>
+<td>Turnout share is 50% or more</td>
+<td>Review crew readiness at that zone's station. It names a shift when that shift holds 40% or more of the turnout excess <strong>and</strong> at least 1.5 times its share of the calls.</td>
+</tr>
+<tr>
+<td><strong>S2</strong></td>
+<td>Coverage</td>
+<td>Travel share is 50% or more, 30% or more of late calls are coded "unit from another zone", and the zone borrows ambulances at least 1.5 times the city rate</td>
+<td>Consider posting an extra ambulance in that zone during the busiest three hours of late calls</td>
+</tr>
+<tr>
+<td><strong>S3</strong></td>
+<td>Routes</td>
+<td>Travel share is 50% or more, and "traffic or road closure" is the top code (at least 3 calls and at least 30% of late calls)</td>
+<td>Check road works and alternative routes. It says "weekdays" if 80% or more of late calls fall on weekdays.</td>
+</tr>
+<tr>
+<td><strong>S4</strong></td>
+<td>Dispatcher cover</td>
+<td>Citywide, all priorities: in an hour of the day with above-median call counts, the 90th percentile of dispatch time is over the processing target</td>
+<td>Add dispatcher cover in those hours</td>
+</tr>
+<tr>
+<td><strong>S5</strong></td>
+<td>Maintenance</td>
+<td>One ambulance has 2 or more breakdowns in the window</td>
+<td>Schedule preventive maintenance for that ambulance</td>
+</tr>
+<tr>
+<td><strong>S6</strong></td>
+<td>Address checks</td>
+<td>A zone has at least 5 late calls, and 20% or more of them have "unclear address"</td>
+<td>Use an address-verification script</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The formula</strong> for the evidence and the estimate is in sections 8 and 12.</p>
+<p><strong>Watch out for.</strong> The rules only see what the crews record. If delay reasons are missing, S2, S3, S5 and
+S6 cannot fire. The tool <strong>decides nothing</strong>. A qualified person decides.</p>
+<h2 id="14-dispatcher-tips-rules-t1-to-t6">14. Dispatcher tips (rules T1 to T6)</h2>
+<p><strong>What they tell you.</strong> Live suggestions for the dispatcher, from the board right now and the last two
+shifts.</p>
+<p><strong>How to read them.</strong> They appear in <strong>Suggested actions</strong> on the History tab.</p>
+<table>
+<thead>
+<tr>
+<th>Tip</th>
+<th>If</th>
+<th>Then suggest</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>T1 Dispatch now</strong></td>
+<td>A call has waited longer than the processing target (64 s) with no dispatch</td>
+<td>Dispatch it now. It names the nearest free ambulance: own zone first, then neighboring zones.</td>
+</tr>
+<tr>
+<td><strong>T2 Rebalance</strong></td>
+<td>A zone has ambulances but none free, and a neighbor has 2 or more free</td>
+<td>Move one to stand by (from the neighbor with the most free)</td>
+</tr>
+<tr>
+<td><strong>T3 Cover</strong></td>
+<td>An ambulance is out of service</td>
+<td>Ask the neighboring zones to cover</td>
+</tr>
+<tr>
+<td><strong>T4 Route</strong></td>
+<td>A zone has 3 or more calls and its <strong>median</strong> travel is at least 1.25 times the city's</td>
+<td>Check the route. If 2 or more late calls share a delay reason, name it: reroute around traffic or road works, or keep an ambulance posted.</td>
+</tr>
+<tr>
+<td><strong>T5 Station alert</strong></td>
+<td>A zone has 3 or more calls and its <strong>median</strong> turnout is over the turnout target (60 s)</td>
+<td>Alert that station's crews</td>
+</tr>
+<tr>
+<td><strong>T6 Dispatcher load</strong></td>
+<td>The city has 5 or more calls and the <strong>90th percentile</strong> of dispatch time is over 64 s</td>
+<td>Ask the supervisor for a second dispatcher</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Watch out for.</strong> Tips use small samples (a few calls), so they are prompts for your judgment, not
+verdicts. "Neighboring zones" means zones that touch on the map: A touches B and D; B touches A, C and E;
+C touches B and F; D touches A and E; E touches B, D and F; F touches C and E.</p>
+<h2 id="15-slip-back">15. Slip-back</h2>
+<p><strong>What it tells you.</strong> Whether a zone is drifting back to its old problem after a fix.</p>
+<p><strong>How to read it.</strong> A <strong>Slip-back alert</strong> names the zone and the warning sign, and the zone is at least
+amber on the map.</p>
+<p><strong>The formula.</strong> For each logged action, ERGent builds the zone's daily chart with limits from the <strong>first
+7 days after the action</strong>. If a slow-side flag appears on a day <strong>after those 7 days</strong>, it raises an alert.</p>
+<p><strong>Watch out for.</strong> It needs enough days after the action. In the demo data, there is no slip-back for
+Zone D, which is the right answer.</p>
+<h2 id="quick-reference-the-formulas-on-one-page">Quick reference: the formulas on one page</h2>
+<table>
+<thead>
+<tr>
+<th>Statistic</th>
+<th>Formula</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Response</td>
+<td><code>on_scene - dispatched</code></td>
+</tr>
+<tr>
+<td>SD</td>
+<td><code>sqrt( sum (x - mean)^2 / (n - 1) )</code></td>
+</tr>
+<tr>
+<td>Percentile (type 7)</td>
+<td><code>h = (n - 1) p</code>, then interpolate</td>
+</tr>
+<tr>
+<td>Daily center and sigma</td>
+<td>center = mean of daily means; <code>sigma_xbar</code> = SD of daily means</td>
+</tr>
+<tr>
+<td>Daily limits</td>
+<td><code>center +/- 3 x sigma_xbar</code></td>
+</tr>
+<tr>
+<td>S chart</td>
+<td><code>B3 x s_bar</code> and <code>B4 x s_bar</code></td>
+</tr>
+<tr>
+<td>Every-call limits</td>
+<td><code>center +/- 3 x MR_bar / 1.128</code></td>
+</tr>
+<tr>
+<td>z</td>
+<td><code>(point - center) / sigma_xbar</code></td>
+</tr>
+<tr>
+<td>Zone box chart limits</td>
+<td><code>center +/- 3 x sigma_short / sqrt(n_zone)</code></td>
+</tr>
+<tr>
+<td>Ppk</td>
+<td><code>(ln USL - mean ln x) / (3 x SD ln x)</code></td>
+</tr>
+<tr>
+<td>Cpk</td>
+<td><code>(ln USL - mean ln x) / (3 x sigma_short)</code></td>
+</tr>
+<tr>
+<td>Expected on time</td>
+<td><code>100 x Phi(3 x Ppk)</code></td>
+</tr>
+<tr>
+<td>ANOVA F</td>
+<td><code>( SSB / (k - 1) ) / ( SSW / (N - k) )</code></td>
+</tr>
+<tr>
+<td>Welch t</td>
+<td><code>(mean_b - mean_a) / sqrt( s_b^2/n_b + s_a^2/n_a )</code></td>
+</tr>
+<tr>
+<td>Stage excess</td>
+<td><code>max(0, stage time - target)</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section class="chapter">
+<h1 id="chapter-5-glossary-and-faq"><span class="chnum">Chapter 5</span>Glossary and FAQ</h1>
+<h2 id="glossary">Glossary</h2>
+<p>Terms are in alphabetical order.</p>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>90th percentile</strong></td>
+<td>The time that 9 in 10 calls beat. The slowest 1 in 10 calls take longer. The standard asks for it to be at or under the target.</td>
+</tr>
+<tr>
+<td><strong>Action</strong></td>
+<td>A fix that the supervisor logs, with a date, a zone, a stage, what was done and an owner. ERGent then checks whether it worked.</td>
+</tr>
+<tr>
+<td><strong>Alarm</strong></td>
+<td>A flag on the <strong>slow</strong> side of a control chart. A flag on the fast side only says "check the data".</td>
+</tr>
+<tr>
+<td><strong>ANOVA</strong></td>
+<td>A test that asks whether several groups (here, zones) really differ, or whether the gaps could be chance.</td>
+</tr>
+<tr>
+<td><strong>Average (mean)</strong></td>
+<td>The sum of the times divided by how many there are. It hides slow calls, so ERGent also shows percentiles.</td>
+</tr>
+<tr>
+<td><strong>Baseline</strong></td>
+<td>A stretch of normal days used to set a zone's normal range. In ERGent, the <strong>chart period</strong> plays this role.</td>
+</tr>
+<tr>
+<td><strong>CAD</strong></td>
+<td>Computer-aided dispatch. The city's system that keeps one row per 911 call and stamps the times.</td>
+</tr>
+<tr>
+<td><strong>Capability (Ppk, Cpk)</strong></td>
+<td>A measure of whether a stable process can meet its target reliably. ERGent shows it as a plain verdict.</td>
+</tr>
+<tr>
+<td><strong>Center line</strong></td>
+<td>The middle line of a control chart: the zone's normal level.</td>
+</tr>
+<tr>
+<td><strong>Chart period</strong></td>
+<td>How many days of history the cards use (14, 28 or 42). It also sets the control limits.</td>
+</tr>
+<tr>
+<td><strong>Chart signal</strong></td>
+<td>A strong warning on the daily chart: rule R1 fired, or two or more different slow-side rules fired in the last 7 days.</td>
+</tr>
+<tr>
+<td><strong>Clock speed</strong></td>
+<td>How fast the board clock runs when you log calls by hand (1x, 10x, 30x or 60x).</td>
+</tr>
+<tr>
+<td><strong>Common cause</strong></td>
+<td>Ordinary, everyday variation. The ups and downs inside the control limits.</td>
+</tr>
+<tr>
+<td><strong>Control chart</strong></td>
+<td>A chart of a process over time, with a center line and control limits. It shows when something unusual happens.</td>
+</tr>
+<tr>
+<td><strong>Control limits (UCL and LCL)</strong></td>
+<td>The upper and lower lines on a control chart, at 3 sigma from the center. They show what is <strong>normal for the process</strong>. They are not the target.</td>
+</tr>
+<tr>
+<td><strong>Crew turnout</strong></td>
+<td>The time from dispatch until the crew leaves (<code>dispatched</code> to <code>en_route</code>). Target: 60 seconds.</td>
+</tr>
+<tr>
+<td><strong>Delay reason</strong></td>
+<td>One of six codes the crew picks when a stage runs late: traffic or road closure, ambulance breakdown, unit from another zone, unclear address, weather, crew not ready.</td>
+</tr>
+<tr>
+<td><strong>Dispatch processing</strong></td>
+<td>The time from the call arriving until an ambulance is dispatched (<code>call_received</code> to <code>dispatched</code>). Target: 64 seconds.</td>
+</tr>
+<tr>
+<td><strong>False alarm</strong></td>
+<td>A flag that fires by chance when nothing has really changed. A few are expected.</td>
+</tr>
+<tr>
+<td><strong>Geometric mean</strong></td>
+<td>The "typical" value for skewed data: <code>exp</code> of the mean of the logs. ERGent uses it for a typical response time.</td>
+</tr>
+<tr>
+<td><strong>Log scale (ln)</strong></td>
+<td>A way of measuring that pulls in a long slow tail. ERGent's charts and tests use the natural log of the time.</td>
+</tr>
+<tr>
+<td><strong>Median</strong></td>
+<td>The middle value: half the calls are faster, half are slower.</td>
+</tr>
+<tr>
+<td><strong>Moving range (MR)</strong></td>
+<td>The size of the jump from one call to the next.</td>
+</tr>
+<tr>
+<td><strong>NFPA 1710</strong></td>
+<td>A US standard for fire and EMS response. It is the source of the priority 1 targets (64 s, 60 s and 480 s).</td>
+</tr>
+<tr>
+<td><strong>On time</strong></td>
+<td>A call whose response was at or under its target. The goal is at least 90% of calls.</td>
+</tr>
+<tr>
+<td><strong>p-value</strong></td>
+<td>The chance of seeing a difference this big if nothing had really changed. A small p (under 0.05) means the difference is probably real.</td>
+</tr>
+<tr>
+<td><strong>Percentile</strong></td>
+<td>The value that a given share of the data falls under. The 90th percentile is beaten by 90% of calls.</td>
+</tr>
+<tr>
+<td><strong>Poka-yoke</strong></td>
+<td>Mistake-proofing. The screen makes the wrong entry hard to make, for example by showing only the next valid button.</td>
+</tr>
+<tr>
+<td><strong>Priority</strong></td>
+<td>The urgency code for a call: 1 life-threatening, 2 urgent, 3 non-urgent. Each has its own response target.</td>
+</tr>
+<tr>
+<td><strong>Response time</strong></td>
+<td>The time from dispatch to arrival on scene (<code>dispatched</code> to <code>on_scene</code>). It is turnout plus travel. This is the prompt's metric.</td>
+</tr>
+<tr>
+<td><strong>Shift</strong></td>
+<td>An eight-hour block: day 06:00 to 14:00, evening 14:00 to 22:00, night 22:00 to 06:00.</td>
+</tr>
+<tr>
+<td><strong>Sigma (σ)</strong></td>
+<td>A measure of spread, like a standard deviation. Control limits sit 3 sigma from the center.</td>
+</tr>
+<tr>
+<td><strong>Slip-back</strong></td>
+<td>A zone drifting back to its old problem after a fix.</td>
+</tr>
+<tr>
+<td><strong>Special cause</strong></td>
+<td>Something that changed the process: a breakdown, road works, a new crew habit. A flag points to one.</td>
+</tr>
+<tr>
+<td><strong>Specification limit (spec limit)</strong></td>
+<td>The requirement, such as the 9-minute target. It comes from a standard, not from the process.</td>
+</tr>
+<tr>
+<td><strong>Stable</strong></td>
+<td>A process that stays inside its control limits with no flags. Capability only makes sense for a stable process.</td>
+</tr>
+<tr>
+<td><strong>Standard deviation (SD)</strong></td>
+<td>How spread out the values are around their mean. A big SD means less predictable service.</td>
+</tr>
+<tr>
+<td><strong>Subgroup</strong></td>
+<td>A small group of values charted as one point. In the daily chart, a subgroup is one zone-day. In the History chart, it is one zone.</td>
+</tr>
+<tr>
+<td><strong>Suggested action</strong></td>
+<td>A fixed "if this, then suggest that" rule on the data, shown with its evidence.</td>
+</tr>
+<tr>
+<td><strong>Synthetic data</strong></td>
+<td>Invented data, made by a script. ERGent contains no real patient data.</td>
+</tr>
+<tr>
+<td><strong>Travel time</strong></td>
+<td>The drive to the scene (<code>en_route</code> to <code>on_scene</code>).</td>
+</tr>
+<tr>
+<td><strong>Welch's t-test</strong></td>
+<td>A test of whether two groups have different averages that does not assume equal spread. ERGent uses it for before and after.</td>
+</tr>
+<tr>
+<td><strong>X̄ chart (x-bar chart)</strong></td>
+<td>A control chart of group averages. ERGent's daily chart shows each day's average.</td>
+</tr>
+<tr>
+<td><strong>Zone</strong></td>
+<td>One of six areas of Ithaca (A to F). The outlines on the map are illustrative, not official EMS districts.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="frequently-asked-questions">Frequently asked questions</h2>
+<h3>1. Why not just use the monthly average?</h3>
+<p>An average blends fast and slow calls. A handful of very slow calls can hide inside a good-looking
+average. Take ten calls with times 4, 5, 6, 7, 8, 9, 10, 11, 12 and 20 minutes. The average is 9.2
+minutes, close to a 9-minute target. But only 6 of the 10 were on time, and one patient waited 20
+minutes. ERGent shows the 90th and 95th percentiles and on-time share next to the average, and splits
+each zone and each day. That is where the slow calls show up.</p>
+<h3>2. Why does ERGent use logs?</h3>
+<p>Response times are skewed. Most are quick, and a few are very slow. The log pulls in the slow tail, so
+control charts and tests behave. ERGent turns the results back into minutes before showing them, so you
+never have to think in logs.</p>
+<h3>3. What is the difference between amber and red?</h3>
+<p>On the Zone map, <strong>amber ("Worth a look")</strong> means one warning sign: either the daily chart shows a
+strong change, or the zone's 90th percentile is over its target. <strong>Red ("Act now")</strong> means both together.
+Amber is worth checking. Red needs action. Some amber zones are false alarms, and the stricter amber
+rule makes them rare.</p>
+<h3>4. Why does Zone D's daily chart show no red dots when the Zone map is amber?</h3>
+<p>The control limits come from the <strong>chart period</strong> you picked. If a problem lasts for most of that
+period, it widens the limits and can hide itself on the daily chart. That is a trade-off the team chose
+for simplicity and consistency. The Zone map, Delay by stage and Capability cards do not hide it. Read
+the daily chart together with them.</p>
+<h3>5. What does "Can't judge yet" mean on the Capability card?</h3>
+<p>The zone's times changed during the period (it has a flag on its daily chart). A reliability score for
+a zone that is changing would mislead. Find and fix the cause first, then judge again.</p>
+<h3>6. What does "Not enough calls" mean?</h3>
+<p>A zone needs at least 30 calls in the chart period for a trustworthy score. With fewer calls, the
+numbers are too uncertain.</p>
+<h3>7. Is the data real?</h3>
+<p>No. All the data is synthetic. A script made it with a fixed random seed. It has no real patients,
+addresses or names. It is shaped like real field data so that the tool has something realistic to
+analyze. The Ithaca zone outlines are illustrative too.</p>
+<h3>8. Where do the targets come from?</h3>
+<p>For priority 1, from NFPA 1710, a US standard: 64 seconds to dispatch, 60 seconds for the crew to get
+moving and 8 minutes to travel, so 9 minutes from dispatch to arrival, each met by at least 90% of
+calls. <strong>The priority 2 (15 minutes) and priority 3 (20 minutes) targets are our own assumptions</strong>,
+because the standard does not set them. A supervisor can change every target with the <strong>Targets</strong>
+button.</p>
+<h3>9. Does ERGent dispatch ambulances or change staffing?</h3>
+<p>No. ERGent <strong>flags and suggests</strong>. Every suggestion is "for review by qualified staff", and the
+dispatcher's tips are "for the dispatcher's judgment". People make every decision.</p>
+<h3>10. What is the difference between a control limit and the target?</h3>
+<p>A <strong>control limit</strong> (UCL and LCL) comes from the process: it shows what is normal for a zone. The
+<strong>target</strong> (a specification limit) comes from a standard: it shows what is required. A zone can be
+within its normal range and still miss the target, or beat the target and still be changing. ERGent
+draws them as different lines so you never confuse them.</p>
+</section>
+</body></html>
