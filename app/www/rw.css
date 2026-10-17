@@ -686,3 +686,6 @@ label, .control-label {
   .rw-verdict > :last-child { grid-column: 1 / -1; }
   .rw-chartbar .shiny-input-container { width: 100% !important; }
 }
+
+/* the map tooltip keeps its natural width (up to its max-width), so it never squeezes near the map edge */
+.leaflet-tooltip.rw-map-tip { width: max-content; }
