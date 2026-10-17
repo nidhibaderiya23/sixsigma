@@ -23,7 +23,7 @@
     if (!window.L) return null;
     var geo = JSON.parse(el.dataset.geo);
     var center = JSON.parse(el.dataset.center || "[42.444,-76.499]");
-    var map = L.map(el, { scrollWheelZoom: false, zoomSnap: 0.25 }).setView(center, Number(el.dataset.zoom || 13));
+    var map = L.map(el, { scrollWheelZoom: false, zoomSnap: 0.25, trackResize: false }).setView(center, Number(el.dataset.zoom || 13));
     // Esri's grey canvas tiles (no key needed): a base layer plus a street-name layer.
     var theme = el.dataset.tiles || cssVar("--map-tiles") || "dark";
     var shade = theme === "light" ? "Light" : "Dark";
@@ -60,7 +60,8 @@
     var bounds = L.geoJSON(geo).getBounds();
     map.fitBounds(bounds, { padding: [8, 8] });
     if (window.ResizeObserver) {
-      new ResizeObserver(function () { map.invalidateSize(); if (el.clientWidth) map.fitBounds(bounds, { padding: [8, 8], animate: false }); }).observe(el);
+      // a hidden map (width 0) keeps its view; a visible one refits without animation
+      new ResizeObserver(function () { if (!el.clientWidth) return; map.invalidateSize(false); map.fitBounds(bounds, { padding: [8, 8], animate: false }); }).observe(el);
     }
     maps[el.id] = { map: map, layers: layers };
     return maps[el.id];
