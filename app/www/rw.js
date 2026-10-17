@@ -71,10 +71,34 @@
     });
   }
 
+  // Links for demos and screenshots: ?role=dispatcher or ?role=supervisor opens that view,
+  // &tab=History or &tab=Actions opens that tab, and &sim=1 starts the dispatcher's shift replay.
+  function deepLink() {
+    var q = new URLSearchParams(window.location.search);
+    var role = q.get("role");
+    var pick = document.getElementById("pick_" + role);
+    if ((role !== "dispatcher" && role !== "supervisor") || !pick) return;
+    pick.click();
+    var tab = q.get("tab");
+    if (tab) setTimeout(function () {
+      var link = document.querySelector("#" + role + "-tabs a[data-value='" + tab.replace(/'/g, "") + "']");
+      if (link) link.click();
+    }, 800);
+    if (role === "dispatcher" && q.get("sim") === "1") setTimeout(function () {
+      var start = document.getElementById("dispatcher-sim_toggle");
+      if (start) start.click();
+    }, 1200);
+  }
+
   function register() {
     if (window.Shiny && Shiny.addCustomMessageHandler && window.jQuery) {
       Shiny.addCustomMessageHandler("rw_clock", function (msg) { paint(msg.now); });
       keepScroll();
+      if (Shiny.shinyapp && Shiny.shinyapp.isConnected && Shiny.shinyapp.isConnected()) {
+        setTimeout(deepLink, 300);
+      } else {
+        window.jQuery(document).one("shiny:connected", function () { setTimeout(deepLink, 300); });
+      }
     } else {
       setTimeout(register, 50);
     }
