@@ -60,7 +60,7 @@
     var bounds = L.geoJSON(geo).getBounds();
     map.fitBounds(bounds, { padding: [8, 8] });
     if (window.ResizeObserver) {
-      new ResizeObserver(function () { map.invalidateSize(); if (el.offsetWidth) map.fitBounds(bounds, { padding: [8, 8] }); }).observe(el);
+      new ResizeObserver(function () { map.invalidateSize(); if (el.clientWidth) map.fitBounds(bounds, { padding: [8, 8] }); }).observe(el);
     }
     maps[el.id] = { map: map, layers: layers };
     return maps[el.id];
