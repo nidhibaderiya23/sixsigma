@@ -2,7 +2,7 @@
 
 Team ERG (Nidhi Baderiya, Zeba Haq, Dhruv Bhandari) | Cornell Six Sigma Hackathon, SYSEN 5300 | Prompt: Health Systems, Emergency Response
 
-This page is the **Define** and **Measure** work for ERGent, a dashboard for a city 911 EMS dispatch center. Section 7 shows where the app does **Analyze, Improve and Control**. Numbers and rules match [`SPEC.md`](../SPEC.md) and [`plan.md`](plan.md). If this page and `SPEC.md` ever disagree, `SPEC.md` wins.
+This page is the **Define** and **Measure** work for ERGent, a dashboard for the 911 EMS dispatch center of Ithaca, NY (from version 2; version 1 used an unnamed city). Section 7 shows where the app does **Analyze, Improve and Control**. Numbers and rules match [`SPEC.md`](../SPEC.md) and [`plan.md`](plan.md). If this page and `SPEC.md` ever disagree, `SPEC.md` wins.
 
 | Term | Meaning |
 |---|---|
@@ -47,7 +47,7 @@ In our words: a supervisor cannot see **which zone** is slow, **which stage** of
 | Live logging of five timestamps per call | Automatic dispatching or staffing changes: the tool flags and suggests only |
 | Stage times (processing, turnout, travel); response = dispatch to on scene | Real patient data, addresses or names; hospital, on-scene care or pre-arrival instruction times |
 | Dispatcher and supervisor screens | A board shared across browsers (each browser has its own live board) |
-| Control charts, capability, tests, suggestions, action log | A real street map or GPS (zones are a schematic grid of 6 tiles) |
+| Control charts, capability, tests, suggestions, action log | GPS or official EMS districts (the 6 zones are illustrative areas drawn on a map of Ithaca) |
 | Synthetic data made by a seeded script | Per-person dispatcher rankings (the ID is stored; stats are by shift and workload) |
 | | AI-written suggestions, forecasting; Pareto, fishbone and stratification screens (dropped Oct 16) |
 

@@ -61,6 +61,12 @@ The start page has two buttons:
 You can change role at any time. Click **Switch role** in the top right corner. Each browser tab keeps
 its own board, so two people can try ERGent at once without affecting each other.
 
+The **Manual** link in the header opens this manual in a new tab, from any page.
+
+**Shortcut links.** Add `?role=dispatcher` or `?role=supervisor` to the app's address to open a view
+directly. Add `&tab=History` or `&tab=Actions` to open that tab, and `&sim=1` to start the shift
+replay. For example: `http://localhost:8000/?role=dispatcher&sim=1`.
+
 ## The data is synthetic
 
 All the data in ERGent is **invented**. It was made by a script with a fixed random seed, so it is the
