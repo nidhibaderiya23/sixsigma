@@ -19,5 +19,5 @@ Before you record:
 | 1:45-2:15 | Dispatcher tab: **Simulate a shift** at 120x | "The dispatcher sees the same story live. Every call has running clocks that turn amber, then red. The Ithaca map colours each zone by its worst open call, and a late stage needs a reason code: mistake-proofing at the source." |
 | 2:15-2:30 | **History** tab, hover a red diamond | "History compares zones in the current shift, and suggests what to do now. ERGent flags and suggests; qualified staff decide. Thank you." |
 
-Keep it under 3 minutes. If a step goes wrong, stop and record that part again; you can cut the clips
+Shortcut: open the [demo walkthrough](https://claude.ai/artifact/TjuXo1wR6W5AP3v3r8yvvA), pick your version, press Full screen and Play, and record that with QuickTime while you narrate. Keep it under 3 minutes. If a step goes wrong, stop and record that part again; you can cut the clips
 together in iMovie.
