@@ -23,15 +23,18 @@ import zonemap  # noqa: E402
 HERE = Path(__file__).resolve().parent
 
 #: Shown in the header; each saved version of the app sets its own.
-VERSION = "Ithaca base"
+VERSION = "v3"
 WWW = HERE / "www"
 
-FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+# Source Sans 3: a humanist sans with true tabular figures (clocks never jitter) that stays
+# legible on a washed-out classroom projector.
+FONTS = "https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap"
 
-# A small pulse icon as the browser-tab icon (inline, so there is no file to serve).
-FAVICON = ("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' "
-           "fill='none' stroke='%23ff6b5b' stroke-width='2' stroke-linecap='round' "
-           "stroke-linejoin='round'%3E%3Cpolyline points='22 12 18 12 15 21 9 3 6 12 2 12'/%3E%3C/svg%3E")
+# A white pulse on a clinical-teal tile as the browser-tab icon (inline, so there is no file to serve).
+FAVICON = ("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E"
+           "%3Crect width='24' height='24' rx='5' fill='%230b6474'/%3E"
+           "%3Cpolyline points='20 12 17 12 14.5 19 9.5 5 7 12 4 12' fill='none' stroke='%23ffffff' "
+           "stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
 
 
 def role_button(input_id: str, icon_name: str, name: str, description: str):
@@ -39,7 +42,8 @@ def role_button(input_id: str, icon_name: str, name: str, description: str):
         input_id,
         ui.TagList(ui.span(icon(icon_name), class_="rw-role-icon"),
                    ui.span(name, class_="rw-role-name"),
-                   ui.span(description, class_="rw-role-desc")),
+                   ui.span(description, class_="rw-role-desc"),
+                   ui.span(icon("chevron"), class_="rw-role-go")),
         class_="rw-role")
 
 
@@ -54,9 +58,10 @@ start_page = ui.div(
         class_="rw-hero"))
 
 header = ui.div(
-    ui.div(icon("pulse"), class_="rw-logo"),
-    ui.div(ui.div("ERGent", class_="rw-brand-name"),
-           ui.div(f"Team ERG \u00b7 {qc.CITY} EMS dispatch \u00b7 {VERSION}", class_="rw-brand-sub")),
+    ui.div(ui.div(icon("pulse"), class_="rw-logo"),
+           ui.div(ui.div("ERGent", class_="rw-brand-name"),
+                  ui.div(f"Team ERG \u00b7 {qc.CITY} EMS dispatch \u00b7 {VERSION}", class_="rw-brand-sub")),
+           class_="rw-brand"),
     ui.output_ui("header_chips"),
     ui.div(
         # the simulation controls live in the dispatcher module's namespace ("dispatcher")
@@ -76,8 +81,9 @@ app_ui = ui.page_fluid(
         ui.include_css(WWW / "rw.css", method="inline"),
         ui.include_js(WWW / "rw.js", method="inline"),
         zonemap.head()),
-    ui.div(
-        header,
+    # the header is a full-width teal band; the screens sit in a centred column below it
+    ui.tags.header(header, class_="rw-topbar"),
+    ui.tags.main(
         ui.navset_hidden(
             ui.nav_panel(None, start_page, value="start"),
             ui.nav_panel(None, dispatcher_ui("dispatcher"), value="dispatcher"),

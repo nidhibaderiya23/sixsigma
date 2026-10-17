@@ -59,6 +59,7 @@ _ICONS = {
     "headset": ('<path d="M3 18v-6a9 9 0 0 1 18 0v6"/>'
                 '<path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>'),
     "chart": '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+    "chevron": '<polyline points="9 6 15 12 9 18"/>',
 }
 
 
@@ -272,7 +273,7 @@ def _live_board_ui():
         # 2 x 2: log a call | incoming, dispatched | en route
         ui.div(log_call, ui.output_ui("incoming"), ui.output_ui("dispatched"), ui.output_ui("en_route"),
                class_="rw-two"),
-        ui.div(ui.output_ui("fleet"), _zone_map_card(), class_="rw-two"),
+        ui.div(ui.output_ui("fleet"), _zone_map_card(), class_="rw-two rw-two-fleet"),
         ui.div(ui.output_ui("resolved"), style="margin-top:16px"),
     )
 

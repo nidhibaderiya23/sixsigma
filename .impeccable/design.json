@@ -1,0 +1,331 @@
+{
+ "schemaVersion": 2,
+ "generatedAt": "2026-10-17T02:39:52-04:00",
+ "title": "Design System: ERGent v3, Clinical light",
+ "extensions": {
+  "colorMeta": {
+   "primary": {
+    "role": "primary",
+    "displayName": "Clinical Teal",
+    "canonical": "#0b6474",
+    "oklch": "oklch(46.4% 0.079 214)",
+    "tonalRamp": [
+     "#000f18",
+     "#002d38",
+     "#034e5b",
+     "#267181",
+     "#5095a4",
+     "#7eb9c7",
+     "#a7dbe8",
+     "#c9f8ff"
+    ]
+   },
+   "band": {
+    "role": "primary",
+    "displayName": "Deep Band Teal",
+    "canonical": "#0a4f5c",
+    "oklch": "oklch(39.5% 0.066 214)",
+    "tonalRamp": [
+     "#000f16",
+     "#002c35",
+     "#194d58",
+     "#366f7d",
+     "#5c93a0",
+     "#87b7c3",
+     "#aedae4",
+     "#d0f6ff"
+    ]
+   },
+   "canvas": {
+    "role": "neutral",
+    "displayName": "Cool Canvas",
+    "canonical": "#eef1f5",
+    "oklch": "oklch(95.7% 0.006 255)",
+    "tonalRamp": [
+     "#0a0b0d",
+     "#252729",
+     "#434548",
+     "#64666a",
+     "#87898d",
+     "#acaeb1",
+     "#cfd1d4",
+     "#edeff1"
+    ]
+   },
+   "ink": {
+    "role": "neutral",
+    "displayName": "Ink",
+    "canonical": "#16212c",
+    "oklch": "oklch(24.3% 0.026 249)",
+    "tonalRamp": [
+     "#060c12",
+     "#1f2730",
+     "#3c4651",
+     "#5b6874",
+     "#7e8b98",
+     "#a4afbb",
+     "#c8d2dd",
+     "#e6f0fa"
+    ]
+   },
+   "muted": {
+    "role": "neutral",
+    "displayName": "Muted Ink",
+    "canonical": "#556170",
+    "oklch": "oklch(48.8% 0.028 254)",
+    "tonalRamp": [
+     "#060c13",
+     "#1f2731",
+     "#3c4652",
+     "#5c6776",
+     "#7f8a99",
+     "#a4afbd",
+     "#c8d2df",
+     "#e6effb"
+    ]
+   },
+   "green": {
+    "role": "status",
+    "displayName": "On-track Green",
+    "canonical": "#2f9e5e",
+    "oklch": "oklch(62.1% 0.138 154)",
+    "tonalRamp": [
+     "#001400",
+     "#00330a",
+     "#005624",
+     "#007b40",
+     "#3d9f64",
+     "#71c38c",
+     "#9de5b3",
+     "#c1ffd3"
+    ]
+   },
+   "amber": {
+    "role": "status",
+    "displayName": "Watch Amber",
+    "canonical": "#c98500",
+    "oklch": "oklch(67.0% 0.143 73)",
+    "tonalRamp": [
+     "#200000",
+     "#441900",
+     "#6a3600",
+     "#945600",
+     "#b97a08",
+     "#dba253",
+     "#fac784",
+     "#ffe6aa"
+    ]
+   },
+   "red": {
+    "role": "status",
+    "displayName": "Past-target Red",
+    "canonical": "#d1342b",
+    "oklch": "oklch(56.8% 0.195 28)",
+    "tonalRamp": [
+     "#2e0000",
+     "#5a0000",
+     "#890000",
+     "#ba211c",
+     "#e25245",
+     "#ff8272",
+     "#ffac9c",
+     "#ffcebf"
+    ]
+   },
+   "chart-series": {
+    "role": "data",
+    "displayName": "Series Blue",
+    "canonical": "#2a78d6",
+    "oklch": "oklch(57.5% 0.163 256)",
+    "tonalRamp": [
+     "#000235",
+     "#00225f",
+     "#00428d",
+     "#1764bd",
+     "#448ae2",
+     "#73b0ff",
+     "#9dd4ff",
+     "#c0f2ff"
+    ]
+   }
+  },
+  "typographyMeta": {
+   "display": {
+    "displayName": "Display",
+    "purpose": "The ERGent title on the start page only."
+   },
+   "headline": {
+    "displayName": "Headline",
+    "purpose": "Page titles."
+   },
+   "title": {
+    "displayName": "Title",
+    "purpose": "Card and dialog titles."
+   },
+   "data": {
+    "displayName": "Data",
+    "purpose": "KPI numbers in the vitals strip, tabular."
+   },
+   "clock": {
+    "displayName": "Clock",
+    "purpose": "Running and final clocks, tabular."
+   },
+   "body": {
+    "displayName": "Body",
+    "purpose": "Everything else."
+   },
+   "label": {
+    "displayName": "Label",
+    "purpose": "Field labels, KPI labels, legends."
+   },
+   "caption": {
+    "displayName": "Caption",
+    "purpose": "Clock captions, unit zones, tags."
+   }
+  },
+  "shadows": [
+   {
+    "name": "resting",
+    "value": "0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.05)",
+    "purpose": "Cards, the vitals strip, role cards."
+   },
+   {
+    "name": "pop",
+    "value": "0 12px 32px rgba(16,24,40,.16), 0 2px 6px rgba(16,24,40,.08)",
+    "purpose": "Dialogs, notifications, date picker, map tooltips."
+   }
+  ],
+  "motion": [
+   {
+    "name": "state",
+    "value": "150ms ease-out",
+    "purpose": "Hover and selection colour changes; 0ms under prefers-reduced-motion."
+   }
+  ],
+  "breakpoints": [
+   {
+    "name": "projector",
+    "value": "1200px"
+   },
+   {
+    "name": "stack",
+    "value": "992px"
+   },
+   {
+    "name": "phone",
+    "value": "640px"
+   },
+   {
+    "name": "filterbar-one-row",
+    "value": "1320px"
+   }
+  ]
+ },
+ "components": [
+  {
+   "name": "Primary Button",
+   "kind": "button",
+   "refersTo": "button-primary",
+   "description": "The one primary action per view.",
+   "html": "<button class=\"ds-btn-primary\">Save action</button>",
+   "css": ".ds-btn-primary{background:#0b6474;color:#fff;border:1px solid #0b6474;border-radius:6px;height:38px;padding:0 16px;font:600 15px 'Source Sans 3',system-ui,sans-serif;transition:background-color .15s ease-out}.ds-btn-primary:hover{background:#08535f;border-color:#08535f}.ds-btn-primary:active{background:#064450}.ds-btn-primary:focus-visible{outline:2px solid #0b6474;outline-offset:2px}"
+  },
+  {
+   "name": "Row Action Button",
+   "kind": "button",
+   "refersTo": "button-row-action",
+   "description": "Per-call actions on the dispatcher board.",
+   "html": "<button class=\"ds-btn-row\">Dispatch</button>",
+   "css": ".ds-btn-row{background:#fff;color:#0b6474;border:1px solid #a9d0d6;border-radius:6px;min-height:32px;padding:4px 13px;font:600 14px 'Source Sans 3',system-ui,sans-serif;transition:background-color .15s ease-out}.ds-btn-row:hover{background:#e3f1f3;border-color:#0b6474;color:#08535f}.ds-btn-row:focus-visible{outline:2px solid #0b6474;outline-offset:2px}"
+  },
+  {
+   "name": "Secondary Button",
+   "kind": "button",
+   "refersTo": "button-secondary",
+   "description": "Cancel, Add call, Download.",
+   "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
+   "css": ".ds-btn-secondary{background:#fff;color:#16212c;border:1px solid #8592a0;border-radius:6px;height:38px;padding:0 16px;font:600 15px 'Source Sans 3',system-ui,sans-serif}.ds-btn-secondary:hover{background:#f0f3f7;border-color:#3a4754}.ds-btn-secondary:focus-visible{outline:2px solid #0b6474;outline-offset:2px}"
+  },
+  {
+   "name": "Field",
+   "kind": "input",
+   "refersTo": "input",
+   "description": "Selects and text fields.",
+   "html": "<input class=\"ds-input\" value=\"2026-10-12\">",
+   "css": ".ds-input{background:#fff;color:#16212c;border:1px solid #8592a0;border-radius:6px;height:38px;padding:0 12px;font:400 15px 'Source Sans 3',system-ui,sans-serif;font-variant-numeric:tabular-nums}.ds-input:hover{border-color:#3a4754}.ds-input:focus{outline:0;border-color:#0b6474;box-shadow:0 0 0 3px rgba(11,100,116,.22)}"
+  },
+  {
+   "name": "Status Flag Chip",
+   "kind": "chip",
+   "refersTo": "chip-flag-amber",
+   "description": "A status shown as a lab flag: tint fill, dark ink, dot.",
+   "html": "<span class=\"ds-chip ds-chip-amber\"><i></i>Just meets the standard</span> <span class=\"ds-chip ds-chip-red\"><i></i>Below the standard</span> <span class=\"ds-chip ds-chip-green\"><i></i>Reliable</span>",
+   "css": ".ds-chip{display:inline-flex;align-items:center;gap:7px;padding:3px 11px;border-radius:999px;border:1px solid;font:600 13px 'Source Sans 3',system-ui,sans-serif}.ds-chip i{width:8px;height:8px;border-radius:50%}.ds-chip-amber{background:#fdf1d9;border-color:#efd29b;color:#8a5300}.ds-chip-amber i{background:#c98500}.ds-chip-red{background:#fdecea;border-color:#f2c1bc;color:#b42318}.ds-chip-red i{background:#d1342b}.ds-chip-green{background:#e6f4ea;border-color:#b9dfc6;color:#1d7044}.ds-chip-green i{background:#2f9e5e}"
+  },
+  {
+   "name": "Underline Tabs",
+   "kind": "nav",
+   "refersTo": "nav",
+   "description": "Screen tabs on the canvas.",
+   "html": "<nav class=\"ds-tabs\"><a class=\"on\">Live board</a><a>History</a></nav>",
+   "css": ".ds-tabs{display:flex;gap:4px;border-bottom:1px solid #c5ced8;font:600 15.5px 'Source Sans 3',system-ui,sans-serif}.ds-tabs a{position:relative;padding:12px 14px 11px;color:#556170;cursor:pointer}.ds-tabs a:hover{color:#16212c}.ds-tabs a.on{color:#0b6474}.ds-tabs a.on:after{content:'';position:absolute;left:10px;right:10px;bottom:-1px;height:3px;border-radius:3px 3px 0 0;background:#0b6474}"
+  },
+  {
+   "name": "Vitals Strip",
+   "kind": "custom",
+   "refersTo": "card",
+   "description": "KPI counts joined by hairlines (signature).",
+   "html": "<div class=\"ds-strip\"><div><b>0</b><span>Waiting</span></div><div><b>1</b><span>En route</span></div><div><b>11</b><span>Units available</span></div></div>",
+   "css": ".ds-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#dde3ea;border:1px solid #dde3ea;border-radius:8px;overflow:hidden;font-family:'Source Sans 3',system-ui,sans-serif}.ds-strip div{background:#fff;padding:14px 18px}.ds-strip b{display:block;font-size:32px;font-weight:700;color:#16212c;font-variant-numeric:tabular-nums}.ds-strip span{font-size:14px;font-weight:600;color:#556170}"
+  },
+  {
+   "name": "Flagged Clock",
+   "kind": "custom",
+   "refersTo": "chip-flag-red",
+   "description": "A running clock; only an out-of-range clock carries the tinted flag.",
+   "html": "<span class=\"ds-clock\">7:05</span> <span class=\"ds-clock ds-clock-amber\">1:03</span> <span class=\"ds-clock ds-clock-red\">15:50</span>",
+   "css": ".ds-clock{font:700 22px 'Source Sans 3',system-ui,sans-serif;font-variant-numeric:tabular-nums;padding:0 6px;border-radius:4px;color:#16212c}.ds-clock-amber{background:#fdf1d9;color:#8a5300}.ds-clock-red{background:#fdecea;color:#b42318}"
+  }
+ ],
+ "narrative": {
+  "northStar": "The Lab Report",
+  "overview": "ERGent v3 is the quality console an EMS medical director would want on a bright desk and a class would want on a washed-out projector: a cool grey canvas, white surfaces separated by hairlines, and dark ink that survives any lamp. Everything in range reads in plain ink; anything out of range carries a tinted flag, the way a clinical lab report prints normal values plainly and flags the abnormal ones. One deep clinical teal owns the shell band, the primary action, selection and focus; green, amber and red are reserved for status.",
+  "keyCharacteristics": [
+   "A full-width deep teal header band; everything else is light.",
+   "Counts sit in a joined vitals strip, never floating cards.",
+   "Lists are flow sheets: rows separated by hairlines, no boxes.",
+   "Status is a flag (tinted fill plus dark ink of the same hue), shown only when it carries meaning.",
+   "One family, Source Sans 3, with tabular figures everywhere."
+  ],
+  "rules": [
+   {
+    "name": "The Lab Flag Rule",
+    "body": "In-range values print in plain ink with no fill. Only an out-of-range value gets a flag: its ink turns the status ink and it sits on the status tint. Every status ink passes 5:1 on its own tint.",
+    "section": "colors"
+   },
+   {
+    "name": "The Reserved Status Rule",
+    "body": "Green, amber and red never decorate and never label a data category. The chart stages use their own validated hues (violet, rose, blue).",
+    "section": "colors"
+   },
+   {
+    "name": "The One Family Rule",
+    "body": "Source Sans 3 carries every role, including chart text: SVG charts keep their text as text so the browser sets it in the page font.",
+    "section": "typography"
+   }
+  ],
+  "dos": [
+   "Do print in-range values in plain Ink and flag only out-of-range ones (The Lab Flag Rule).",
+   "Do keep every figure tabular and every label sentence case.",
+   "Do give charts the full width at 1200px or narrower.",
+   "Do use Clinical Teal for action, selection and focus, and nothing else."
+  ],
+  "donts": [
+   "Don't use green, amber or red for decoration or for data categories.",
+   "Don't float KPI numbers in separate cards; join them in the vitals strip.",
+   "Don't box list rows or nest cards.",
+   "Don't add uppercase tracked labels, glow, gradients, blur or coloured side stripes.",
+   "Don't bring back the dark command-center ground of version 1."
+  ]
+ }
+}

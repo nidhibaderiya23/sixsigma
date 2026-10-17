@@ -6,7 +6,7 @@
   "use strict";
   var maps = {};
   var waiting = {};
-  var FALLBACK = { green: "#6fd39a", amber: "#f2c14e", red: "#ef6461", grey: "#6b7280" };
+  var FALLBACK = { green: "#2f9e5e", amber: "#e0a100", red: "#d1342b", grey: "#8e99a5" };
 
   function cssVar(name) {
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim().replace(/["']/g, "");
@@ -25,7 +25,7 @@
     var center = JSON.parse(el.dataset.center || "[42.444,-76.499]");
     var map = L.map(el, { scrollWheelZoom: false, zoomSnap: 0.25 }).setView(center, Number(el.dataset.zoom || 13));
     // Esri's grey canvas tiles (no key needed): a base layer plus a street-name layer.
-    var theme = el.dataset.tiles || cssVar("--map-tiles") || "dark";
+    var theme = el.dataset.tiles || cssVar("--map-tiles") || "light";
     var shade = theme === "light" ? "Light" : "Dark";
     var esri = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_" + shade + "_Gray_";
     L.tileLayer(esri + "Base/MapServer/tile/{z}/{y}/{x}", {
@@ -36,7 +36,7 @@
     map.getPane("rwLabels").style.pointerEvents = "none";
     L.tileLayer(esri + "Reference/MapServer/tile/{z}/{y}/{x}", { maxZoom: 16, pane: "rwLabels" }).addTo(map);
     var layers = {};
-    var line = cssVar("--map-line") || "#ffffff";
+    var line = cssVar("--map-line") || "#33475b";
     L.geoJSON(geo, {
       style: function () { return { color: line, weight: 1.5, fillColor: FALLBACK.grey, fillOpacity: 0.35 }; },
       onEachFeature: function (f, layer) {
