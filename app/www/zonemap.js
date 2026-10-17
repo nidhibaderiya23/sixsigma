@@ -62,7 +62,7 @@
     if (window.ResizeObserver) {
       // refit without the zoom animation: no motion for a layout change, and no half-zoomed frame
       // (a hidden map, width 0, keeps its view, so showing it again does not reload every tile)
-      new ResizeObserver(function () { if (!el.offsetWidth) return; map.invalidateSize(false); map.fitBounds(bounds, { padding: [8, 8], animate: false }); }).observe(el);
+      new ResizeObserver(function () { if (!el.clientWidth) return; map.invalidateSize(false); map.fitBounds(bounds, { padding: [8, 8], animate: false }); }).observe(el);
     }
     maps[el.id] = { map: map, layers: layers };
     return maps[el.id];
