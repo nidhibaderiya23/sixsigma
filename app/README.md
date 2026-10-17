@@ -19,11 +19,11 @@ This folder holds the Response Watch tool: a Shiny for Python dashboard for a ci
 | File | Role |
 |---|---|
 | [`qc.py`](qc.py) | **Every statistic.** Plain functions on pandas tables and lists of numbers. No Shiny, no plotting. |
-| [`charts.py`](charts.py) | Matplotlib figures for the supervisor screens. Draws what `qc.py` computed. Computes nothing. |
-| [`simulator.py`](simulator.py) | The live board's rules: the call model, the fleet, alerts, and the shift replay. Pure Python, unit-tested. |
-| [`ui_dispatcher.py`](ui_dispatcher.py) | Dispatcher screens (live board, history) and the building blocks both roles share. |
+| [`charts.py`](charts.py) | Matplotlib figures for the supervisor screens and the dispatcher's History tab. Draws what `qc.py` computed. Computes nothing. |
+| [`simulator.py`](simulator.py) | The live board's rules: the call model, the fleet, the clocks, and the shift replay. Pure Python, unit-tested. |
+| [`ui_dispatcher.py`](ui_dispatcher.py) | Dispatcher screens (live board, History tab), the simulation controls for the page header, and the building blocks both roles share. |
 | [`ui_supervisor.py`](ui_supervisor.py) | Supervisor screens: settings card, Overview, Charts, Actions. |
-| [`app.py`](app.py) | The Shiny app: start page, role picker, header, banner. Wires the two roles together. |
+| [`app.py`](app.py) | The Shiny app: start page, role picker, header. Wires the two roles together. |
 | `www/rw.css`, `www/rw.js` | The dark look, and a small script that repaints the running clocks once a second. |
 | `requirements.txt` | Pinned dependencies (`==`). |
 | `.python-version` | `3.12`. Must match the manifest. |
@@ -104,7 +104,7 @@ fixes = qc.suggest(qc.until(stages, "2026-09-28"), priority=1)   # list of sugge
 
 ## 4. `qc.py`: the statistics
 
-Public functions are listed in the order they appear in the file. Functions starting with `_` are helpers ([4.8](#48-private-helpers)).
+`qc.py` has **35 public functions** and a few public constants, listed in the order they appear in the file. Functions starting with `_` are helpers ([4.9](#49-private-helpers)).
 
 ### 4.1 Constants
 
@@ -120,6 +120,7 @@ Public functions are listed in the order they appear in the file. Functions star
 | `CALL_COLUMNS` | 14 names | The columns of every calls CSV (see [`data/README.md`](../data/README.md)) |
 | `D2`, `D4` | 1.128, 3.267 | Control-chart constants for moving ranges of span 2 |
 | `RULE_TEXT` | R1 to R5 | Plain-words names for the flag rules, shown to the supervisor |
+| `NEIGHBORS` | zone to a tuple of zones | Which zones share an edge on the city grid. Used by the dispatcher tips ([4.8](#48-live-shift-tools-dispatcher)). |
 
 ### 4.2 Loading and stage times
 
@@ -357,7 +358,7 @@ Capability per zone, shown only for stable zones with enough calls.
 
 - **Inputs:** `stages`; `priority`; `targets`; the baseline arguments; `min_n`, the fewest calls a zone needs (default 30); `period_days`, the period to judge (e.g. 28). Pass ALL calls up to the as-of date: the control chart is built with its real baseline, then only the last `period_days` days are checked for flags and used for the indices. (The Charts screen does exactly this.)
 - **Returns:** one row per zone: `zone, n, ppk, cpk, stable, shapiro_p, shown, message`. `ppk` and `cpk` are filled only when `shown` is `True`.
-- **Formula:** USL = ln(target minutes). Ppk uses all the zone's ln minutes in the table (sigma_total). Cpk uses sigma_short = sqrt(mean of the daily variances) from the zone's daily subgroups. `stable` means the zone's `daily_xbar_s` chart is non-empty and has **no slow-side flag**. `shown = capability is computable and stable and n >= min_n`. With few calls the indices are too uncertain to mean anything.
+- **Formula:** USL = ln(target minutes). Ppk uses the zone's ln minutes in the period (sigma_total). The period is the last `period_days` days, or the whole table if `period_days` is `None`. Cpk uses sigma_short = sqrt(mean of the daily variances) from the zone's daily subgroups in that period. `stable` means the zone's `daily_xbar_s` chart (built on all the calls, with its real baseline) has days in the period and **no slow-side flag on any of them**. `shown = capability is computable and stable and n >= min_n`. With few calls the indices are too uncertain to mean anything.
 - **Degenerate:** an unstable zone has `shown = False` and the message "not stable: capability is not meaningful". A stable zone with fewer than `min_n` calls has `shown = False` and the message "too few calls for capability (n = X; need 30)". Constant data gives the "no variation" message. `shapiro_p` is blank when there are fewer than 3 values.
 
 ### 4.7 Stage breakdown, health, suggestions, before/after
@@ -435,7 +436,75 @@ Zones drifting back after a fix.
 - **Formula:** for each action, rebuild the daily X̄-S limits from the first `settle_days` days after the action. Any slow-side flag on a day after those `settle_days` days raises an alert.
 - **Degenerate:** no actions (or `None`) gives `[]`. An action whose zone has no limits (too little data) is skipped.
 
-### 4.8 Private helpers
+### 4.8 Live shift tools (dispatcher)
+
+Support for the dispatcher's history and live-shift view: which calls belong to "this shift and the one before", how each zone compares with the city, and real-time tips. A shift is 8 hours: day 06-14, evening 14-22, night 22-06 (see `shift_of`).
+
+#### `NEIGHBORS`
+
+A dict from each zone to the tuple of zones that share an edge on the city grid (A B C on the top row, D E F below).
+
+| Zone | Neighbors |
+|---|---|
+| A | B, D |
+| B | A, C, E |
+| C | B, F |
+| D | A, E |
+| E | B, D, F |
+| F | C, E |
+
+`dispatcher_tips` uses it to look for a nearby free ambulance and to say which zones should cover.
+
+#### `shift_window(now) -> dict`
+
+The shift that `now` falls in, and the shift before it.
+
+- **Inputs:** `now`, a date and time (anything `pandas.Timestamp` accepts).
+- **Returns:** `{"now", "current", "current_start", "previous", "previous_start", "label"}`. `current` and `previous` are `"day"`, `"evening"` or `"night"`. The starts are timestamps. `label` is text such as `Current: night shift 22:00-06:00, Sep 19 · Previous: evening shift 14:00-22:00, Sep 19`.
+- **Formula:** `current = shift_of(now.hour)`. `current_start` is that shift's start hour (06, 14 or 22) on `now`'s date, or on the day before if that would be later than `now` (a night shift after midnight began the evening before). `previous_start = current_start - 8 hours`. Example: at 2026-09-20 02:30, the night shift began Sep 19 22:00 and the previous (evening) shift began Sep 19 14:00.
+- **Degenerate:** none. A time that cannot be parsed raises the usual pandas error.
+
+#### `shift_calls(stages, now) -> DataFrame`
+
+The calls the dispatcher's two-shift view should use.
+
+- **Inputs:** a `stages` table; `now`.
+- **Returns:** the rows of `stages` that are valid, were received from the previous shift's start up to `now`, **and had reached the scene by `now`** (`on_scene <= now`). So a shift replay never shows the future, and calls still in progress are left out.
+- **Degenerate:** no matching calls gives an empty table with the same columns.
+
+#### `zone_subgroup_chart(stages, priority) -> DataFrame`
+
+Each zone as one subgroup of log response minutes, compared with the city's limits. It is the course's X̄ chart with zones, not days, as the subgroups.
+
+- **Inputs:** a `stages` table (usually from `shift_calls`); `priority` (1, 2 or 3).
+- **Returns:** one row per zone A to F: `zone, n, mean_log, sd_log, mean_min, x_ucl, x_lcl, x_ucl_min, x_lcl_min, z, flag, values_log`. `_min` columns are in minutes (`mean_min` is the geometric mean). `x_ucl` and `x_lcl` are ln minutes. `values_log` is the list of the zone's ln minutes, for the box plot. `flag` is `"above"` (slower than the city), `"below"` (faster: check the data) or `""`. `df.attrs` holds `xbbar`, `sigma_short` (ln minutes), `center_min` (minutes) and `message`.
+- **Formula:** this is `xbar_s_limits` on the six zones. Center x̄̄ = mean of the zone means. sigma_short = sqrt(mean of the zone variances), over zones with 2 or more calls. A zone's limits are x̄̄ +/- 3 sigma_short / sqrt(n_zone), so a zone with few calls gets wide limits. z = (zone mean - x̄̄) / (sigma_short / sqrt(n_zone)). `flag` is `"above"` when z > 3 and `"below"` when z < -3. Zones have no time order, so only this beyond-the-limit rule applies (like an analysis of means).
+- **Degenerate:** no valid calls of that priority gives every `n = 0`, no limits, and `attrs["message"]` = "no completed calls yet in these two shifts". If no zone has 2 or more calls, or all calls are the same, there are no limits or flags and `message` says why. A zone with no calls has blank numbers. A zone with one call has limits and a z-score but no `sd_log`.
+
+#### `dispatcher_tips(window, board_calls, fleet, now, targets=TARGETS) -> list`
+
+Real-time suggestions for the dispatcher, from the live board and the last two shifts. The tool decides nothing: these are for the dispatcher's judgment.
+
+- **Inputs:**
+  - `window`: a `stages` table of the last two shifts, from `shift_calls`. All priorities. Invalid calls are ignored. May be `None`.
+  - `board_calls`: the live board's calls in the `CALL_COLUMNS` layout, with blank stamps for steps not done yet (the screen passes `Board.calls_frame(now)`). May be `None`.
+  - `fleet`: a list of dicts with `unit_id`, `home_zone` and `state` (`available`, `dispatched`, `en_route`, `on_scene` or `out_of_service`). May be `None`.
+  - `now`: the current time; `targets`: a targets dict (seconds).
+- **Returns:** a list of dicts `{"rule", "zone", "text", "evidence"}`. `zone` is `"A"` to `"F"`, or `"All"` for T6. The order is T1, T2, T3, then T4 and T5 zone by zone, then T6.
+- **Formula (the rules):**
+
+| Rule | Fires when | Suggestion |
+|---|---|---|
+| T1 | A call on the board has no dispatch stamp and no on-scene stamp, and has waited longer than the processing target (64 s by default) | "Dispatch call X now." Names the nearest free ambulance: first one from the call's own zone, then one from a neighbor (in `NEIGHBORS` order). If none is free: "No ambulance nearby is free: ask the closest crew to clear." |
+| T2 | A zone that has ambulances has none free, and a neighbor has 2 or more free | "Move one ambulance from Zone N to stand by in Zone Z." N is the neighbor with the most free. |
+| T3 | A zone has an ambulance out of service | "Ask Zone N or Zone M to cover Zone Z's calls." The evidence lists the unit IDs. |
+| T4 | A zone has 3 or more calls in the window, and its median travel is at least 1.25 times the city's median travel | The text follows the top delay code among the zone's late calls (late response or late travel): `traffic_or_road_closure` gives "reroute around the traffic or road works"; `unit_from_another_zone` gives "keep an ambulance posted in the zone"; otherwise "check the route before sending the next unit" |
+| T5 | A zone has 3 or more calls in the window, and its median turnout is over the turnout target (60 s by default) | "Alert Zone Z's station: crews are slow to get rolling." |
+| T6 | The window has 5 or more valid calls, and the city's 90th percentile of processing (`percentile` at 0.9) is over the processing target | "Dispatch is slowing: ask the supervisor for a second dispatcher." |
+
+- **Degenerate:** no board calls (`None` or empty) means no T1. No fleet means no T2 or T3. An empty or `None` window means no T4, T5 or T6. A quiet board returns `[]`.
+
+### 4.9 Private helpers
 
 These start with `_`. They are not part of the interface.
 
@@ -448,12 +517,13 @@ These start with `_`. They are not part of the interface.
 | `_baseline_window(stages, baseline_days, baseline_start)` | The start and end of the baseline period |
 | `_stage_excess(calls, st)` | Minutes over target per stage, and each stage's share |
 | `_busiest_hours(calls, width=3)`, `_hours_text(start, width=3)` | The busiest 3-hour window, and its text such as `17:00-20:00` |
+| `_fmt_secs(s)` | Seconds as `m:ss` text for tip evidence (75 gives `1:15`) |
 
 ---
 
 ## 5. `charts.py`: the figures
 
-Drawing only. Each function takes a result from `qc.py` and returns a matplotlib `Figure` in the app's dark style. The backend is `Agg`, so no window opens. **Control limits (from the process) are dashed grey. The target (a specification limit) is a solid amber line.** They are never confused.
+Drawing only. There are 8 public figure functions. Each function takes a result from `qc.py` and returns a matplotlib `Figure` in the app's dark style. The backend is `Agg`, so no window opens. **Control limits (from the process) are dashed grey. The target (a specification limit) is a solid amber line.** They are never confused.
 
 | Function | Takes | Shows |
 |---|---|---|
@@ -463,6 +533,7 @@ Drawing only. Each function takes a result from `qc.py` and returns a matplotlib
 | `stage_share(bd)` | `qc.stage_breakdown` output | Stacked horizontal bars: each stage's share of the zone's minutes over target (0 to 100%) |
 | `normal_plot(norm, zone)` | `qc.normality` output | The normal probability plot of ln minutes, with a fit line and the Shapiro-Wilk p in the title |
 | `before_after_chart(chart_full, zone, action_date)` | `qc.daily_xbar_s` output | The `daily_chart` with the action marked |
+| `zone_box_chart(sub, priority, target_min)` | `qc.zone_subgroup_chart` output, the priority, and the target in minutes | One **box plot per zone** of ln response minutes (axis labels in minutes, log scale). A diamond marks each zone's mean: blue normally, red when the zone is slower than the city, a hollow amber ring when faster (check the data). A solid grey line is the city center. Short dashed grey lines are each zone's control limits (they depend on its number of calls). A solid amber line is the target. The axis labels show `n` per zone. |
 | `empty(message)` | text | A blank figure with a short message. Every function above falls back to it when there is no data or no limits. |
 
 ---
@@ -490,7 +561,9 @@ Each call's state at a simulated time. This is what the "Simulate a shift" repla
 | `Call` | One call, with the `CALL_COLUMNS` fields plus board fields. `status`, `elapsed(stage, now)` and `severity(now)` are properties of the call. |
 | `late_stage(call, action, now)` | The stage a button press would end, if it already ran past its target. Pressing On scene also checks total response. |
 | `severity(elapsed_s, target_s)`, `worst(*levels)` | `"red"` past the target, `"amber"` above 80% of it, else `"green"`. `worst` picks the most serious. |
-| `Board` | One browser session's board. It has two clocks, the wall clock and the replay clock, so their calls never mix. `add_call` stamps the received time. `check` and `apply` accept only the next step (they raise `BoardError`, or `ReasonRequired` when a reason is missing). `fleet`, `available_units`, `set_out_of_service` and `back_in_service` manage the 12 ambulances. `sync_replay` loads a replay state. `counts`, `zone_tiles` and `alerts` feed the screen. `to_frame` exports every call in the `CALL_COLUMNS` schema (the "Download calls" file). |
+| `ManualClock(start, mono, speed=1)` | The clock for calls logged by hand: wall time at 1x, or faster at 10x, 30x or 60x (`MANUAL_SPEEDS`). The caller passes in the monotonic time (`now(mono)`), so it is testable. `set_speed(speed, mono)` continues from the current board time, so the clock never jumps. `reset(start, mono)` goes back to a wall time and keeps the speed. |
+| `Board` | One browser session's board. It has two worlds, one for the manual clock and one for the replay clock, so their calls never mix. `add_call` stamps the received time. `check` and `apply` accept only the next step (they raise `BoardError`, or `ReasonRequired` when a reason is missing). `fleet`, `available_units`, `set_out_of_service` and `back_in_service` manage the 12 ambulances. `sync_replay` loads a replay state. `reset_all` empties the board: no calls, replay or manual, and every ambulance available. `counts` and `zone_tiles` feed the live board. `calls_frame(now=None, manual_only=False, all_worlds=False)` returns the calls as a `CALL_COLUMNS` table with real timestamps (stamps after `now` blanked): the History tab and `qc.dispatcher_tips` read it. `to_frame` exports every call of both clocks as text (the "Download calls" file). |
+| `SPEEDS`, `MANUAL_SPEEDS`, `START_HOURS`, `DEFAULT_DAY` | Replay speeds (30, 60, 120), manual clock speeds (1, 10, 30, 60), the replay start hours (0, 6, 14, 22), and the default replay day (`2026-09-20`) |
 | `load_units(path=None)`, `default_fleet()` | The fleet list from `data/units.csv`, or the default two ambulances per zone |
 | `fmt_clock`, `fmt_time`, `epoch` | Formatting helpers (`75` seconds is `1:15`) |
 
@@ -500,9 +573,40 @@ Each call's state at a simulated time. This is what the "Simulate a shift" repla
 
 | File | Role |
 |---|---|
-| [`app.py`](app.py) | Builds the start page (two role buttons), the header (with the clock-mode and role chips and a **Switch role** link) and the "synthetic data" banner. A hidden navset switches between the start page, the dispatcher view and the supervisor view. The live board's state lives inside `server()`, so each browser session has its own. |
-| [`ui_dispatcher.py`](ui_dispatcher.py) | `dispatcher_ui` and `dispatcher_server`: the live board (call tables, unit picker, ordered buttons, reason dialog, clear confirmation, fleet, alerts, live map, simulation controls, CSV download) and `history_ui` and `history_server` (per-zone summary table and the 20 latest resolved calls). It calls `qc.zone_summary` and `qc.last_days`. It also holds the small building blocks both roles share (`icon`, `chip`, `tag`, `card_head`, `eyebrow`) and `get_calls`, which reads and caches a calls CSV. A one-second tick moves the replay clock and repaints the clocks. |
+| [`app.py`](app.py) | Builds the start page (two role buttons) and the header: the logo, a chip with the role, a chip with the clock mode, and a **Switch role** link. On the dispatcher screen only, the header also holds the simulation controls (`sim_controls_ui`). A hidden navset switches between the start page, the dispatcher view and the supervisor view. The live board's state lives inside `server()`, so each browser session has its own. |
+| [`ui_dispatcher.py`](ui_dispatcher.py) | The dispatcher view and the building blocks both roles share (`icon`, `chip`, `tag`, `card_head`, `eyebrow`, and `get_calls`, which reads and caches a calls CSV). Details in [7.1](#71-the-dispatcher-view). |
 | [`ui_supervisor.py`](ui_supervisor.py) | The settings card (dataset: demo, baseline or messy; priority, as-of date, chart period, targets, baseline) and three tab modules listed in `TABS`: **Overview** (KPI tiles, zone health, history map, and a data-quality card that lists every excluded call, which is how the messy file's 7 planted defects show up), **Charts** (the X̄-S and I-MR figures, stage breakdown, capability table, ANOVA and normal plot) and **Actions** (slip-back alerts, suggestions, action log, before/after). `supervisor_server` builds the shared settings (targets, `stages`, `upto`, `health`, actions) once, and each tab reads them. Every number is a `qc` call. Every chart is a `charts` call. |
+
+### 7.1 The dispatcher view
+
+`ui_dispatcher.py` draws it. The rules are in `simulator.py`, and every number, limit and tip is a `qc` call.
+
+| Piece | What it is |
+|---|---|
+| `sim_controls_ui()` | The compact simulation controls in the page header: **Day** (default Sep 20), **Speed** (30x, 60x, 120x), **Start at** (00:00, 06:00, 14:00, 22:00), a **Simulate a shift** button (it becomes **Pause**, **Resume** or **Run again**) and **Reset**. |
+| `dispatcher_ui()`, `dispatcher_server(active)` | Two tabs: **Live board** and **History**. The server returns a reactive clock label for the header chip: `LIVE 1x` (green), `LIVE 10x`, `LIVE 30x`, `LIVE 60x`, or `SIM 30x`, `SIM 60x`, `SIM 120x` (amber). |
+| `history_ui()`, `history_server(visible, board, now)` | The History tab. `visible` is true only while the tab is shown. `board` and `now` are the live board and its clock. |
+| `RESOLVED_SHOWN`, `HISTORY_REFRESH_S`, `TIP_NAMES`, `chart_note(sub)` | The Resolved list length (30), the History refresh interval (5 s), the display names for the tips, and the one-line note under each zone chart. |
+
+**Live board, top to bottom:**
+
+1. A KPI row: Waiting, Dispatched, En route, On scene, Units available.
+2. A 2 x 2 grid: **Log a call** (zone, priority, **Clock speed** 1x, 10x, 30x or 60x, **Add call**) next to **Incoming calls**; then **Dispatched** next to **En route**.
+3. **Ambulances** (each with an **Out of service** or **Back in service** button) next to the **Live zone map**.
+4. **Resolved**, full width. A call counts as resolved once it is on scene. A call you logged by hand and that is still at the scene has a small **Clear** button (with a confirmation); a cleared call shows **Cleared**. Replay rows show **At the scene** and **Replay** tags. It lists the latest 30.
+
+There is no alerts panel and no separate On scene list. The page head holds a date and time chip and **Download calls (CSV)** (`Board.to_frame`).
+
+**Clocks.** With no simulation running, the board uses `ManualClock`: real time at the chosen Clock speed. Changing the speed continues from the current board time. While a simulation runs, the board uses the replay clock. **Reset** calls `Board.reset_all` and `ManualClock.reset`: no calls, all 12 ambulances available, Resolved empty, and the clock back to wall time at the chosen manual speed.
+
+**Ordered buttons (poka-yoke).** Only the next valid button is shown for a call. A press that ends a late stage opens a dialog that asks for one of the 6 delay reasons, and the time of the press is kept. Clear asks for confirmation. All of this is `Board.check`, `Board.needs_reason` and `Board.apply`.
+
+**History tab** (no selectors). It shows the **current shift and the previous one**, following the board clock (the simulated time during a simulation), and refreshes about every 5 seconds while it is visible. Its data is the demo file's calls that had reached the scene by the board time, plus the calls logged by hand (`Board.calls_frame(now, manual_only=True)`), cut by `qc.shift_calls`. Top to bottom:
+
+1. The shift label from `qc.shift_window`, for example `Current: evening shift 14:00-22:00, Sep 20 · Previous: day shift 06:00-14:00, Sep 20`.
+2. **Suggestions for the dispatcher** from `qc.dispatcher_tips`, each with its rule's display name: T1 Dispatch now, T2 Rebalance, T3 Cover, T4 Route, T5 Station alert, T6 Dispatcher load. The note says the suggestions are for the dispatcher's judgment and the tool decides nothing on its own.
+3. A KPI row: calls, median, 90th percentile and % on time. All priorities, and each call's own target.
+4. Three charts, one per priority, **Response time by zone**, from `charts.zone_box_chart` and `qc.zone_subgroup_chart`. Each has a note: "No zone is slower than the city as a whole.", or which zones are.
 
 ---
 
@@ -516,5 +620,5 @@ Each call's state at a simulated time. This is what the "Simulate a shift" repla
 
 | File | Covers |
 |---|---|
-| [`tests/test_qc.py`](../tests/test_qc.py) | Every function in section 4: the known answers from `SPEC.md` section 4, a degenerate case for each, a planted shift that must be flagged, the suggestion rules (each built to trigger only itself), before/after, slip-back, float-noise constants, and invalid calls that must not move a window |
-| [`tests/test_simulator.py`](../tests/test_simulator.py) | `events_until`, the replay clock, the ordered buttons, delay reasons, the fleet, alerts, zone tiles and the export schema |
+| [`tests/test_qc.py`](../tests/test_qc.py) | Every function in section 4: the known answers from `SPEC.md` section 4, a degenerate case for each, a planted shift that must be flagged, the suggestion rules (each built to trigger only itself), before/after, slip-back, float-noise constants, invalid calls that must not move a window, and the live shift tools (`shift_window`, `shift_calls`, `zone_subgroup_chart`, `dispatcher_tips`) |
+| [`tests/test_simulator.py`](../tests/test_simulator.py) | `events_until`, the replay clock, the manual clock, the ordered buttons, delay reasons, the fleet, zone tiles, `reset_all`, `calls_frame` and the export schema |

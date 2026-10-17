@@ -401,3 +401,86 @@ def test_capability_judges_stability_with_the_real_baseline():
     assert not cap.loc["D", "stable"] and cap.loc["D", "ppk"] is None   # the slow days are in the period
     cap14 = qc.zone_capability(st, period_days=14).set_index("zone")
     assert cap14.loc["D", "stable"] and cap14.loc["D", "ppk"] is not None  # only the fixed days
+
+
+# ---- live shift tools (dispatcher history tab, H-09) ---------------------------------------------
+
+def test_shift_window_hand_checked():
+    w = qc.shift_window("2026-09-20 15:30")
+    assert (w["current"], w["previous"]) == ("evening", "day")
+    assert w["current_start"] == pd.Timestamp("2026-09-20 14:00")
+    assert w["previous_start"] == pd.Timestamp("2026-09-20 06:00")
+    late = qc.shift_window("2026-09-21 02:10")          # night shift began the evening before
+    assert late["current"] == "night" and late["current_start"] == pd.Timestamp("2026-09-20 22:00")
+    assert late["previous_start"] == pd.Timestamp("2026-09-20 14:00")
+    assert "evening shift 14:00-22:00, Sep 20" in late["label"]
+
+
+def test_shift_calls_never_shows_the_future():
+    rows = [{"zone": "A", "received": "2026-09-20 05:00", "call_id": "OLD"},     # before the window
+            {"zone": "A", "received": "2026-09-20 07:00", "call_id": "PREV"},    # previous shift
+            {"zone": "A", "received": "2026-09-20 15:00", "call_id": "NOW"},     # current, done by 15:30
+            {"zone": "A", "received": "2026-09-20 15:28", "call_id": "OPEN"}]    # still en route at 15:30
+    st = qc.stage_times(make_calls(rows))
+    assert list(qc.shift_calls(st, "2026-09-20 15:30")["call_id"]) == ["PREV", "NOW"]
+
+
+def test_zone_subgroup_chart_matches_xbar_s_on_zones():
+    rows = []
+    for z, base in zip("ABCDEF", (300, 310, 290, 305, 295, 300)):
+        rows += [{"zone": z, "received": f"2026-09-20 0{7 + k}:00", "call_id": f"{z}{k}",
+                  "travel": base + WOBBLE[k]} for k in range(3)]
+    st = qc.stage_times(make_calls(rows))
+    sub = qc.zone_subgroup_chart(st, 1)
+    logs = [np.log(st[st.zone == z].response_min.to_numpy()) for z in "ABCDEF"]
+    ref = qc.xbar_s_limits(logs)
+    assert sub.attrs["xbbar"] == pytest.approx(ref["xbbar"])
+    assert sub.attrs["sigma_short"] == pytest.approx(ref["sigma_short"])
+    assert list(sub["z"]) == pytest.approx([r["z"] for r in ref["subgroups"]])
+    assert list(sub["n"]) == [3] * 6 and (sub["flag"] == "").all()
+
+
+def test_zone_subgroup_chart_flags_a_slow_zone_and_degenerate():
+    rows = []
+    for z in "ABCDEF":
+        slow = 400 if z == "D" else 0
+        rows += [{"zone": z, "received": f"2026-09-20 0{7 + k}:00", "call_id": f"{z}{k}",
+                  "travel": 300 + slow + WOBBLE[k]} for k in range(4)]
+    sub = qc.zone_subgroup_chart(qc.stage_times(make_calls(rows)), 1).set_index("zone")
+    # D pulls the city center up, so the tightly clustered normal zones may sit below it: never "above"
+    assert sub.loc["D", "flag"] == "above" and sub.loc["A", "flag"] != "above"
+    empty = qc.zone_subgroup_chart(qc.stage_times(make_calls(rows)), 3)      # no priority-3 calls
+    assert empty.attrs["center_min"] is None and "no completed calls" in empty.attrs["message"]
+
+
+def _fleet(states):
+    return [{"unit_id": f"M-{z}{i}", "home_zone": z, "state": states.get(f"M-{z}{i}", "available")}
+            for z in "ABCDEF" for i in (1, 2)]
+
+
+def test_dispatcher_tips_live_rules():
+    now = pd.Timestamp("2026-09-20 15:30")
+    board = make_calls([{"zone": "D", "received": "2026-09-20 15:28", "call_id": "W1"}])
+    board.loc[:, ["dispatched", "en_route", "on_scene", "cleared"]] = pd.NaT   # still waiting, 2:00
+    fleet = _fleet({"M-D1": "en_route", "M-D2": "out_of_service"})            # D has nothing free
+    tips = qc.dispatcher_tips(None, board, fleet, now)
+    rules = {(t["rule"], t["zone"]) for t in tips}
+    assert ("T1", "D") in rules and ("T2", "D") in rules and ("T3", "D") in rules
+    t1 = next(t for t in tips if t["rule"] == "T1")
+    assert "M-A1" in t1["text"] and "2:00" in t1["evidence"]     # neighbour A's unit, waited 2:00
+    assert qc.dispatcher_tips(None, None, _fleet({}), now) == []  # quiet board: no tips
+
+
+def test_dispatcher_tips_shift_rules():
+    rows = []
+    for z in "ABCDEF":
+        for k in range(4):
+            rows.append({"zone": z, "received": f"2026-09-20 1{k}:00", "call_id": f"{z}{k}",
+                         "travel": 600 if z == "C" else 300, "turnout": 150 if z == "E" else 40,
+                         "processing": 90, "delay_reason": "traffic_or_road_closure" if z == "C" else ""})
+    window = qc.shift_calls(qc.stage_times(make_calls(rows)), "2026-09-20 15:30")
+    tips = qc.dispatcher_tips(window, None, _fleet({}), "2026-09-20 15:30")
+    got = {(t["rule"], t["zone"]) for t in tips}
+    assert ("T4", "C") in got and "Reroute" in next(t["text"] for t in tips if t["rule"] == "T4")
+    assert ("T5", "E") in got and ("T6", "All") in got
+    assert not any(t["zone"] in "ABDF" and t["rule"] in ("T4", "T5") for t in tips)

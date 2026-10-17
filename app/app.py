@@ -15,13 +15,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from shiny import App, reactive, render, ui  # noqa: E402
 
 import qc  # noqa: E402,F401  (all numbers on screen come from qc.py)
-from ui_dispatcher import chip, dispatcher_server, dispatcher_ui, eyebrow, icon  # noqa: E402
+from ui_dispatcher import (chip, dispatcher_server, dispatcher_ui, eyebrow, icon,  # noqa: E402
+                           sim_controls_ui)
 from ui_supervisor import supervisor_server, supervisor_ui  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 WWW = HERE / "www"
-
-BANNER = "Synthetic data. Flags are for qualified staff to investigate, not automatic dispatch decisions."
 
 FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
 
@@ -47,7 +46,7 @@ start_page = ui.div(
         ui.div("Team ERG", class_="rw-hero-sub"),
         ui.div(
             role_button("pick_dispatcher", "headset", "I'm a dispatcher",
-                        "Work the live board: incoming calls, units, clocks and alerts."),
+                        "Work the live board: incoming calls, ambulances, clocks and shift suggestions."),
             role_button("pick_supervisor", "chart", "I'm a supervisor",
                         "See which zone needs attention, which stage causes it, and what to try."),
             class_="rw-roles"),
@@ -56,15 +55,15 @@ start_page = ui.div(
 header = ui.div(
     ui.div(icon("pulse"), class_="rw-logo"),
     ui.div(ui.div("Response Watch", class_="rw-brand-name"),
-           ui.div("Team ERG · City EMS dispatch", class_="rw-brand-sub")),
+           ui.div("Team ERG \u00b7 City EMS dispatch", class_="rw-brand-sub")),
     ui.output_ui("header_chips"),
     ui.div(
+        # the simulation controls live in the dispatcher module's namespace ("dispatcher")
+        ui.panel_conditional("input.page === 'dispatcher'", sim_controls_ui("dispatcher")),
         ui.panel_conditional("input.page !== 'start'",
                              ui.input_action_link("switch_role", "Switch role", class_="rw-linkbtn")),
         class_="rw-header-end"),
     class_="rw-header")
-
-banner = ui.div(icon("info"), ui.span(BANNER), class_="rw-banner", role="note")
 
 app_ui = ui.page_fluid(
     ui.head_content(
@@ -77,7 +76,6 @@ app_ui = ui.page_fluid(
         ui.include_js(WWW / "rw.js", method="inline")),
     ui.div(
         header,
-        banner,
         ui.navset_hidden(
             ui.nav_panel(None, start_page, value="start"),
             ui.nav_panel(None, dispatcher_ui("dispatcher"), value="dispatcher"),
@@ -120,7 +118,7 @@ def server(input, output, session):
     def header_chips():
         current = role()
         if current == "dispatcher":
-            live = mode() == "LIVE"
+            live = mode() == "LIVE 1x"          # green only for the real-time clock
             return ui.div(chip("Dispatcher", None),
                           chip(mode(), "green" if live else "amber"),
                           class_="rw-header-chips")

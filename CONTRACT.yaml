@@ -155,3 +155,25 @@ tasks:
       testme script and the H-03 tests both pass with no extra steps; git
       grep -i "api_key" finds no real key; the Devpost entry links the repo.
     result: "Simulated fresh clone (only the files git would commit): new 3.12 venv from app/requirements.txt, 60 tests pass, testme serves HTTP 200; no real key found. Still open: commit and push, real clone check, Devpost entry links the repo."
+
+  - id: H-09
+    title: Dispatcher view redesign from team feedback (Oct 16)
+    points: "protects H-04 (working tool) and H-05 (demonstration): the team's requested layout, live tips and shift charts"
+    status: done
+    owner: "Claude (agent) + Claude helper (UI) + Nidhi Baderiya"
+    started_at: "2026-10-16 20:54"
+    owns: ["app/app.py", "app/ui_dispatcher.py", "app/simulator.py", "app/www/", "app/qc.py", "app/charts.py", "tests/"]
+    notes: >
+      Requested by Nidhi: remove the synthetic-data banner; compact simulation
+      controls in the header; Reset clears everything to 0; manual clock
+      speed; On scene and Resolved merged; 2x2 layout; no live alerts; History
+      = current + previous shift following the board clock, with real-time
+      dispatcher tips (qc.dispatcher_tips) and zones-as-subgroups box-plot
+      control charts for priorities 1-3 (qc.zone_subgroup_chart).
+    definition_of_done: >
+      pytest tests passes (including the shift_window, shift_calls,
+      zone_subgroup_chart and dispatcher_tips tests), and in the browser:
+      Reset shows all zeros, the manual speed works, the History tab follows
+      the simulated clock and shows 3 charts and tips, no horizontal scroll at
+      375 px.
+    result: "70 pytest tests pass (incl. shift_window, shift_calls, zone_subgroup_chart, dispatcher_tips); browser-checked: banner gone, header sim controls, Reset to 0 0 0 0 / 12 free, manual 60x clock, Resolved merged, no alerts, History follows the sim clock with tips and 3 priority box-plot charts, no horizontal scroll at 375 px."

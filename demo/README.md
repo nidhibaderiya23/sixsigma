@@ -147,29 +147,78 @@ the source (the dispatcher's buttons) stops most of it from happening at all.
 
 ---
 
-## 5. The dispatcher's live board
+## 5. The dispatcher: live board and History
 
-Click **Switch role**, then **I'm a dispatcher**.
+Click **Switch role**, then **I'm a dispatcher**. The simulation controls sit in the header, to the left
+of **Switch role**: **Day** (default Sep 20), **Speed** (30x, 60x, 120x), **Start** (00:00, 06:00,
+14:00, 22:00), a coral **Simulate a shift** button and **Reset**. A chip next to the title shows the
+clock mode. Right now it says `LIVE 1x` (real time).
 
-1. **Simulate a shift:** Day 2026-09-20, Speed 120x, Start at "Evening shift, 14:00". Click
-   **Simulate a shift**.
-   - The header chip turns to "SIM 120X" and the clock runs fast.
-   - Calls appear in Incoming, then move through Dispatched, En route, On scene and Resolved at
-     their recorded times.
-   - Clocks turn amber at 80% of a stage target and red past it, and the zone map tiles change color.
-   - Click **Reset** when done.
-2. **Log a call by hand:** Zone D, Priority 1, then **Add call**. The received time is stamped from
-   the clock. Pick a unit and click **Dispatch**.
-   - Wait more than 60 seconds, then click **En route**: a dialog asks *why* turnout was late. Pick
-     "Crew not ready" and save.
-   - Then click **On scene**, then **Clear** (it asks for confirmation).
+1. **Header controls: Simulate a shift.** Keep Day Sep 20, choose Speed 120x and Start 14:00, then
+   click **Simulate a shift**.
+   - The chip changes to `SIM 120x`. The button becomes **Pause** (then **Resume**, and **Run again**
+     when the day ends).
+   - The board clock (the time chip at the top of the live board) now runs 120 times faster than
+     real time.
+2. **Watch the board.**
+   - The top row counts Waiting, Dispatched, En route, On scene and Units available.
+   - Calls appear in **Incoming calls**, then move to **Dispatched** and **En route** at the times in
+     the file. Replayed rows carry a **Replay** tag and no buttons: they are read-only.
+   - Each running clock is green, turns amber above 80% of its stage target, and red past it. The
+     **Live zone map** tile of a zone takes the worst clock colour in it. **Ambulances** shows who is
+     dispatched, en route or on scene.
+   - A call that reaches the scene moves to **Resolved** (full width, latest 30) with its final
+     response time, tagged **At the scene** and **Replay**. A cleared call shows **Cleared**.
+   - **How to read it:** red means a stage is already past its target.
+3. **History tab.** Click **History** while the simulation runs. It has no selectors. It shows the
+   current shift and the previous one, following the simulated clock, and refreshes about every 5
+   seconds.
+   - At about 14:28 on the simulated clock, the label reads `Current: evening shift 14:00-22:00, Sep 20
+     · Previous: day shift 06:00-14:00, Sep 20`.
+   - **Suggestions for the dispatcher** comes first. Around then you should see a **Station alert** for
+     Zone D: "Alert Zone D's station: crews are slow to get rolling", with a median turnout of about 2
+     minutes over the two shifts against the 1-minute target. (Zone D's turnout is the planted
+     problem.)
+   - Next come four tiles: about 35 to 40 calls, a median of about 6 minutes, a 90th percentile of about
+     8 minutes and about 97% on time (all priorities, each call's own target). The numbers keep
+     changing as the clock runs.
+   - Then three charts, one per priority, **Response time by zone**. Each zone is a box plot of its
+     calls. The diamond is the zone's mean. The grey line is the city center, and the dashed grey lines
+     are each zone's control limits (they are wider for zones with few calls). The amber line is the
+     target. A note under each chart says "No zone is slower than the city as a whole.", or names the
+     zones that are.
+   - **How to read it:** a red diamond above its dashed limit is a zone slower than the city as a
+     whole. The suggestions are for the dispatcher's judgment; the tool decides nothing.
+4. **Reset to zero.** Click **Reset**. All replay and hand-logged calls disappear. Waiting, Dispatched,
+   En route and On scene all show 0, Units available shows 12, Resolved is empty, and the chip
+   goes back to `LIVE 1x` on real time.
+5. **Log a call by hand, at 60x.** On the **Live board**, in **Log a call**, choose Zone D, Priority 1
+   and **Clock speed** 60x, then click **Add call**.
+   - The chip says `LIVE 60x`. One real second is one minute on the board clock. (The board clock now
+     runs ahead of real time, and the History shift label follows it.)
+   - The call appears in **Incoming calls** with a unit picker (home-zone units first) and
+     **Dispatch**. Its Waiting clock turns amber, then red past 1:04, within about a second.
+   - Click **Dispatch**. The stage already ran late, so a dialog "Why was this late?" asks for one of
+     the 6 delay reasons. Pick "Unclear address" and click **Save reason and continue**. The time
+     you pressed the button is kept.
+   - The call moves to **Dispatched**. Its turnout clock (target 1:00) turns red within a second or
+     two. Click **En route** and give a reason ("Crew not ready"). It moves to **En route**, which
+     shows Travel (target 8:00) and Total clocks. Click **On scene**. A response past its target also
+     asks for a reason.
+   - The call now sits in **Resolved** with its response time and a small **Clear** button. Click
+     **Clear**, then confirm "Clear call ...?". The row shows **Cleared**, and the ambulance is
+     free again.
    - Only the next valid button is ever shown. This is the poka-yoke.
-3. **Fleet board:** click **Out of service** on an en-route ambulance. Its call is flagged, and the
-   reason "Ambulance breakdown" is recorded when it arrives.
-4. **History tab:** Demo, last 7 days, priority 1. The All row shows 295 calls, average 5.6,
-   median 5.2, 90th percentile 7.9, 95th percentile 9.0 and 94.9% on time. Zone C's row has the
-   lowest on time (86.7%).
-5. **Download calls (CSV):** saves this session's calls in the same format as `data/calls_*.csv`.
+6. **Ambulances.** In **Ambulances**, click **Out of service** on M-A1. (If that ambulance is rolling to
+   a call you logged, the call is flagged **Breakdown**, and the reason "Ambulance breakdown" is
+   recorded when it arrives.) Open **History**. Within about 5 seconds a **Cover** suggestion
+   appears: "Ask Zone B or Zone D to cover Zone A's calls", with the evidence "1 of Zone A's
+   ambulances out of service: M-A1." Click **Back in service** to undo it. If a zone has no free
+   ambulance and a neighbor has two or more, History shows a **Rebalance** suggestion instead.
+
+**Download calls (CSV)** on the live board saves this session's calls in the same format as
+`data/calls_*.csv`. On the real clock, History starts empty (the demo file ends on Oct 12) and fills
+with the calls you log by hand.
 
 ---
 

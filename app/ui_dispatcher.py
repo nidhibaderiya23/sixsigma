@@ -1,8 +1,8 @@
-"""Dispatcher screens: the live board and the history tab.
+"""Dispatcher screens: the live board and the shift review (History tab).
 
-The call model, the fleet, the alerts and the shift replay live in simulator.py
-(pure Python, unit-tested); every percentile and summary comes from qc.py. This
-file only draws them and passes the button presses back.
+The call model, the fleet, the clocks and the shift replay live in simulator.py
+(pure Python, unit-tested); every percentile, limit and suggestion comes from
+qc.py. This file only draws them and passes the button presses back.
 
 State lives inside the server function, so every browser session has its own board.
 """
@@ -19,21 +19,27 @@ import time  # noqa: E402
 from datetime import datetime  # noqa: E402
 
 import pandas as pd  # noqa: E402
-from shiny import module, reactive, render, ui  # noqa: E402
+from shiny import module, reactive, render, req, ui  # noqa: E402
 
+import charts  # noqa: E402
 import qc  # noqa: E402
 import simulator as sim  # noqa: E402
 
-#: The share of calls that should be on time (NFPA 1710), used only to colour a dot.
-ON_TIME_GOAL = 90.0
+#: How many cleared or on-scene calls the Resolved panel lists.
+RESOLVED_SHOWN = 30
 
-#: How many resolved calls the live board lists.
-RESOLVED_SHOWN = 10
+#: Seconds between refreshes of the History tab (shift window, suggestions, charts).
+HISTORY_REFRESH_S = 5
 
 SPEED_CHOICES = {str(s): f"{s}x" for s in sim.SPEEDS}
-START_CHOICES = {str(h): label for h, label in sim.START_HOURS.items()}
+MANUAL_SPEED_CHOICES = {str(s): f"{s}x" for s in sim.MANUAL_SPEEDS}
+START_CHOICES = {str(h): f"Start {h:02d}:00" for h in sim.START_HOURS}
 ZONE_CHOICES = {z: z for z in qc.ZONES}
 PRIORITY_CHOICES = {"1": "1 (life-threatening)", "2": "2", "3": "3"}
+
+#: Display names for the dispatcher_tips rules.
+TIP_NAMES = {"T1": "Dispatch now", "T2": "Rebalance", "T3": "Cover", "T4": "Route",
+             "T5": "Station alert", "T6": "Dispatcher load"}
 
 # ---- shared building blocks (the supervisor screens use these too) ------------------------
 
@@ -194,34 +200,36 @@ def list_card(label: str, title: str, rows: list, empty: str, host: dict, total:
     return ui.div(card_head(label, title, count), body, class_="rw-card", **host)
 
 
+def _day_label(iso: str) -> str:
+    return pd.Timestamp(iso).strftime("%b %d")
+
+
+# ---- the simulation controls (shown in the page header) ----------------------------------------
+
+@module.ui
+def sim_controls_ui():
+    """Compact simulation controls for the header. Call it with the dispatcher's id
+    ("dispatcher") so the dispatcher's server reads these inputs."""
+    return ui.div(
+        ui.input_select("sim_day", "Day", choices={sim.DEFAULT_DAY: _day_label(sim.DEFAULT_DAY)}),
+        ui.input_select("sim_speed", "Speed", choices=SPEED_CHOICES, selected="60"),
+        ui.input_select("sim_start", "Start at", choices=START_CHOICES, selected="0"),
+        ui.input_action_button("sim_toggle", "Simulate a shift", class_="btn-primary btn-sm"),
+        ui.input_action_button("sim_reset", "Reset", class_="btn-default btn-sm"),
+        class_="rw-simbar")
+
+
 # ---- the live board ----------------------------------------------------------------------------
 
 def _live_board_ui():
-    sim_card = ui.div(
-        card_head("Simulation", "Simulate a shift"),
-        ui.p("Replay one day of the demo data on a fast clock. Calls move through the board "
-             "at the times in the file.", class_="rw-muted rw-small"),
-        ui.div(
-            ui.input_select("sim_day", "Day", choices={sim.DEFAULT_DAY: sim.DEFAULT_DAY}),
-            ui.input_select("sim_speed", "Speed", choices=SPEED_CHOICES, selected="60"),
-            ui.input_select("sim_start", "Start at", choices=START_CHOICES, selected="0"),
-            class_="rw-controls"),
-        ui.div(
-            ui.input_action_button("sim_toggle", "Simulate a shift", class_="btn-primary"),
-            ui.input_action_button("sim_reset", "Reset", class_="btn-default"),
-            class_="rw-btnrow", style="margin-top:14px"),
-        ui.output_ui("sim_note"),
-        class_="rw-card")
-
-    new_call = ui.div(
+    log_call = ui.div(
         card_head("New call", "Log a call"),
-        ui.p("The received time is stamped from the clock. Then work the call with the buttons "
-             "below.", class_="rw-muted rw-small"),
         ui.div(
             ui.input_select("new_zone", "Zone", choices=ZONE_CHOICES),
             ui.input_select("new_priority", "Priority", choices=PRIORITY_CHOICES),
+            ui.input_select("manual_speed", "Clock speed", choices=MANUAL_SPEED_CHOICES, selected="1"),
             ui.input_action_button("new_call", "Add call", class_="btn-default"),
-            class_="rw-controls"),
+            class_="rw-controls rw-controls-call"),
         class_="rw-card")
 
     return ui.TagList(
@@ -233,13 +241,11 @@ def _live_board_ui():
                    class_="rw-btnrow"),
             class_="rw-page-head"),
         ui.output_ui("kpis"),
-        ui.div(sim_card, new_call, class_="rw-two"),
-        ui.div(
-            ui.div(ui.output_ui("incoming"), ui.output_ui("dispatched"), ui.output_ui("en_route"),
-                   ui.output_ui("on_scene"), ui.output_ui("resolved"), class_="rw-stack"),
-            ui.div(ui.output_ui("zone_map"), ui.output_ui("alerts"), ui.output_ui("fleet"),
-                   class_="rw-stack"),
-            class_="rw-grid"),
+        # 2 x 2: log a call | incoming, dispatched | en route
+        ui.div(log_call, ui.output_ui("incoming"), ui.output_ui("dispatched"), ui.output_ui("en_route"),
+               class_="rw-two"),
+        ui.div(ui.output_ui("fleet"), ui.output_ui("zone_map"), class_="rw-two"),
+        ui.div(ui.output_ui("resolved"), style="margin-top:16px"),
     )
 
 
@@ -257,25 +263,25 @@ def dispatcher_ui():
 def dispatcher_server(input, output, session, active):
     """The dispatcher's board. `active` is a reactive that is True while this view is shown.
 
-    Returns a reactive giving the clock mode label ("LIVE" or "SIM 60x") for the header.
+    Returns a reactive giving the clock label for the header, e.g. "LIVE 1x" or "SIM 60x".
     """
     board = sim.Board(sim.load_units())
     st = {"replay": None, "last": None, "picks": {}, "pending": None,
-          "sig": None, "tsig": None, "v": 0, "tv": 0}
+          "sig": None, "tsig": None, "v": 0, "tv": 0,
+          "clock": sim.ManualClock(datetime.now(), time.monotonic(), 1)}
     version = reactive.Value(0)        # bumps when a call or unit changes
-    timever = reactive.Value(0)        # bumps when time alone changes an alert or a tile colour
+    timever = reactive.Value(0)        # bumps when time alone changes a zone tile colour
     sim_state = reactive.Value("stopped")      # stopped, running, paused or finished
-    mode_label = reactive.Value("LIVE")
-
-    history_server("history")
+    mode_label = reactive.Value("LIVE 1x")
 
     # ---- clock and state helpers ---------------------------------------------------------------
 
     def now() -> datetime:
+        """The board clock: the replay's simulated time, else the manual clock."""
         replay = st["replay"]
         if replay is not None:
             return replay.now
-        return datetime.now().replace(microsecond=0)
+        return st["clock"].now(time.monotonic())
 
     def bump() -> None:
         """Tell the screens something changed (only if it really did)."""
@@ -297,7 +303,13 @@ def dispatcher_server(input, output, session, active):
 
     def set_label() -> None:
         replay = st["replay"]
-        mode_label.set("LIVE" if replay is None else f"SIM {replay.speed}x")
+        mode_label.set(f"LIVE {st['clock'].speed}x" if replay is None else f"SIM {replay.speed}x")
+
+    @reactive.calc
+    def history_visible():
+        return bool(active()) and input.tabs() == "History"
+
+    history_server("history", visible=history_visible, board=board, now=now)
 
     # ---- the one-second tick ------------------------------------------------------------------------
 
@@ -325,10 +337,11 @@ def dispatcher_server(input, output, session, active):
     def _data_for_simulator():
         calls, _ = get_calls("demo")
         if calls is None:
-            ui.update_select("sim_day", choices={"": "Data not generated yet"})
+            ui.update_select("sim_day", choices={"": "No data"})
             return
         days = sim.available_days(calls)
-        ui.update_select("sim_day", choices=days, selected=sim.pick_day(days))
+        ui.update_select("sim_day", choices={d: _day_label(d) for d in days},
+                         selected=sim.pick_day(days))
 
     @reactive.effect
     @reactive.event(input.sim_toggle)
@@ -355,7 +368,7 @@ def dispatcher_server(input, output, session, active):
                 new = sim.Replay(sim.day_calls(calls, day), speed=int(input.sim_speed()),
                                  start_hour=int(input.sim_start()))
             except ValueError:
-                notify(f"There are no calls on {day}.", "error")
+                notify(f"There are no calls on {day} after that start time.", "error")
                 return
             board.reset_sim()
             board.set_mode("sim")
@@ -372,13 +385,17 @@ def dispatcher_server(input, output, session, active):
     @reactive.effect
     @reactive.event(input.sim_reset)
     def _sim_reset():
+        """Everything the dispatcher sees goes back to zero and the clock to wall time."""
         st["replay"] = None
+        st["pending"] = None
         st["picks"].clear()
-        board.reset_sim()
+        board.reset_all()
+        st["clock"].reset(datetime.now(), time.monotonic())     # keeps the chosen manual speed
         sim_state.set("stopped")
         set_label()
         bump()
         bump_time()
+        ui.modal_remove()
 
     @reactive.effect
     @reactive.event(input.sim_speed, ignore_init=True)
@@ -389,27 +406,18 @@ def dispatcher_server(input, output, session, active):
             set_label()
 
     @reactive.effect
+    @reactive.event(input.manual_speed, ignore_init=True)
+    def _manual_speed():
+        # continues from the current board time, so the clock never jumps
+        st["clock"].set_speed(int(input.manual_speed()), time.monotonic())
+        set_label()
+        bump_time()
+
+    @reactive.effect
     def _toggle_label():
         label = {"stopped": "Simulate a shift", "running": "Pause", "paused": "Resume",
-                 "finished": "Replay this day again"}[sim_state()]
+                 "finished": "Run again"}[sim_state()]
         ui.update_action_button("sim_toggle", label=label)
-
-    @render.ui
-    def sim_note():
-        state = sim_state()
-        calls, why = get_calls("demo")
-        if calls is None:
-            return ui.p(why or "Data not generated yet", class_="rw-muted rw-small",
-                        style="margin:12px 0 0")
-        replay = st["replay"]
-        if state == "stopped" or replay is None:
-            text = ("Pick a day, a speed and a start time, then start. Replayed calls are read-only; "
-                    "calls you add use the same clock.")
-        else:
-            text = (f"Replaying {replay.day:%Y-%m-%d} at {replay.speed}x"
-                    f"{' (finished)' if state == 'finished' else ''}. Speed changes apply now; "
-                    "reset to change the day or the start time.")
-        return ui.p(text, class_="rw-muted rw-small", style="margin:12px 0 0")
 
     # ---- manual calls and buttons --------------------------------------------------------------------------
 
@@ -537,7 +545,7 @@ def dispatcher_server(input, output, session, active):
     def clock_chip():
         sim_state()
         mode = mode_label()
-        tone = "green" if mode == "LIVE" else "amber"
+        tone = "green" if mode == "LIVE 1x" else "amber"
         t = now()
         return ui.div(
             chip(ui.span(t.strftime("%Y-%m-%d"), class_="rw-nowdate"), None),
@@ -617,40 +625,31 @@ def dispatcher_server(input, output, session, active):
         return list_card("Travelling", "En route", rows, "No units on the road.", host())
 
     @render.ui
-    def on_scene():
-        version()
-        t = now()
-        rows = []
-        for c in calls_with("on_scene"):
-            tg = c.targets
-            resp = c.elapsed("response", t)
-            sev = sim.severity(resp, tg["response"])
-            actions = [action_button("Clear", "clear", c.call_id)] if c.source == "manual" \
-                else [tag("Replay")]
-            status = "within target" if sev != "red" else "past target"
-            rows.append(row(c, f"Unit {c.unit_id}, response {status} ({sim.fmt_clock(tg['response'])})",
-                            actions=actions, live=False, sev=sev,
-                            clocks=[final_box("Response", resp, tg["response"])]))
-        return list_card("At the scene", "On scene", rows, "No units on scene.", host())
-
-    @render.ui
     def resolved():
+        """On scene means resolved: every call that reached the scene, with its final response.
+        A Clear button stays on rows whose ambulance is still there (it frees the ambulance)."""
         version()
         t = now()
-        done = sorted((c for c in board.calls() if c.status == "cleared"),
-                      key=lambda c: c.cleared, reverse=True)
+        done = sorted((c for c in board.calls() if c.status in ("on_scene", "cleared")),
+                      key=lambda c: c.on_scene or c.cleared, reverse=True)
         rows = []
         for c in done[:RESOLVED_SHOWN]:
             tg = c.targets
             resp = c.elapsed("response", t)
-            late = resp is not None and resp > tg["response"]
+            sev = sim.severity(resp, tg["response"]) if resp is not None else "green"
             reason = qc.REASON_CODES.get(c.delay_reason, "")
-            sub = f"Unit {c.unit_id} · cleared {sim.fmt_time(c.cleared)}"
+            if c.status == "cleared":
+                sub = f"Unit {c.unit_id} · cleared {sim.fmt_time(c.cleared)}"
+                actions = [tag("Cleared")]
+            else:
+                sub = f"Unit {c.unit_id} · on scene {sim.fmt_time(c.on_scene)}"
+                actions = [action_button("Clear", "clear", c.call_id)] if c.source == "manual" \
+                    else [tag("At the scene"), tag("Replay")]
             if reason:
                 sub += f" · {reason}"
             clocks = [final_box("Response", resp, tg["response"])] if resp is not None else []
-            rows.append(row(c, sub, live=False, sev="red" if late else "green", clocks=clocks))
-        card = list_card("This session", "Resolved", rows, "Nothing resolved yet.", host(),
+            rows.append(row(c, sub, live=False, sev=sev, actions=actions, clocks=clocks))
+        card = list_card("At the scene and after", "Resolved", rows, "No calls on scene yet.", host(),
                          total=len(done))
         if len(done) > RESOLVED_SHOWN:
             card.children.append(ui.div(f"Showing the latest {RESOLVED_SHOWN} of {len(done)}. "
@@ -680,29 +679,6 @@ def dispatcher_server(input, output, session, active):
             class_="rw-legend")
         return ui.div(card_head("Zones", "Live zone map"), ui.div(*cells, class_="rw-map"), legend,
                       class_="rw-card")
-
-    @render.ui
-    def alerts():
-        version()
-        timever()
-        items = board.alerts(now())
-        rows = []
-        for a in items:
-            tone = a["severity"] if a["active"] else "grey"
-            rows.append(ui.div(
-                ui.span(class_="rw-dot", **{"data-tone": tone}),
-                ui.div(ui.div(a["title"], class_="rw-row-title"), ui.div(a["sub"], class_="rw-row-sub"),
-                       class_="rw-row-main"),
-                ui.div(ui.span(sim.fmt_time(a["raised_at"]), class_="rw-final",
-                               style="font-size:14px;font-weight:600"),
-                       ui.span("Raised" if a["active"] else "Resolved", class_="rw-cap"),
-                       class_="rw-clockbox"),
-                class_="rw-row"))
-        body = ui.div(*rows, class_="rw-rows", style="max-height:340px;overflow-y:auto") if rows \
-            else ui.div("No alerts. Everything is inside its target.", class_="rw-empty")
-        active_n = sum(1 for a in items if a["active"])
-        return ui.div(card_head("Live alerts", "Newest first",
-                                ui.span(f"{active_n} active", class_="rw-count")), body, class_="rw-card")
 
     @render.ui
     def fleet():
@@ -740,97 +716,160 @@ def dispatcher_server(input, output, session, active):
     return mode_label
 
 
-# ---- history tab -----------------------------------------------------------------------------------
+# ---- history tab: the current shift and the one before ------------------------------------------------
+
+def _zone_words(zones: list[str]) -> str:
+    """['C'] -> 'Zone C'; ['C', 'D'] -> 'Zones C and D'; ['A', 'C', 'D'] -> 'Zones A, C and D'."""
+    if len(zones) == 1:
+        return f"Zone {zones[0]}"
+    return "Zones " + ", ".join(zones[:-1]) + f" and {zones[-1]}"
+
+
+def chart_note(sub: pd.DataFrame) -> str:
+    """One line under a zone chart: qc's message when there is nothing to chart, else the flags."""
+    message = sub.attrs.get("message") or ""
+    if message:
+        return message[0].upper() + message[1:] + ("" if message.endswith(".") else ".")
+    above = list(sub.loc[sub["flag"] == "above", "zone"])
+    below = list(sub.loc[sub["flag"] == "below", "zone"])
+    parts = [f"{_zone_words(above)} {'is' if len(above) == 1 else 'are'} slower than the city as a whole."
+             if above else "No zone is slower than the city as a whole."]
+    if below:
+        parts.append(f"{_zone_words(below)} {'is' if len(below) == 1 else 'are'} faster than the city "
+                     "as a whole (check the data).")
+    return " ".join(parts)
+
 
 @module.ui
 def history_ui():
-    controls = ui.div(
-        ui.div(
-            ui.input_select("dataset", "Dataset",
-                            choices={"demo": "Demo (planted problems)", "baseline": "Baseline (stable)"}),
-            ui.input_select("period", "Period", choices={"7": "Last 7 days", "30": "Last 30 days"}),
-            ui.input_select("priority", "Priority", choices=PRIORITY_CHOICES),
-            class_="rw-controls"),
-        class_="rw-card")
+    def chart_card(p: int):
+        return ui.div(
+            card_head(f"Priority {p}", "Response time by zone"),
+            ui.output_plot(f"chart_p{p}", height="340px"),
+            ui.output_ui(f"note_p{p}"),
+            class_="rw-card", style="margin-top:16px")
+
     return ui.div(
-        ui.div(ui.div(eyebrow("History"), ui.h2("How zones performed", class_="rw-page-title")),
+        ui.div(ui.div(eyebrow("History"), ui.h2("Current and previous shift", class_="rw-page-title")),
                class_="rw-page-head"),
-        controls,
-        ui.div(ui.output_ui("history_body"), style="margin-top:16px"))
-
-
-def _fmt1(v) -> str:
-    return "–" if v is None or pd.isna(v) else f"{v:.1f}"
-
-
-def _fmt0(v) -> str:
-    return "–" if v is None or pd.isna(v) else f"{v:.0f}"
+        ui.output_ui("shift_line"),
+        ui.output_ui("tips"),
+        ui.output_ui("shift_kpis"),
+        chart_card(1), chart_card(2), chart_card(3))
 
 
 @module.server
-def history_server(input, output, session):
+def history_server(input, output, session, visible, board, now):
+    """The shift review. Data: the demo file the simulation replays, plus the calls logged by
+    hand, cut to the current and previous shift at the board clock by qc.shift_calls."""
+    win_val = reactive.Value(None)      # {"window", "label", "missing"}; set only when it changes
+    tips_val = reactive.Value(None)
+    st = {"sig": None, "tips": None}
+
+    @reactive.effect
+    def _refresh():
+        if not visible():
+            return
+        reactive.invalidate_later(HISTORY_REFRESH_S)
+        t = now()
+        demo, why = get_calls("demo", stages=True)
+        manual = qc.stage_times(board.calls_frame(t, manual_only=True))
+        stages = manual if demo is None else pd.concat([demo, manual], ignore_index=True)
+        window = qc.shift_calls(stages, t)
+        label = qc.shift_window(t)["label"]
+        tips = qc.dispatcher_tips(window, board.calls_frame(t), board.fleet(), t)
+        sig = (label, len(window), tuple(window["call_id"]), why)
+        if sig != st["sig"]:
+            st["sig"] = sig
+            win_val.set({"window": window, "label": label, "missing": why if demo is None else ""})
+        if tips != st["tips"]:
+            st["tips"] = tips
+            tips_val.set(tips)
+
+    @reactive.calc
+    def subs():
+        w = req(win_val())
+        return {p: qc.zone_subgroup_chart(w["window"], p) for p in qc.PRIORITIES}
+
     @render.ui
-    def history_body():
-        dataset, days, pri = input.dataset(), int(input.period()), int(input.priority())
-        stages, why = get_calls(dataset, stages=True)
-        if stages is None:
-            return placeholder_card("History", "No data to show", why or "Data not generated yet")
+    def shift_line():
+        w = win_val()
+        if w is None:
+            return ui.div("Loading the shift data…", class_="rw-muted rw-small")
+        extra = [ui.div(w["missing"] + ": only the calls you log by hand are shown.",
+                        class_="rw-muted rw-small", style="margin-top:4px")] if w["missing"] else []
+        return ui.div(ui.div(w["label"], class_="rw-shiftline"), *extra, style="margin-bottom:16px")
 
-        window = qc.last_days(stages, days)
-        if window["date"].notna().sum() == 0:
-            return placeholder_card("History", "No data to show", "That file has no valid calls.")
-        first, last = window["date"].min(), window["date"].max()
-        target_min = qc.stage_targets(pri)["response"] / 60.0
-
-        zones = qc.zone_summary(window, pri)
-        trs = []
-        for r in zones.itertuples():
-            pct = r.pct_on_time
-            tone = "grey" if r.n == 0 or pd.isna(pct) else ("green" if pct >= ON_TIME_GOAL else "red")
-            label = "All zones" if r.zone == "All" else f"Zone {r.zone}"
-            trs.append(ui.tags.tr(
-                ui.tags.td(label),
-                ui.tags.td(str(int(r.n))),
-                ui.tags.td(_fmt1(r.mean)), ui.tags.td(_fmt1(r.median)),
-                ui.tags.td(_fmt1(r.p90)), ui.tags.td(_fmt1(r.p95)),
-                ui.tags.td(ui.span(class_="rw-dot", **{"data-tone": tone}), f"{_fmt0(pct)}%"
-                           if not pd.isna(pct) else "–"),
-                class_="rw-total" if r.zone == "All" else None))
-        head = ui.tags.tr(*[ui.tags.th(h) for h in (
-            "Zone", "Calls", "Average (min)", "Median (min)", "90th percentile (min)",
-            "95th percentile (min)", "On time")])
-        summary_card = ui.div(
-            card_head("Priority " + str(pri), "Response time by zone",
-                      ui.span(f"{first:%b %d} to {last:%b %d, %Y}", class_="rw-count")),
-            ui.p(f"Response is dispatch to on scene. On time means within {target_min:g} minutes. "
-                 f"Goal: at least {ON_TIME_GOAL:.0f}% on time. The average is shown for comparison "
-                 "only; the median and the 90th and 95th percentiles show the slow tail.",
-                 class_="rw-muted rw-small"),
-            ui.div(ui.tags.table(ui.tags.thead(head), ui.tags.tbody(*trs), class_="rw-table"),
-                   class_="rw-table-wrap"),
-            class_="rw-card")
-
-        done = window[window["valid"] & (window["priority"] == pri) & window["cleared"].notna()]
-        done = done.sort_values("cleared", ascending=False).head(20)
+    @render.ui
+    def tips():
+        items = tips_val()
+        if items is None:
+            return None
         rows = []
-        for r in done.itertuples():
-            late = bool(r.late)
-            reason = qc.REASON_CODES.get(r.delay_reason, "")
-            sub = f"{r.call_received:%Y-%m-%d %H:%M} · unit {r.unit_id}" + (f" · {reason}" if reason else "")
+        for tip in items:
+            tone = "red" if tip["rule"] == "T1" else "amber"
+            where = "All zones" if tip["zone"] == "All" else f"Zone {tip['zone']}"
             rows.append(ui.div(
-                ui.span(class_="rw-dot", **{"data-tone": "red" if late else "green"}),
-                ui.div(ui.div(r.call_id, tag(f"Zone {r.zone}"), tag("Late" if late else "On time",
-                                                                    "red" if late else None),
-                              class_="rw-row-title"),
-                       ui.div(sub, class_="rw-row-sub"), class_="rw-row-main"),
-                ui.div(ui.span(f"{r.response_min:.1f}", class_="rw-final",
-                               **{"data-sev": "red" if late else "green"}),
-                       ui.span("minutes", class_="rw-cap"), class_="rw-clockbox"),
-                class_="rw-row"))
-        recent_card = ui.div(
-            card_head("Resolved calls", "20 most recent",
+                ui.span(class_="rw-dot", **{"data-tone": tone}),
+                ui.div(ui.div(tag(TIP_NAMES.get(tip["rule"], tip["rule"])), tag(where),
+                              ui.span(tip["text"], class_="rw-tip-text"), class_="rw-row-title"),
+                       ui.div(tip["evidence"], class_="rw-row-sub"), class_="rw-row-main"),
+                class_="rw-row rw-row-wrap"))
+        body = ui.div(*rows, class_="rw-rows") if rows else \
+            ui.div("No suggestions right now.", class_="rw-empty")
+        return ui.div(
+            card_head("Real time", "Suggestions for the dispatcher",
                       ui.span(str(len(rows)), class_="rw-count")),
-            ui.div(*rows, class_="rw-rows") if rows else ui.div("No resolved calls in this period.",
-                                                               class_="rw-empty"),
-            class_="rw-card", style="margin-top:16px")
-        return ui.TagList(summary_card, recent_card)
+            body,
+            ui.p("Suggestions for the dispatcher's judgment; the tool decides nothing on its own.",
+                 class_="rw-muted rw-small", style="margin:12px 0 0"),
+            class_="rw-card", style="margin-bottom:16px")
+
+    @render.ui
+    def shift_kpis():
+        w = win_val()
+        if w is None:
+            return None
+        window = w["window"]
+        n = len(window)
+        if n:
+            s = qc.summary(window["response_min"], qc.TARGETS["response"][1] / 60.0)
+            median, p90 = f"{s['median']:.1f}", f"{s['p90']:.1f}"
+            on_time = f"{100 * (1 - window['late'].mean()):.0f}%"
+        else:
+            median = p90 = on_time = "–"
+        items = [("Calls", str(n)), ("Median (min)", median), ("90th percentile (min)", p90),
+                 ("On time", on_time)]
+        return ui.div(
+            ui.div(*[ui.div(ui.div(value, class_="rw-kpi-num"), ui.div(label, class_="rw-kpi-label"),
+                            class_="rw-kpi") for label, value in items],
+                   class_="rw-kpis rw-kpis-4"),
+            ui.p("All priorities, calls that reached the scene. On time means within each call's own target.",
+                 class_="rw-muted rw-small", style="margin:8px 0 0"))
+
+    def draw(p: int):
+        return charts.zone_box_chart(subs()[p], p, qc.TARGETS["response"][p] / 60.0)
+
+    @render.plot(alt="Box plot of response time for each zone against the city's control limits, priority 1")
+    def chart_p1():
+        return draw(1)
+
+    @render.plot(alt="Box plot of response time for each zone against the city's control limits, priority 2")
+    def chart_p2():
+        return draw(2)
+
+    @render.plot(alt="Box plot of response time for each zone against the city's control limits, priority 3")
+    def chart_p3():
+        return draw(3)
+
+    @render.ui
+    def note_p1():
+        return ui.p(chart_note(subs()[1]), class_="rw-muted rw-small", style="margin:8px 0 0")
+
+    @render.ui
+    def note_p2():
+        return ui.p(chart_note(subs()[2]), class_="rw-muted rw-small", style="margin:8px 0 0")
+
+    @render.ui
+    def note_p3():
+        return ui.p(chart_note(subs()[3]), class_="rw-muted rw-small", style="margin:8px 0 0")

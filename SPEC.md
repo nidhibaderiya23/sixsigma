@@ -94,6 +94,19 @@ Say the method in words before any code exists. Load the `stats-first-steering` 
      stage capped at the citywide median for that stage and priority, e.g. "if Zone D's turnout were
      typical, on time would rise from 78% to 97%". Suggestions are fixed if-then rules on these numbers
      (listed in `docs/plan.md`). Each shows its evidence and says "for review by qualified staff".
+  9. **Dispatcher's shift view**, on the current and previous shift, following the board clock:
+     - A **zones-as-subgroups X̄ chart** per priority. Each zone is one subgroup of log response
+       minutes. Center x̄̄ = the mean of the zone means; σ_short = √(mean of the zone variances);
+       zone limits x̄̄ ± 3σ_short/√n_zone. Each zone is drawn as a box plot plus its mean.
+       Zones have no time order, so only the beyond-the-limit rule applies, like an analysis of means.
+     - **Real-time dispatcher tips:** fixed rules on the live board and the two shifts (listed in
+       `docs/plan.md`):
+       - dispatch a call that has waited past 64 s;
+       - rebalance ambulances into a zone with none free;
+       - cover a zone with a unit out of service;
+       - reroute when a zone's travel is ≥ 1.25× the city's;
+       - alert a station whose turnout is over target;
+       - ask for a second dispatcher when processing is over target.
 - **Why it fits the use case:** response times are skewed, and the danger is in the slow tail.
   Percentiles and control charts on log times show the slow outliers that monthly averages hide. The
   stage split shows why a call was slow, and daily zone charts show where and since when.
@@ -150,12 +163,17 @@ Fixed for every team:
 ## 6. Outputs
 - **What the user sees:** a start page with two buttons, Dispatcher and Supervisor.
   - **Dispatcher:**
-    - Live tables for incoming, dispatched, en route, on scene and resolved calls, each with a running
-      clock that turns red past its target.
+    - Live board (redesigned with the team on Oct 16):
+      - the top row of counts: waiting, dispatched, en route, on scene and units available;
+      - a 2x2 grid: Log a call (with a clock-speed option), Incoming calls, Dispatched and En route;
+      - then the ambulances list and the live 6-zone tile map, then Resolved (on scene counts as
+        resolved; Clear frees the ambulance).
+      Every clock turns amber at 80% of its target and red past it.
+    - Compact simulation controls in the header. Reset clears the board to zero.
     - Buttons that only work in order, a reason code required when a stage is late, and a
       confirmation before Clear.
-    - A fleet board (ambulances available, busy or out of service), live alerts, a live 6-zone tile
-      map, a weekly and monthly history tab, and a "Simulate a shift" button.
+    - History tab: the current and previous shift, following the board clock. It shows real-time
+      dispatcher suggestions and a zones-as-subgroups control chart for each priority.
   - **Supervisor:** a settings card above the tabs sets the dataset, the priority (default 1), the as-of
     date, the baseline start and the targets.
     - **Overview:** a zone health list (green, amber or red, with the reason in plain words). It covers

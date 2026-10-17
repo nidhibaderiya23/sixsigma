@@ -973,3 +973,187 @@ def slip_back(stages: pd.DataFrame, actions: pd.DataFrame, priority: int = 1,
                                    f"{d0:%Y-%m-%d} action: "
                                    + "; ".join(RULE_TEXT[r] for r in rules) + "."})
     return alerts
+
+
+# ---- live shift tools (dispatcher history tab) -------------------------------------------------
+
+#: Zones that share an edge on the city grid (A B C on the top row, D E F below).
+NEIGHBORS = {"A": ("B", "D"), "B": ("A", "C", "E"), "C": ("B", "F"),
+             "D": ("A", "E"), "E": ("B", "D", "F"), "F": ("C", "E")}
+
+_SHIFT_START = {"day": 6, "evening": 14, "night": 22}
+_PREVIOUS_SHIFT = {"day": "night", "evening": "day", "night": "evening"}
+
+
+def shift_window(now) -> dict:
+    """The shift `now` falls in and the shift before it (each 8 hours long).
+
+    Returns now, current, current_start, previous, previous_start and a label.
+    A night shift that started before midnight starts on the previous day.
+    """
+    now = pd.Timestamp(now)
+    name = shift_of(now.hour)
+    start = now.normalize() + pd.Timedelta(hours=_SHIFT_START[name])
+    if start > now:
+        start -= pd.Timedelta(days=1)
+    prev = _PREVIOUS_SHIFT[name]
+    prev_start = start - pd.Timedelta(hours=8)
+
+    def span(shift, s):
+        return f"{shift} shift {s:%H:%M}-{s + pd.Timedelta(hours=8):%H:%M}, {s:%b %d}"
+
+    return {"now": now, "current": name, "current_start": start, "previous": prev,
+            "previous_start": prev_start,
+            "label": f"Current: {span(name, start)} · Previous: {span(prev, prev_start)}"}
+
+
+def shift_calls(stages: pd.DataFrame, now) -> pd.DataFrame:
+    """Valid calls received from the previous shift's start up to `now` that had
+    reached the scene by `now` (so a replay never shows the future)."""
+    w = shift_window(now)
+    return stages[stages["valid"] & (stages["call_received"] >= w["previous_start"])
+                  & (stages["call_received"] <= w["now"]) & (stages["on_scene"] <= w["now"])]
+
+
+def zone_subgroup_chart(stages: pd.DataFrame, priority: int) -> pd.DataFrame:
+    """Each zone as one subgroup of log response minutes, against the city's limits.
+
+    Center x-double-bar = mean of the zone means; sigma_short = sqrt(mean of the
+    zone variances) (the course's X-bar formula, with zones as subgroups). A
+    zone's limits are x-double-bar +/- 3 sigma_short / sqrt(n_zone). flag is
+    "above" (slower than the city as a whole) or "below" (faster: check the
+    data) when the zone mean is beyond its limit. Zones have no time order, so
+    only the beyond-the-limit rule applies (like an analysis of means).
+    One row per zone: zone, n, mean_log, sd_log, mean_min, x_ucl, x_lcl (log),
+    x_ucl_min, x_lcl_min, z, flag, values_log (list for the box plot).
+    attrs: xbbar, sigma_short, center_min, message.
+    """
+    calls = stages[stages["valid"] & (stages["priority"] == priority)]
+    groups = [np.log(calls.loc[calls["zone"] == z, "response_min"].to_numpy()) for z in ZONES]
+    lim = xbar_s_limits(groups)
+    rows = []
+    for z, g, r in zip(ZONES, groups, lim["subgroups"] or [None] * len(ZONES)):
+        row = {"zone": z, "n": int(g.size),
+               "mean_log": float(g.mean()) if g.size else None,
+               "sd_log": float(g.std(ddof=1)) if g.size >= 2 else None,
+               "mean_min": float(math.exp(g.mean())) if g.size else None,
+               "x_ucl": None, "x_lcl": None, "x_ucl_min": None, "x_lcl_min": None,
+               "z": None, "flag": "", "values_log": list(g)}
+        if r is not None and r["z"] is not None:
+            row.update(x_ucl=r["x_ucl"], x_lcl=r["x_lcl"], x_ucl_min=math.exp(r["x_ucl"]),
+                       x_lcl_min=math.exp(r["x_lcl"]), z=r["z"],
+                       flag="above" if r["z"] > 3 else "below" if r["z"] < -3 else "")
+        rows.append(row)
+    out = pd.DataFrame(rows)
+    out.attrs.update(xbbar=lim["xbbar"], sigma_short=lim["sigma_short"],
+                     center_min=math.exp(lim["xbbar"]) if lim["ok"] else None,
+                     message="" if lim["ok"] else
+                     ("no completed calls yet in these two shifts" if not len(calls)
+                      else lim["message"]))
+    return out
+
+
+def _fmt_secs(s: float) -> str:
+    s = int(round(s))
+    return f"{s // 60}:{s % 60:02d}"
+
+
+def dispatcher_tips(window: pd.DataFrame, board_calls: pd.DataFrame | None, fleet,
+                    now, targets: dict = TARGETS) -> list:
+    """Real-time suggestions for the dispatcher, from the board and the last two shifts.
+
+    window       stage_times rows from shift_calls() (current + previous shift)
+    board_calls  the live board's calls in CALL_COLUMNS (blank stamps = not yet)
+    fleet        list of {unit_id, home_zone, state}; state is available,
+                 dispatched, en_route, on_scene or out_of_service
+    Rules (each a dict: rule, zone, text, evidence):
+      T1 a call has waited longer than the processing target -> dispatch it now,
+         naming the nearest free unit (own zone first, then neighbours)
+      T2 a zone has no free ambulance and a neighbour has 2 or more -> move one
+         to stand by (redistribute availability)
+      T3 an ambulance is out of service -> ask a neighbour zone to cover
+      T4 a zone's median travel this window >= 1.25 x the city's (3+ calls) ->
+         reroute (road works / traffic) or post a unit (calls from other zones)
+      T5 a zone's median turnout this window is over the turnout target (3+ calls)
+         -> alert that station's crews
+      T6 the city's 90th percentile of processing is over target (5+ calls) ->
+         ask for a second dispatcher
+    Suggestions are for the dispatcher's judgment; the tool decides nothing.
+    """
+    now = pd.Timestamp(now)
+    tips = []
+
+    def add(rule, zone, text, evidence):
+        tips.append({"rule": rule, "zone": zone, "text": text, "evidence": evidence})
+
+    fl = pd.DataFrame(list(fleet) if fleet is not None else [],
+                      columns=["unit_id", "home_zone", "state"])
+    free = fl[fl["state"] == "available"]
+    free_by_zone = free["home_zone"].value_counts()
+
+    if board_calls is not None and len(board_calls):
+        bc = board_calls.copy()
+        for col in ("call_received", "dispatched", "on_scene"):
+            bc[col] = pd.to_datetime(bc[col], errors="coerce")
+        waiting = bc[bc["dispatched"].isna() & bc["call_received"].notna() & bc["on_scene"].isna()]
+        for r in waiting.sort_values("call_received").itertuples():
+            waited = (now - r.call_received).total_seconds()
+            if waited > targets["processing"]:
+                pool = (list(free[free["home_zone"] == r.zone]["unit_id"])
+                        + [u for n in NEIGHBORS.get(r.zone, ()) for u in free[free["home_zone"] == n]["unit_id"]])
+                unit = (f" Nearest free ambulance: {pool[0]} (Zone {fl.set_index('unit_id').loc[pool[0], 'home_zone']})."
+                        if pool else " No ambulance nearby is free: ask the closest crew to clear.")
+                add("T1", r.zone, f"Dispatch call {r.call_id} now.{unit}",
+                    f"It has waited {_fmt_secs(waited)} (target {_fmt_secs(targets['processing'])}); "
+                    f"priority {r.priority}.")
+
+    if len(fl):
+        for z in ZONES:
+            if free_by_zone.get(z, 0) == 0 and (fl["home_zone"] == z).any():
+                donors = [n for n in NEIGHBORS[z] if free_by_zone.get(n, 0) >= 2]
+                if donors:
+                    best = max(donors, key=lambda n: free_by_zone.get(n, 0))
+                    add("T2", z, f"Move one ambulance from Zone {best} to stand by in Zone {z}.",
+                        f"Zone {z} has no free ambulance; Zone {best} has {free_by_zone[best]} free.")
+        out = fl[fl["state"] == "out_of_service"]
+        for z, units in out.groupby("home_zone"):
+            cover = " or ".join(f"Zone {n}" for n in NEIGHBORS.get(z, ()))
+            add("T3", z, f"Ask {cover} to cover Zone {z}'s calls.",
+                f"{len(units)} of Zone {z}'s ambulances out of service: {', '.join(units['unit_id'])}.")
+
+    w = window[window["valid"]] if window is not None and len(window) else window
+    if w is not None and len(w):
+        city_travel = float(w["travel_s"].median())
+        for z in ZONES:
+            zc = w[w["zone"] == z]
+            if len(zc) < 3:
+                continue
+            travel = float(zc["travel_s"].median())
+            if city_travel > 0 and travel >= 1.25 * city_travel:
+                late = zc[zc["late"] | zc["travel_late"]]
+                codes = late["delay_reason"][late["delay_reason"] != ""].value_counts()
+                cause = codes.index[0] if len(codes) else ""
+                if cause == "traffic_or_road_closure":
+                    text = f"Reroute ambulances heading into Zone {z} around the traffic or road works."
+                elif cause == "unit_from_another_zone":
+                    text = f"Keep an ambulance posted in Zone {z}: its calls are being answered from other zones."
+                else:
+                    text = f"Travel into Zone {z} is slow: check the route before sending the next unit."
+                ev = (f"Median travel {travel / 60:.1f} min vs. {city_travel / 60:.1f} min citywide "
+                      f"over these two shifts ({len(zc)} calls)")
+                if cause:
+                    ev += f"; top delay reason: {REASON_CODES[cause].lower()} ({codes.iloc[0]} of {len(late)} late calls)"
+                add("T4", z, text, ev + ".")
+            turnout = float(zc["turnout_s"].median())
+            if turnout > targets["turnout"]:
+                add("T5", z, f"Alert Zone {z}'s station: crews are slow to get rolling.",
+                    f"Median turnout {_fmt_secs(turnout)} over these two shifts vs. the "
+                    f"{_fmt_secs(targets['turnout'])} target ({len(zc)} calls).")
+        if len(w) >= 5:
+            p90 = percentile(w["processing_s"], 0.9)
+            if p90 > targets["processing"]:
+                add("T6", "All", "Dispatch is slowing: ask the supervisor for a second dispatcher, and "
+                                 "dispatch as soon as the address and code are confirmed.",
+                    f"90th percentile of call-to-dispatch is {p90:.0f} s vs. the "
+                    f"{targets['processing']:.0f} s target ({len(w)} calls).")
+    return tips

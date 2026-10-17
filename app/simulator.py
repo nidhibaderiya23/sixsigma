@@ -1,4 +1,4 @@
-"""Response Watch live-board logic: the call model, the fleet, alerts and the shift replay.
+"""Response Watch live-board logic: the call model, the fleet, zone tiles and the shift replay.
 
 Pure Python: no Shiny and no plotting, so every rule here is unit-tested
 (tests/test_simulator.py). The screens in ui_dispatcher.py only call this file and
@@ -80,11 +80,9 @@ UNIT_LABEL = {
 #: A clock turns amber above this share of its target, red past the target.
 AMBER_SHARE = 0.8
 
-#: Alerts: the stage a late call is waiting in, in plain words.
-ALERT_LIMIT = 40
-
 DEFAULT_DAY = "2026-09-20"
-SPEEDS = (30, 60, 120)
+SPEEDS = (30, 60, 120)             # shift replay speeds
+MANUAL_SPEEDS = (1, 10, 30, 60)    # clock speeds while calls are logged by hand
 
 #: The shifts a replay can start at (hour of day).
 START_HOURS = {0: "Midnight", 6: "Day shift, 06:00", 14: "Evening shift, 14:00",
@@ -371,8 +369,38 @@ def late_stage(call: Call, action: str, now: datetime) -> dict | None:
     return None
 
 
+class ManualClock:
+    """The clock for work done by hand: wall time at 1x, or faster at 10x, 30x, 60x.
+
+    Pure: the caller passes in the monotonic time, so tests control it. Changing
+    the speed continues from the current board time (the clock never jumps), and
+    reset() goes back to a given wall time, keeping the speed.
+    """
+
+    def __init__(self, start: datetime, mono: float, speed: int = 1):
+        self.base_time = start
+        self.base_mono = mono
+        self.speed = int(speed)
+
+    def _exact(self, mono: float) -> datetime:
+        return self.base_time + timedelta(seconds=(mono - self.base_mono) * self.speed)
+
+    def now(self, mono: float) -> datetime:
+        """The board time, to the whole second."""
+        return self._exact(mono).replace(microsecond=0)
+
+    def set_speed(self, speed: int, mono: float) -> None:
+        self.base_time = self._exact(mono)
+        self.base_mono = mono
+        self.speed = int(speed)
+
+    def reset(self, start: datetime, mono: float) -> None:
+        self.base_time = start
+        self.base_mono = mono
+
+
 class Board:
-    """The live board of one browser session: calls, units, alerts, zone tiles.
+    """The live board of one browser session: calls, units and zone tiles.
 
     There are two worlds, one on the wall clock and one on the replay clock, so
     that calls entered on one clock never mix with clocks of the other.
@@ -396,6 +424,11 @@ class Board:
     def reset_sim(self) -> None:
         """Forget the replay and every call entered on the replay clock."""
         self.worlds["sim"] = World()
+        self.mode = "wall"
+
+    def reset_all(self) -> None:
+        """Back to an empty board: no calls (replay or manual), every unit available."""
+        self.worlds = {"wall": World(), "sim": World()}
         self.mode = "wall"
 
     def calls(self) -> list[Call]:
@@ -591,51 +624,6 @@ class Board:
                           "severity": level})
         return tiles
 
-    def alerts(self, now: datetime, limit: int = ALERT_LIMIT) -> list[dict]:
-        """Alerts, newest first. Each is raised at the moment its threshold was crossed
-        (so a coarse replay tick still orders them correctly) and stays in the list,
-        marked inactive, once it is resolved."""
-        items = []
-        for call in self.world.calls.values():
-            tg = call.targets
-            tag = f"{call.call_id} · Zone {call.zone} · priority {call.priority}"
-            wait = call.elapsed("processing", now)
-            if wait is not None and wait > tg["processing"]:
-                active = call.dispatched is None
-                items.append({
-                    "kind": "queue", "key": call.call_id,
-                    "raised_at": call.call_received + timedelta(seconds=tg["processing"]),
-                    "active": active, "severity": "red",
-                    "title": ("Waiting more than " + fmt_clock(tg["processing"]) + " for dispatch")
-                             if active else "Slow dispatch, now sent",
-                    "sub": tag if active else f"{tag} · took {fmt_clock(wait)}"})
-            roll = call.elapsed("turnout", now)
-            if roll is not None and roll > tg["turnout"]:
-                active = call.en_route is None
-                items.append({
-                    "kind": "turnout", "key": call.call_id,
-                    "raised_at": call.dispatched + timedelta(seconds=tg["turnout"]),
-                    "active": active, "severity": "red",
-                    "title": ("Turnout over " + fmt_clock(tg["turnout"]))
-                             if active else "Slow turnout, now rolling",
-                    "sub": tag if active else f"{tag} · took {fmt_clock(roll)}"})
-            resp = call.elapsed("response", now)
-            if resp is not None and resp > tg["response"]:
-                active = call.on_scene is None
-                items.append({
-                    "kind": "response", "key": call.call_id,
-                    "raised_at": call.dispatched + timedelta(seconds=tg["response"]),
-                    "active": active, "severity": "red",
-                    "title": ("Response past target (" + fmt_clock(tg["response"]) + ")")
-                             if active else "Response was past target",
-                    "sub": tag if active else f"{tag} · took {fmt_clock(resp)}"})
-        for unit_id, since in self.world.oos.items():
-            items.append({"kind": "unit", "key": unit_id, "raised_at": since, "active": True,
-                          "severity": "amber", "title": f"Unit {unit_id} out of service",
-                          "sub": f"Home zone {self.home_zone(unit_id)}"})
-        items.sort(key=lambda a: a["raised_at"], reverse=True)
-        return items[:limit]
-
     def signature(self) -> tuple:
         """Changes whenever anything visible in the tables or the fleet changes
         (but not merely because time passed)."""
@@ -644,24 +632,39 @@ class Board:
         return (self.mode, calls, tuple(sorted(self.world.oos)))
 
     def time_signature(self, now: datetime) -> tuple:
-        """Changes whenever an alert or a zone tile changes colour because of the clock."""
-        alerts = tuple((a["kind"], a["key"], a["active"]) for a in self.alerts(now))
-        tiles = tuple((t["zone"], t["severity"]) for t in self.zone_tiles(now))
-        return alerts, tiles
+        """Changes whenever a zone tile changes colour because of the clock."""
+        return tuple((t["zone"], t["severity"]) for t in self.zone_tiles(now))
 
-    def to_frame(self) -> pd.DataFrame:
-        """Every call of the session in the qc.CALL_COLUMNS schema (blank = not stamped)."""
+    def calls_frame(self, now: datetime | None = None, *, manual_only: bool = False,
+                    all_worlds: bool = False) -> pd.DataFrame:
+        """The board's calls in the qc.CALL_COLUMNS schema, with real timestamps (NaT = not yet).
+
+        By default only the clock the board is showing; stamps after `now` are blanked.
+        manual_only keeps the calls entered by hand (not the shift replay).
+        """
+        worlds = list(self.worlds.values()) if all_worlds else [self.world]
         rows = []
-        for world in self.worlds.values():
+        for world in worlds:
             for c in world.calls.values():
-                row = {}
-                for col in qc.CALL_COLUMNS:
-                    v = getattr(c, col)
-                    if col in qc.TIMESTAMPS:
-                        v = "" if v is None else v.strftime("%Y-%m-%d %H:%M:%S")
-                    elif v is None:
-                        v = ""
-                    row[col] = v
+                if manual_only and c.source != "manual":
+                    continue
+                row = {col: getattr(c, col) for col in qc.CALL_COLUMNS}
+                for col in qc.TIMESTAMPS:
+                    v = row[col]
+                    row[col] = pd.NaT if v is None or (now is not None and v > now) else v
                 rows.append(row)
         df = pd.DataFrame(rows, columns=list(qc.CALL_COLUMNS))
+        for col in qc.TIMESTAMPS:
+            df[col] = pd.to_datetime(df[col])
         return df.sort_values("call_received", kind="stable").reset_index(drop=True)
+
+    def to_frame(self) -> pd.DataFrame:
+        """Every call of the session (both clocks) in the qc.CALL_COLUMNS schema, for the
+        CSV download: timestamps as text, blank = not stamped."""
+        df = self.calls_frame(all_worlds=True)
+        for col in qc.TIMESTAMPS:
+            df[col] = df[col].dt.strftime("%Y-%m-%d %H:%M:%S").fillna("")
+        for col in qc.CALL_COLUMNS:
+            if col not in qc.TIMESTAMPS:
+                df[col] = df[col].astype(object).where(df[col].notna(), "")
+        return df

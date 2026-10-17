@@ -11,6 +11,8 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+import math  # noqa: E402
+
 import numpy as np  # noqa: E402
 
 BG = "#16191f"
@@ -199,3 +201,54 @@ def normal_plot(norm: dict, zone: str):
 def before_after_chart(chart_full, zone: str, action_date):
     """Daily averages before and after an action, the after part with its own limits."""
     return daily_chart(chart_full, zone, action_dates=[action_date])
+
+
+def zone_box_chart(sub, priority: int, target_min: float):
+    """Zones as subgroups, from qc.zone_subgroup_chart(): a box plot of each zone's
+    log response minutes, the zone mean (diamond), and the city's center line and
+    control limits (each zone's limits depend on its number of calls)."""
+    if sub is None or not len(sub) or int(sub["n"].sum()) == 0:
+        return empty(f"Priority {priority}: no completed calls in these two shifts yet")
+    fig, (ax,) = _fig(height=3.6)
+    zones = list(sub["zone"])
+    have = [i for i, v in enumerate(sub["values_log"]) if len(v)]
+    ax.boxplot([sub["values_log"].iloc[i] for i in have], positions=have, widths=0.5,
+               patch_artist=True, showfliers=True, manage_ticks=False,
+               medianprops={"color": FG, "linewidth": 1.2},
+               boxprops={"facecolor": "#232833", "edgecolor": MUTED},
+               whiskerprops={"color": MUTED}, capprops={"color": MUTED},
+               flierprops={"marker": "o", "markersize": 3, "markerfacecolor": MUTED,
+                           "markeredgecolor": "none"})
+    xbbar = sub.attrs.get("xbbar")
+    if sub.attrs.get("center_min") is not None:
+        ax.axhline(xbbar, color=MUTED, linewidth=1, label="city center")
+    first = True
+    for i, r in enumerate(sub.itertuples()):
+        if r.x_ucl is not None and not (isinstance(r.x_ucl, float) and np.isnan(r.x_ucl)):
+            ax.hlines([r.x_ucl, r.x_lcl], i - 0.38, i + 0.38, colors=MUTED, linestyles="--",
+                      linewidth=1, label="city limits (3σ)" if first else None)
+            first = False
+        if r.mean_log is not None and not (isinstance(r.mean_log, float) and np.isnan(r.mean_log)):
+            if r.flag == "above":
+                ax.scatter(i, r.mean_log, marker="D", s=40, color=RED, zorder=5)
+            elif r.flag == "below":
+                ax.scatter(i, r.mean_log, marker="D", s=40, facecolors="none", edgecolors=AMBER,
+                           zorder=5)
+            else:
+                ax.scatter(i, r.mean_log, marker="D", s=34, color=LINE, zorder=5)
+    ax.scatter([], [], marker="D", s=34, color=LINE, label="zone mean")
+    ax.scatter([], [], marker="D", s=40, color=RED, label="slower than city")
+    ax.axhline(math.log(target_min), color=AMBER, linewidth=1.4,
+               label=f"{target_min:.0f}-min target")
+    lo, hi = ax.get_ylim()
+    ticks = [t for t in (1, 2, 3, 5, 8, 10, 15, 20, 30, 45, 60, 90) if lo <= math.log(t) <= hi]
+    ax.set_yticks([math.log(t) for t in ticks])
+    ax.set_yticklabels([f"{t:g}" for t in ticks])
+    ax.set_xticks(range(len(zones)))
+    ax.set_xticklabels([f"{z}\nn={n}" for z, n in zip(zones, sub["n"])])
+    ax.set_xlim(-0.6, len(zones) - 0.4)
+    _style(ax, f"Priority {priority}: each zone's calls against the city's control limits",
+           "minutes (log scale)")
+    _legend(ax)
+    fig.tight_layout()
+    return fig

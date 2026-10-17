@@ -1,4 +1,4 @@
-"""Tests for app/simulator.py: the shift replay and the live board rules.
+"""Tests for app/simulator.py: the shift replay, the manual clock and the live board rules.
 
 The replay is checked on a tiny hand-made table of 2 calls at 4 chosen times.
 The board rules (one valid button at a time, a reason when a stage runs late,
@@ -325,22 +325,6 @@ def test_zone_tiles_colour_and_counts():
     assert tiles["D"]["severity"] == "green"
 
 
-def test_alerts_are_newest_first_and_resolve():
-    board = make_board()
-    cid = board.add_call("A", 1, at(0)).call_id
-    assert board.alerts(at(60)) == []                                   # 60 s < 64 s: nothing yet
-    board.set_out_of_service("M-C1", at(200))
-    alerts = board.alerts(at(300))
-    assert [a["kind"] for a in alerts] == ["unit", "queue"]             # unit 200 s, queue 64 s
-    assert alerts[1]["active"] and alerts[1]["raised_at"] == at(64)
-    board.apply(cid, "dispatch", at(310), unit_id="M-A1", reason="unclear_address")
-    queue = [a for a in board.alerts(at(320)) if a["kind"] == "queue"][0]
-    assert not queue["active"]                                          # resolved, stays in the log
-    board.apply(cid, "en_route", at(400), reason="crew_not_ready")      # turnout 90 s > 60 s
-    kinds = {a["kind"]: a["active"] for a in board.alerts(at(401))}
-    assert kinds["turnout"] is False
-
-
 def test_signature_ignores_time_but_sees_changes():
     board = make_board()
     cid = board.add_call("A", 1, at(0)).call_id
@@ -386,3 +370,78 @@ def test_to_frame_has_the_qc_schema_and_blank_for_unstamped():
 def test_default_fleet_is_twelve_ambulances():
     fleet = sim.default_fleet()
     assert len(fleet) == 12 and fleet[0] == ("M-A1", "A") and fleet[-1] == ("M-F2", "F")
+
+
+# ---- the manual clock, Reset, and the frames the History tab reads ---------------------------
+
+def test_manual_clock_runs_at_speed_and_never_jumps_when_the_speed_changes():
+    clock = sim.ManualClock(T0, mono=1000.0, speed=1)
+    assert clock.now(1010.0) == at(10)                    # 1x: wall time
+    clock.set_speed(10, mono=1010.0)                      # continues from 08:00:10
+    assert clock.now(1010.0) == at(10)                    # no jump at the moment of the change
+    assert clock.now(1012.0) == at(10 + 20)               # 2 real seconds x 10
+    clock.set_speed(60, mono=1012.0)
+    assert clock.now(1012.0) == at(30)
+    assert clock.now(1013.0) == at(90)                    # 1 real second x 60
+    clock.set_speed(1, mono=1013.0)
+    assert clock.now(1015.0) == at(92)                    # back to wall pace, still from 08:01:30
+
+
+def test_manual_clock_reset_goes_back_to_the_given_time_and_keeps_the_speed():
+    clock = sim.ManualClock(T0, mono=0.0, speed=30)
+    assert clock.now(10.0) == at(300)
+    clock.reset(at(1000), mono=10.0)
+    assert clock.now(10.0) == at(1000)
+    assert clock.now(11.0) == at(1030) and clock.speed == 30
+
+
+def test_reset_all_empties_both_worlds_and_frees_every_unit():
+    board = make_board()
+    cid = board.add_call("A", 1, at(0)).call_id
+    board.apply(cid, "dispatch", at(10), unit_id="M-A1")
+    board.set_out_of_service("M-B1", at(20))
+    board.set_mode("sim")
+    sim_replay = sim.Replay(two_calls(), speed=60, start_hour=8)
+    sim_replay.sim_time = at(1000)
+    board.sync_replay(sim_replay.state())
+    board.add_call("C", 2, at(1000))                     # a manual call on the replay clock
+    board.reset_all()
+    assert board.mode == "wall"
+    assert board.calls() == [] and board.worlds["sim"].calls == {} and board.worlds["wall"].calls == {}
+    assert all(u["state"] == "available" for u in board.fleet())
+    assert board.counts() == {"received": 0, "dispatched": 0, "en_route": 0, "on_scene": 0,
+                              "cleared": 0, "units_available": 4}
+    assert len(board.to_frame()) == 0
+
+
+def test_calls_frame_blanks_stamps_after_now_and_can_keep_only_manual_calls():
+    board = make_board()
+    cid = board.add_call("A", 1, at(0)).call_id
+    board.apply(cid, "dispatch", at(30), unit_id="M-A1")
+    board.set_mode("sim")
+    replay = sim.Replay(two_calls(), speed=60, start_hour=8)
+    replay.sim_time = at(1000)
+    board.sync_replay(replay.state())
+    board.add_call("D", 3, at(1000))
+    everything = board.calls_frame()
+    assert len(everything) == 3                          # A, B (replay) and the manual call
+    manual = board.calls_frame(manual_only=True)
+    assert len(manual) == 1 and manual.loc[0, "zone"] == "D"
+    early = board.calls_frame(at(100))                   # at 08:01:40 only call A's first stamps exist
+    row = early[early["call_id"] == "A"].iloc[0]
+    assert row["dispatched"] == at(60) and pd.isna(row["en_route"])
+    assert pd.isna(row["on_scene"]) and pd.isna(row["cleared"])
+    assert list(manual.columns) == list(qc.CALL_COLUMNS)
+
+
+def test_manual_calls_frame_feeds_qc_stage_times_and_the_shift_window():
+    board = make_board()
+    cid = board.add_call("A", 1, at(0)).call_id
+    board.apply(cid, "dispatch", at(30), unit_id="M-A1")
+    board.apply(cid, "en_route", at(60))
+    board.apply(cid, "on_scene", at(400))
+    stages = qc.stage_times(board.calls_frame(manual_only=True))
+    assert bool(stages.loc[0, "valid"]) and stages.loc[0, "response_s"] == 370
+    window = qc.shift_calls(stages, at(500))              # 08:08:20 is in the day shift
+    assert list(window["call_id"]) == [cid]
+    assert len(qc.shift_calls(stages, at(300))) == 0      # not on scene yet at 08:05

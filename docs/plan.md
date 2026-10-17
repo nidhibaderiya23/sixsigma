@@ -41,16 +41,16 @@ Stage excess = max(0, stage time - stage target). A stage's share = its excess /
 - One ambulance with ≥ 2 breakdowns in the period → "Schedule preventive maintenance for that ambulance".
 - "Unclear address" in ≥ 20% of late calls → "Use an address-verification script".
 - Slip-back alert: after an action, any flag on the after-action limits brings the zone back to amber or red.
-
+## Dispatcher tips (H-09, each tested; current + previous shift and the live board)
+T1 call waiting > 64 s → dispatch now (nearest free unit: own zone, then neighbours) · T2 zone with no free ambulance, neighbour has ≥ 2 → move one ·
+T3 unit out of service → neighbour covers · T4 zone travel median ≥ 1.25× city (3+ calls) → reroute / post a unit · T5 zone turnout median > 60 s → alert station · T6 city processing p90 > 64 s (5+ calls) → second dispatcher.
 ## Decisions (approved by the team, Oct 16)
-- Stages: processing, turnout and travel; the headline is dispatch to on scene. Reasons: automatic factors plus a code when late.
-- Fields: ambulance ID and home zone, distance, dispatcher ID, weather. Dispatcher stats are by shift and workload, not by person.
+- Stages: processing, turnout, travel (headline: dispatch to on scene); reasons: automatic + code when late; fields incl. ambulance, distance, dispatcher ID (stats by shift, not person), weather.
 - Roles: a start-page picker. Dispatcher: queue and status tables, fleet, alerts, live map, weekly and monthly history, full poka-yoke.
 - Supervisor: Overview, Charts and Actions (not DMAIC tabs). Define and Measure live in the docs.
 - Charts: I-MR, daily X̄-S (the course's method, not a p-chart), stage breakdown, capability, ANOVA and Welch (on logs).
 - Actions: rules with an impact estimate, an action log, before/after, slip-back alerts. No Pareto, fishbone or control plan.
-- Targets: NFPA 1710 (64 s, 60 s, 480 s; P1 = 9 min), P2 15 and P3 20 assumed, all editable. 6 zones; demo: D turnout and C travel.
-- Live data comes from simulation plus manual entry, with a separate board per browser. There are two maps, live and history.
+- Targets: NFPA 1710 (64 s, 60 s, 480 s; P1 = 9 min), P2 15 / P3 20 assumed, editable. 6 zones; demo: D turnout, C travel. Simulation + manual entry, one board per browser, live and history maps.
 
 ## Biggest risks
 1. **Too much to build.** We build in layers and deploy after L1, so a working version always exists. L3 is cut first.

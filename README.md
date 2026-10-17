@@ -107,23 +107,25 @@ The test data is committed in `data/`. To rebuild it, run `.venv/bin/python data
 
 ## 4. What you see
 
-The start page has two buttons: **I'm a dispatcher** and **I'm a supervisor**. Each role gets its own screens. A **Switch role** link in the header takes you back. A banner on every screen reminds you that the data is synthetic.
+The start page has two buttons: **I'm a dispatcher** and **I'm a supervisor**. Each role gets its own screens. A **Switch role** link in the header takes you back.
 
 ### 4.1 Dispatcher (secondary user)
 
-The dispatcher has two tabs: **Live board** and **History**.
+The dispatcher has two tabs: **Live board** and **History**. The simulation controls sit in the page header, next to **Switch role**.
 
 | Screen | What it shows | How to read it |
 |---|---|---|
-| **Live board: counts** | Calls waiting, dispatched, en route and on scene, and units available | A quick view of the workload |
-| **Live board: call tables** | Five tables: Incoming, Dispatched, En route, On scene, Resolved. Each open call has a running clock. | The clock is green until 80% of its target, amber above that, and **red past the target** |
+| **Header: simulation controls** (dispatcher screen only) | **Day** (default Sep 20), **Speed** (30x, 60x, 120x), **Start** (00:00, 06:00, 14:00, 22:00), a coral **Simulate a shift** button (it becomes **Pause**), and **Reset**. A chip shows the clock mode: `LIVE 1x`, `LIVE 60x`, `SIM 120x` and so on. | Simulate replays one day of the demo data on a fast clock. Calls move through the lists at the times in the file, and replayed calls are read-only. **Reset clears everything to zero:** all calls, all 12 ambulances available, Resolved empty, and the clock back to real time. |
+| **Live board: counts** | Waiting, Dispatched, En route, On scene, and Units available | A quick view of the workload |
+| **Log a call** | Zone, priority, **Clock speed** (1x, 10x, 30x or 60x) and **Add call**. The received time is stamped from the board clock. | The clock speed applies when no simulation is running. At 60x, one real second is one board minute, so you can watch clocks turn red without waiting. |
+| **Incoming calls, Dispatched, En route** | One list per stage. Each open call has a running clock. | The clock is green until 80% of its target, amber above that, and **red past the target**. |
 | **Poka-yoke** (mistake-proofing) | The buttons Dispatch, En route, On scene and Clear | See the list below. The wrong entry is hard to make. |
-| **Simulate a shift** | Replays one day of the demo data on a fast clock (30x, 60x or 120x). You pick the day and the start time. | Calls move through the tables at the times in the file. Replayed calls are read-only. |
-| **Log a call** | Add a call by zone and priority. The received time comes from the clock. | Then work it with the buttons, like a real call |
-| **Fleet** | The 12 ambulances: available, dispatched, en route, on scene, or out of service | "Out of service" flags that unit's open calls as a breakdown |
-| **Live alerts** | Newest first: a call waiting too long, a slow turnout, a response past target, a unit out of service | Red or amber is active. Grey is resolved. |
-| **Live map** | A schematic grid of the 6 zones (A B C on top, D E F below). Each tile shows open calls and free units. | The tile takes the worst clock colour in the zone |
-| **History** | Last 7 days (weekly) or last 30 days (monthly), by priority. A table per zone: calls, average, median, 90th and 95th percentile, % on time. Then the 20 latest resolved calls. | The average is shown for comparison only. The percentiles show the slow tail. |
+| **Ambulances** | The 12 ambulances: available, dispatched, en route, on scene, or out of service, each with an **Out of service** or **Back in service** button | "Out of service" flags that unit's open calls as a breakdown |
+| **Live zone map** | A schematic grid of the 6 zones (A B C on top, D E F below). Each tile shows open calls and free ambulances. | The tile takes the worst clock colour in the zone |
+| **Resolved** (full width) | Every call that has reached the scene, with its final response time. It lists the latest 30. A call you logged and that is still at the scene has a small **Clear** button, with a confirmation. A cleared call shows **Cleared**. Replayed calls show **At the scene** and **Replay**. | On scene counts as resolved. The number is red if the response was past its target. |
+| **History** (no selectors) | The **current shift and the previous shift** (day 06-14, evening 14-22, night 22-06), following the board clock (the simulated time during a simulation). It refreshes about every 5 seconds while visible. Top: **Suggestions for the dispatcher**, each named Dispatch now, Rebalance, Cover, Route, Station alert or Dispatcher load. Then calls, median, 90th percentile and % on time. Then three charts, one per priority, **Response time by zone**. | A zone's box plot shows its calls. Its diamond is the zone mean. A red diamond above the dashed limit is a zone slower than the city as a whole. The note under each chart says which zones, if any. Suggestions are for the dispatcher's judgment. |
+
+There is no alerts panel and no separate On scene list: the suggestions and the Resolved list replace them.
 
 **Poka-yoke rules on the live board:**
 
@@ -194,7 +196,7 @@ Each target should be met by **at least 90% of calls**. Response (dispatched to 
 | Baseline days | 5 to 28 | 14 | Length of that period |
 | Jump buttons | "Jump to Sep 28 (before the fix)", "Jump to the latest day" | | Sets **As of** for the demo |
 
-The dispatcher's controls are: simulation day (default 2026-09-20), speed (30x, **60x**, 120x), start time (**midnight**, 06:00, 14:00, 22:00), and zone and priority for a new call. The History tab has a dataset, a period (7 or 30 days) and a priority.
+The dispatcher's controls are: simulation day (default 2026-09-20), speed (30x, **60x**, 120x), start time (**00:00**, 06:00, 14:00, 22:00), the clock speed for calls logged by hand (**1x**, 10x, 30x, 60x), and the zone and priority of a new call. The History tab has no settings: it follows the board clock.
 
 ---
 
@@ -219,6 +221,7 @@ Response times are skewed: most are fast, and a few are very slow. So control ch
 | 11 | **Impact estimate** | Recount % on time with the flagged stage capped at the citywide median for that stage and priority. Example: turnout [3, 1, 4, 1] min and travel [7, 7, 6, 9] min with a 9-minute target and a 1-minute city median: on time goes from 1/4 = 25% to 3/4 = 75%. | `impact_estimate` | Puts a number on "if this stage were typical". It is an estimate, not a promise. |
 | 12 | **Suggestion rules S1 to S6** (table below) | Fixed if-then rules on stage shares, delay-reason codes and counts. Each shows its evidence and says "for review by qualified staff". | `suggest` | Turns a flag into something to try. |
 | 13 | **Before/after and slip-back** | Before/after: the 14 days before an action vs. the days from it on (up to 14), Welch one-sided on ln minutes. Verdict: *improved* if p < 0.05, *got worse* if p > 0.95, else *no clear change yet*. Slip-back: rebuild limits from the first 7 days after the action. Any later slow-side flag raises an alert. | `before_after`, `slip_back` | Did the fix work, and does it hold? |
+| 14 | **Dispatcher shift tools** (History tab) | **Shift window:** the current 8-hour shift and the one before. **Zone chart:** each zone is one subgroup of ln response minutes (calls that reached the scene). Center = mean of the zone means. sigma_short = sqrt(mean of the zone variances). A zone's limits = center +/- 3 sigma_short / sqrt(n_zone). A zone beyond its limit is slower (or faster) than the city as a whole. **Tips T1 to T6** (table below). | `shift_window`, `shift_calls`, `zone_subgroup_chart`, `dispatcher_tips` | Shows the dispatcher where the city is slow right now, and what to do about it. |
 
 **The five flag rules** (R1 to R4 are the Western Electric rules; R5 is a trend rule). The ids carry a `+` on the slow side and a `-` on the fast side, for example `R2+`.
 
@@ -242,6 +245,17 @@ Two more flags: **rule 1 on single calls** in the I chart (an extreme delay), an
 | S4 | Citywide: in an hour with above-median calls, the processing 90th percentile is over 64 s | Add dispatcher cover in that window |
 | S5 | One ambulance has 2 or more breakdowns in the window | Schedule preventive maintenance for that ambulance |
 | S6 | A zone has at least 5 late calls and 20% or more of them have an "unclear address" | Use an address-verification script |
+
+**The six dispatcher tips** (History tab). They use the last two shifts and the live board, and they are for the dispatcher's judgment.
+
+| Tip | If | Then suggest |
+|---|---|---|
+| T1 Dispatch now | A call on the board has waited longer than the processing target (64 s) | Dispatch it now. Names the nearest free ambulance: its own zone first, then a neighboring zone |
+| T2 Rebalance | A zone has no free ambulance and a neighbor has 2 or more | Move one to stand by in that zone |
+| T3 Cover | An ambulance is out of service | Ask the neighboring zones to cover that zone's calls |
+| T4 Route | A zone's median travel is at least 1.25 times the city's (3 or more calls) | Depending on the top delay reason: reroute around traffic or road works, keep an ambulance posted, or check the route |
+| T5 Station alert | A zone's median turnout is over the turnout target (3 or more calls) | Alert that zone's station |
+| T6 Dispatcher load | The city's 90th percentile of processing is over the target (5 or more calls) | Ask the supervisor for a second dispatcher |
 
 **Which methods come from the course, and which go beyond it.**
 
@@ -298,15 +312,18 @@ flowchart TD
     log --> ba["<b>before_after</b><br>slip_back"]
     tests --> ba
 
-    zh --> screens["Screens<br>Overview, Charts, Actions"]
+    st --> shift["shift_calls / zone_subgroup_chart<br>dispatcher_tips (T1 to T6)"]
+    zh --> screens["Screens<br>Overview, Charts, Actions,<br>Dispatcher History"]
+    shift --> screens
     cap --> screens
     sug --> screens
     ba --> screens
 
-    live["Live board<br>simulator.Board<br>clocks, alerts, fleet"] -.->|"export: Download calls (CSV)"| csv
+    live["Live board<br>simulator.Board<br>clocks, fleet"] -.->|"export: Download calls (CSV)"| csv
+    live -.->|"board calls + fleet"| shift
 ```
 
-Read it left to right. Calls come in as a CSV. `qc.stage_times` is the front door: nothing else touches raw rows. Every other function reads its output. Health combines the chart signal (from the rules) and the 90th percentile. Suggestions come from health plus the stage shares. A logged action feeds the before/after check and the slip-back watch. The screens only draw the results. The live board has its own logic in `app/simulator.py` and reads only the targets and reason codes from `qc`.
+Read it left to right. Calls come in as a CSV. `qc.stage_times` is the front door: nothing else touches raw rows. Every other function reads its output. Health combines the chart signal (from the rules) and the 90th percentile. Suggestions come from health plus the stage shares. A logged action feeds the before/after check and the slip-back watch. The screens only draw the results. The live board has its own logic in `app/simulator.py`. It reads only the targets and reason codes from `qc`. The dispatcher's History tab feeds the board's calls and fleet, and the demo file, through the shift tools in `qc`.
 
 ---
 
@@ -346,11 +363,11 @@ An independent fresh-context review (a reviewer with no memory of the build) che
 Output on our machine (Python 3.12.15):
 
 ```text
-............................................................             [100%]
-60 passed in 0.83s
+......................................................................   [100%]
+70 passed in 0.93s
 ```
 
-That is 36 tests of `qc.py` (`tests/test_qc.py`) and 24 tests of the live-board logic (`tests/test_simulator.py`).
+That is 42 tests of `qc.py` (`tests/test_qc.py`) and 28 tests of the live-board logic (`tests/test_simulator.py`).
 
 **The messy file.** `data/calls_messy.csv` (61 rows) is built with missing en-route stamps, out-of-order times, a duplicate call ID and a zone with almost no calls. In the app, pick **Messy file** in the supervisor's Dataset menu. The Overview data-quality card lists the 7 planted defects, each with its reason, and zones with too few calls show "Not enough data". Nothing crashes. You can also check it from Python:
 
@@ -374,7 +391,7 @@ The five-step story on the demo city (Zone D's night-shift turnout gets slower f
 2. **Charts.** Zone D's daily chart shows flagged (red) days from about Sep 16. The stage breakdown shows turnout, not travel or processing, causing the minutes over target.
 3. **Actions.** The suggestion **"Review crew readiness at Zone D's station, especially the night shift"** appears with its evidence and an impact estimate (on time rises from about 78% to about 97% if turnout were typical). Log it. (The demo's fix is already in the log as A1, dated Sep 29.)
 4. **Jump to the latest day** (Oct 12). The before/after check for that action says **Improved**, and the zone's chart after the action shows no flags: a stable new level.
-5. **Dispatcher.** Click **Switch role**, then **I'm a dispatcher**. Press **Simulate a shift** and watch calls move through the tables, clocks turn red, and alerts and the live map update.
+5. **Dispatcher.** Click **Switch role**, then **I'm a dispatcher**. In the header, pick Sep 20, 120x and a 14:00 start, then press **Simulate a shift**. Watch calls move through the lists, clocks turn red, and the zone map update. Open **History** for the current and previous shift, with suggestions for the dispatcher and a zone chart per priority. **Reset** puts everything back to zero.
 
 ---
 
@@ -425,7 +442,7 @@ The app follows the course's **four-script contract**. All four files are in [`a
 ## 12. Limits and safety
 
 - **Synthetic data.** Every CSV is invented by a seeded script. There is no real patient data, address or name.
-- **Flags are for qualified staff.** The tool flags and suggests. It never dispatches or changes staffing. Every suggestion says "for review by qualified staff".
+- **Flags are for qualified staff.** They are for staff to investigate, not automatic dispatch decisions. The tool flags and suggests. It never dispatches or changes staffing. Every suggestion says "for review by qualified staff", and the dispatcher's tips say they are for the dispatcher's judgment.
 - **Amber means "worth a look". Red means "act".** Several rules plus a 90th-percentile check will sometimes fire by chance. We count a chart signal only when rule R1 fires or 2 or more different rules fire in the last 7 days. On a pure-noise simulation, a stable zone-week then shows amber by chance about 2.5% of the time, versus 7.7% if any single rule counted. Red needs a chart signal *and* a 90th percentile over target, so it is rarer still.
 - **P2 and P3 targets are our assumptions.** NFPA 1710 does not set them. The NFPA numbers are quoted from agency reports, not read from the standard. All targets are editable.
 - **Assumptions behind the statistics:** log response times are roughly normal (the Charts tab shows a Shapiro-Wilk p-value and a probability plot per zone). Calls in time order are roughly independent (stated, not tested). The baseline period is stable (the baseline is shown, and you can move it). Capability needs stability, so it is hidden for flagged zones.
