@@ -569,7 +569,7 @@ Drawing only. There are 11 public functions. Each takes a result from `qc.py` an
 | Function | Takes | Shows |
 |---|---|---|
 | `daily_chart(chart, zone, action_dates=(), target_min=None)` | `qc.daily_xbar_s` output | **Top** ("Zone D: daily average response"): the daily average in minutes (geometric mean), with the constant center line and dashed control limits. Red dots are flagged days. Hollow amber rings are "check the data" days. With `target_min`, a solid amber line draws the target (spec). Green vertical lines mark logged actions. **Bottom:** the daily standard deviation of ln minutes with the S chart's center and upper limit. Date labels appear every 5 days. |
-| `individuals_chart(imr, zone, target_min)` | `qc.imr_chart` output and the target | Every call in order on a log axis (labelled in minutes), with the center line, the UCL and LCL (dashed), and the target as the amber spec line. Red dots are calls beyond the UCL. There is no moving-range panel. |
+| `individuals_chart(imr, zone, target_min)` | `qc.imr_chart` output and the target | Every call in order on a plain minutes axis, with the center line, the UCL and LCL (dashed), and the target as the amber spec line. Red dots are calls beyond the UCL. There is no moving-range panel. |
 | `stage_breakdown(bd)` | `qc.stage_breakdown` output | Stacked horizontal bars: the median minutes in processing, turnout and travel, per zone |
 | `stage_share(bd)` | `qc.stage_breakdown` output | Stacked horizontal bars: each stage's share of the zone's minutes over target (0 to 100%). The last bar, "City", is all zones. |
 | `stage_share_svg(bd)` | `qc.stage_breakdown` output | The same chart as inline SVG. **Hover a bar** to see its share, the minutes over target in total, and the median time of that stage. |
@@ -685,9 +685,9 @@ The page head holds a date and time chip and **Download calls (CSV)** (`Board.to
 
 **Charts tab**, top to bottom:
 
-1. **Control chart** (left, about two thirds): `charts.daily_chart` or `charts.individuals_chart`, one at a time. On the right: **Statistics** (Average, Standard deviation, On time, Zones flagged, for the chart period and all zones; from `qc.summary` and `qc.zone_health`) and **Zone map** (an interactive map of Ithaca with the six zones coloured by health; hover a zone for its reasons, click it to pick that zone in the control bar). A **Data quality** card appears below them only when calls were left out.
-2. **Delay by stage** (with the date range, and hover bars from `charts.stage_share_svg`) next to **Zone comparison** (a plain answer from `qc.zone_anova`; the F value, p and the normal probability plot are in More info).
-3. **Capability**: one plain verdict per zone from `qc.capability_verdict`. The Ppk, Cpk and expected-on-time table is in More info.
+1. **Control chart** (left, about two thirds): `charts.daily_chart` or `charts.individuals_chart`, one at a time. On the right: **Statistics** (Average, Standard deviation, On time, Zones flagged, for the chart period and all zones; from `qc.summary` and `qc.zone_health`) and **Zone map** (an interactive map of Ithaca with the six zones coloured by health; hover a zone for its reasons, click it to pick that zone in the control bar). The side column is as tall as the chart. A **Data quality** card appears below them only when calls were left out.
+2. **Delay by stage** (with the date range, and bars whose hover text shows at once, from `charts.stage_share_svg`) next to **Capability**: one plain verdict per zone from `qc.capability_verdict`. The Ppk, Cpk and expected-on-time table, and what Ppk and Cpk mean, are in More info.
+3. **Zone comparison**, behind a button: a plain answer from `qc.zone_anova`; the F value, p and the normal probability plot are in More info.
 
 **Actions tab**, top to bottom: a context line (dataset, priority, as-of date); the **Slip-back alerts** card only when a zone is slipping back; **Suggested actions** (from `qc.suggest`, with **Log this action**) next to **Actions taken** (with **Log an action**); then **Before and after** (the daily chart with the action marked) next to **Result**: an action dropdown, a verdict chip, and a table of Mean, Standard deviation, On time and Calls, before and after (`qc.before_after`).
 

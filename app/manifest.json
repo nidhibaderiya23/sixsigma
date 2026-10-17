@@ -26,7 +26,7 @@
       "checksum": "61939823fbcc7e8de3b61ab105331baf"
     },
     "README.md": {
-      "checksum": "ec9662033804df01bd25052df44a1eac"
+      "checksum": "9e01e2b75c132bbbc305e5cc3f92447c"
     },
     "app.py": {
       "checksum": "2dd4dc5e7dbb69d09781b3b33b78be3a"
@@ -68,19 +68,25 @@
       "checksum": "017d652d2e9a98623bba9b8fa2a11dd6"
     },
     "ui_help.py": {
-      "checksum": "2f2815b7104b31ae04521a76ff6c0d16"
+      "checksum": "b04748314fdae6155e8d2544ebd4ad93"
     },
     "ui_supervisor.py": {
       "checksum": "a57344ea12506fa8ab0ee26d84fd681a"
     },
     "www/help.css": {
-      "checksum": "24b88d9f71c670055120a111b1b46fff"
+      "checksum": "95ed6745402b111815f4d4989d15d4ae"
     },
     "www/rw.css": {
       "checksum": "339918e047773a70ce8b960dd3de726b"
     },
     "www/rw.js": {
       "checksum": "ecf124c14a011618848d12d77970ab06"
+    },
+    "www/team/dhruv.jpg": {
+      "checksum": "0bc5f043094d7c32f11086c86bc981b8"
+    },
+    "www/team/zeba.jpg": {
+      "checksum": "85c0e5545c54d235907d205f99b71cb8"
     },
     "www/zonemap.js": {
       "checksum": "fdc280620eaaf41d1b814ade8b4c7599"

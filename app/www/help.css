@@ -1,227 +1,59 @@
-/* ERGent v4: the How to use and About pages (app/ui_help.py).
-   Every rule is scoped under .rw-help or .rw-about, so nothing else in the app changes.
-   Tokens and fonts come from rw.css (:root). */
+/* ERGent: the How to use and About pages. One even column of closed dropdowns, in the v4 tokens. */
 
-/* ---- page frame and heads ------------------------------------------------------------------ */
+.rw-info { max-width: 880px; margin: 0 auto; padding: 8px 0 48px; display: flex; flex-direction: column; gap: 28px; }
+.rw-info-head { display: flex; flex-direction: column; gap: 4px; }
+.rw-info-head p { margin: 0; color: var(--ink-2); font-size: 14.5px; }
 
-.rw-help, .rw-about { padding: 24px 0 8px; color: var(--ink); }
+.rw-info section { display: flex; flex-direction: column; gap: 10px; }
+.rw-drop-group {
+  margin: 0; font: 600 13px/1.3 var(--sign); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2);
+}
+.rw-drops { display: flex; flex-direction: column; gap: 8px; }
 
-.rw-help .rw-help-head, .rw-about .rw-help-head { margin-bottom: 8px; }
-.rw-help .rw-help-kicker, .rw-about .rw-help-kicker {
-  font: 600 12px/1.3 var(--sign); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2);
+.rw-drop {
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm, 4px);
+  box-shadow: 0 1px 0 rgba(12, 35, 64, 0.04);
 }
-.rw-help .rw-page-title, .rw-about .rw-page-title { margin: 4px 0 10px; }
-.rw-help .rw-help-lead, .rw-about .rw-help-lead {
-  max-width: 72ch; margin: 0; font-size: 16px; line-height: 1.55; color: var(--ink);
+.rw-drop > summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; gap: 12px;
+  padding: 14px 18px; min-height: 52px;
 }
+.rw-drop > summary::-webkit-details-marker { display: none; }
+.rw-drop-title { flex: 1; font: 600 17px/1.3 var(--sign); color: var(--ink); }
+.rw-drop-sign { position: relative; width: 14px; height: 14px; flex: none; }
+.rw-drop-sign::before, .rw-drop-sign::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 6px; height: 2px; background: var(--navy-950); border-radius: 1px;
+}
+.rw-drop-sign::after { transform: rotate(90deg); }
+.rw-drop[open] .rw-drop-sign::after { transform: rotate(0deg); }
+.rw-drop > summary:hover { background: var(--inset); }
+.rw-drop > summary:focus-visible { outline: 2px solid var(--navy-700); outline-offset: -2px; }
+.rw-drop[open] > summary { border-bottom: 1px solid var(--line-soft); }
 
-/* on this page: a row of small plates */
-.rw-help .rw-help-toc { margin-top: 18px; display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
-.rw-help .rw-help-toc ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
-.rw-help .rw-help-toc a {
-  display: inline-block; padding: 4px 10px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
-  background: var(--panel); color: var(--navy-950); text-decoration: none;
-  font: 600 13.5px/1.25 var(--sign); letter-spacing: 0.02em;
-  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
-}
-.rw-help .rw-help-toc a:hover { background: var(--navy-950); border-color: var(--navy-950); color: var(--on-navy); }
+.rw-drop-body { padding: 14px 18px 16px; font-size: 14.5px; line-height: 1.6; color: var(--ink); }
+.rw-drop-body p { margin: 0 0 8px; max-width: 72ch; }
+.rw-drop-body p:last-child { margin-bottom: 0; }
+.rw-drop-body ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; max-width: 74ch; }
+.rw-drop-body b { font-weight: 600; }
 
-/* ---- sections ------------------------------------------------------------------------------- */
+/* About us: three even cards */
+.rw-team { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.rw-team-card {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+  padding: 18px 12px 16px; background: var(--inset); border: 1px solid var(--line-soft); border-radius: var(--radius-sm, 4px);
+}
+.rw-team-photo {
+  width: 120px; height: 120px; border-radius: 50%; object-fit: cover; display: block;
+  border: 3px solid var(--panel); box-shadow: 0 0 0 1px var(--line);
+}
+.rw-team-initial {
+  display: flex; align-items: center; justify-content: center; background: var(--navy-950); color: var(--on-navy);
+  font: 700 44px/1 var(--sign);
+}
+.rw-team-name { margin-top: 6px; font: 600 17px/1.25 var(--sign); color: var(--ink); }
+.rw-team-line { font-size: 14px; color: var(--ink-2); }
 
-.rw-help .rw-help-section, .rw-about .rw-help-section { margin-top: 36px; scroll-margin-top: 16px; }
-.rw-help .rw-help-section-head, .rw-about .rw-help-section-head {
-  margin-bottom: 14px; padding-top: 14px; border-top: 2px solid var(--navy-950);
-}
-.rw-help .rw-help-section-title, .rw-about .rw-help-section-title {
-  margin: 2px 0 0; font: 700 24px/1.15 var(--sign); color: var(--ink); scroll-margin-top: 16px;
-}
-.rw-help .rw-help-intro, .rw-about .rw-help-intro {
-  max-width: 76ch; margin: 6px 0 0; font-size: 15px; line-height: 1.55; color: var(--ink-2);
-}
-
-/* ---- grids of cards: 3 across at 1024 px, one column on narrow screens ---------------------- */
-
-.rw-help .rw-help-grid, .rw-about .rw-help-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; align-items: stretch;
-}
-.rw-help .rw-help-grid-2 { grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); }
-.rw-help .rw-help-grid-4, .rw-about .rw-help-grid-4 { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
-.rw-help .rw-help-wide, .rw-about .rw-help-wide { grid-column: 1 / -1; }
-
-.rw-help .rw-help-card, .rw-about .rw-help-card,
-.rw-about .rw-about-member { display: flex; flex-direction: column; gap: 10px; }
-.rw-help .rw-help-card-head, .rw-about .rw-help-card-head { display: flex; align-items: center; gap: 12px; }
-.rw-help .rw-help-card-title, .rw-about .rw-help-card-title {
-  margin: 0; font: 700 19px/1.2 var(--sign); color: var(--ink);
-}
-.rw-help .rw-help-card-head .rw-help-kicker { margin-bottom: 2px; }
-.rw-help .rw-help-icon, .rw-about .rw-help-icon {
-  flex: none; width: 40px; height: 40px; border-radius: var(--radius-sm);
-  background: var(--navy-950); color: var(--on-navy);
-  display: inline-flex; align-items: center; justify-content: center;
-}
-.rw-help .rw-help-icon svg { width: 22px; height: 22px; display: block; }
-
-.rw-help .rw-help-card p, .rw-about .rw-help-card p, .rw-about .rw-about-member p {
-  margin: 0; font-size: 14.5px; line-height: 1.55; max-width: 72ch;
-}
-.rw-help .rw-help-card strong, .rw-about .rw-help-card strong { font-weight: 600; color: var(--ink); }
-.rw-help .rw-help-card p.rw-help-meta, .rw-about p.rw-help-meta,
-.rw-help .rw-help-meta { font-size: 13px; line-height: 1.45; color: var(--ink-2); }
-
-.rw-help .rw-help-card h5, .rw-about .rw-help-card h5 {
-  margin: 6px 0 0; font: 600 12.5px/1.3 var(--sign); letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-2);
-}
-.rw-help .rw-help-card h5:first-child { margin-top: 0; }
-
-/* ---- the five call steps: one row of numbered panels -------------------------------------- */
-
-.rw-help .rw-help-flow {
-  list-style: none; margin: 0 0 16px; padding: 0;
-  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px;
-}
-.rw-help .rw-help-flow-step { display: flex; flex-direction: column; gap: 8px; position: relative; padding: 16px 16px 18px; }
-.rw-help .rw-help-flow-step p { margin: 0; font-size: 14px; line-height: 1.5; }
-.rw-help .rw-help-flow-head { display: flex; align-items: center; gap: 9px; }
-.rw-help .rw-help-flow-head .rw-help-card-title { font-size: 17.5px; }
-.rw-help .rw-help-flow-step:not(:last-child)::after {          /* a small arrow to the next step */
-  content: ""; position: absolute; top: 24px; right: -10px; width: 8px; height: 8px;
-  border-top: 2px solid var(--line-strong); border-right: 2px solid var(--line-strong);
-  transform: rotate(45deg);
-}
-
-/* ---- lists ---------------------------------------------------------------------------------- */
-
-.rw-help .rw-help-steps, .rw-help .rw-help-bullets { margin: 0; padding: 0; list-style: none; }
-.rw-help .rw-help-steps { counter-reset: rw-help-step; display: flex; flex-direction: column; gap: 8px; }
-.rw-help .rw-help-steps > li {
-  counter-increment: rw-help-step; position: relative; padding-left: 32px; min-height: 22px;
-  font-size: 14.5px; line-height: 1.5;
-}
-.rw-help .rw-help-steps > li::before {
-  content: counter(rw-help-step); position: absolute; left: 0; top: 0;
-  width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--navy-950);
-  display: inline-flex; align-items: center; justify-content: center;
-  font: 700 12.5px/1 var(--sign); color: var(--navy-950); font-variant-numeric: tabular-nums;
-}
-.rw-help .rw-help-bullets { display: flex; flex-direction: column; gap: 6px; }
-.rw-help .rw-help-bullets > li { position: relative; padding-left: 16px; font-size: 14.5px; line-height: 1.5; }
-.rw-help .rw-help-bullets > li::before {
-  content: ""; position: absolute; left: 2px; top: 0.62em; width: 6px; height: 6px; background: var(--navy-950); border-radius: 1px;
-}
-
-/* status legend rows: the shape, then the words */
-.rw-help .rw-help-legend { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
-.rw-help .rw-help-legend > li { display: flex; align-items: baseline; gap: 10px; font-size: 14.5px; line-height: 1.5; }
-.rw-help .rw-help-legend .rw-dot { position: relative; top: 1px; }
-
-/* term and description rows: controls, tips, rules */
-.rw-help .rw-help-terms {
-  margin: 0; display: grid; grid-template-columns: minmax(96px, max-content) minmax(0, 1fr);
-  border-top: 1px solid var(--line-soft);
-}
-.rw-help .rw-help-terms dt, .rw-help .rw-help-terms dd {
-  margin: 0; padding: 8px 0; border-bottom: 1px solid var(--line-soft); font-size: 14.5px; line-height: 1.5;
-}
-.rw-help .rw-help-terms dt {
-  padding-right: 16px; font: 600 15px/1.45 var(--sign); letter-spacing: 0.01em; color: var(--navy-950);
-}
-.rw-help .rw-help-wide .rw-help-terms { grid-template-columns: minmax(120px, max-content) minmax(0, 1fr); }
-
-/* a callout: a plain inset panel */
-.rw-help .rw-help-note, .rw-about .rw-help-note {
-  margin-top: 2px; padding: 10px 14px; background: var(--inset); border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  font-size: 14px; line-height: 1.55; max-width: 92ch;
-}
-
-/* ---- status colours ------------------------------------------------------------------------- */
-
-.rw-help .rw-help-swatch {
-  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
-  background: var(--inset); border: 1px solid var(--line-soft); border-radius: var(--radius-sm);
-  font: 600 13px/1.2 var(--sign); letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-2);
-}
-.rw-help .rw-help-swatch .rw-dot { width: 16px; height: 16px; }
-.rw-help .rw-help-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-
-/* ---- the statistics: formula, table, capability columns ----------------------------------- */
-
-.rw-help .rw-help-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 32px; }
-.rw-help .rw-help-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.rw-help .rw-help-formula {
-  padding: 10px 14px; background: var(--inset); border: 1px solid var(--line); border-radius: var(--radius-sm);
-  font: 600 16px/1.4 var(--sign); letter-spacing: 0.01em; color: var(--navy-950); font-variant-numeric: tabular-nums;
-}
-.rw-help .rw-help-table { width: 100%; max-width: 420px; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
-.rw-help .rw-help-table caption {
-  caption-side: top; padding: 0 0 6px; text-align: left; font-size: 13px; color: var(--ink-2);
-}
-.rw-help .rw-help-table th {
-  text-align: left; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line);
-  font: 600 12.5px/1.2 var(--sign); letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-2);
-}
-.rw-help .rw-help-table td { padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line-soft); }
-.rw-help .rw-help-table td:first-child { font: 600 15px/1.3 var(--sign); width: 64px; }
-
-/* capability verdicts: the widest chip sets the column, so a chip never overlaps its text */
-.rw-help .rw-help-verdicts {
-  margin: 0; padding: 0; list-style: none;
-  display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 12px; align-items: center;
-}
-.rw-help .rw-help-verdicts > li { display: contents; }
-.rw-help .rw-help-verdicts > li > span:last-child { font-size: 14px; color: var(--ink); font-variant-numeric: tabular-nums; }
-.rw-help .rw-help-verdicts .rw-chip { justify-self: start; }
-
-/* ---- About ---------------------------------------------------------------------------------- */
-
-.rw-about .rw-about-dmaic {
-  margin: 4px 0 0; padding: 0; list-style: none;
-  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px;
-}
-.rw-about .rw-about-dmaic > li {
-  display: flex; align-items: flex-start; gap: 10px; padding: 12px;
-  background: var(--inset); border: 1px solid var(--line-soft); border-radius: var(--radius-sm);
-}
-.rw-about .rw-about-dmaic > li > div { display: flex; flex-direction: column; gap: 2px; font-size: 13.5px; line-height: 1.45; min-width: 0; }
-.rw-about .rw-about-dmaic strong { font: 700 15px/1.2 var(--sign); color: var(--ink); }
-/* a navy street-name plate, as on the zone tags */
-.rw-about .rw-about-plate {
-  flex: none; width: 28px; height: 28px; border-radius: 3px;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--navy-950); color: var(--on-navy); font: 700 16px/1 var(--sign);
-  box-shadow: inset 0 0 0 2px var(--navy-950), inset 0 0 0 3px rgba(255, 255, 255, 0.8);
-}
-
-.rw-about .rw-about-member { flex-direction: row; align-items: center; gap: 16px; }
-.rw-about .rw-about-avatar {
-  flex: none; width: 56px; height: 56px; border-radius: 50%;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--navy-950); color: var(--on-navy); font: 700 26px/1 var(--sign);
-  box-shadow: inset 0 0 0 2px var(--navy-950), inset 0 0 0 3.5px rgba(255, 255, 255, 0.8);
-}
-.rw-about .rw-about-member .rw-help-card-title { margin-bottom: 3px; }
-.rw-about .rw-about-thanks { margin: 16px 0 0; font-size: 14.5px; color: var(--ink-2); max-width: 72ch; }
-
-/* ---- responsive ----------------------------------------------------------------------------- */
-
-@media (max-width: 992px) {
-  .rw-help .rw-help-flow { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .rw-help .rw-help-flow-step::after { display: none; }
-  .rw-about .rw-about-dmaic { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
-  .rw-help .rw-help-cols { grid-template-columns: minmax(0, 1fr); }
-  .rw-help .rw-help-grid-2 { grid-template-columns: minmax(0, 1fr); }
-}
 @media (max-width: 640px) {
-  .rw-help, .rw-about { padding-top: 16px; }
-  .rw-help .rw-help-grid, .rw-help .rw-help-grid-2, .rw-help .rw-help-grid-4,
-  .rw-about .rw-help-grid, .rw-about .rw-help-grid-4 { grid-template-columns: minmax(0, 1fr); }
-  .rw-help .rw-help-flow, .rw-about .rw-about-dmaic { grid-template-columns: minmax(0, 1fr); }
-  .rw-help .rw-help-terms, .rw-help .rw-help-wide .rw-help-terms { grid-template-columns: minmax(0, 1fr); }
-  .rw-help .rw-help-terms dt { padding-bottom: 0; border-bottom: 0; }
-  .rw-help .rw-help-terms dd { padding-top: 2px; }
-  .rw-help .rw-help-section-title, .rw-about .rw-help-section-title { font-size: 21px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .rw-help .rw-help-toc a { transition: none; }
+  .rw-team { grid-template-columns: minmax(0, 1fr); }
+  .rw-drop > summary, .rw-drop-body { padding-left: 14px; padding-right: 14px; }
 }

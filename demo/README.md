@@ -1,6 +1,6 @@
 # Demo: ERGent on every test dataset
 
-A step-by-step walkthrough of ERGent (version 2 and later; Ithaca, NY) that anyone can follow and get the same numbers. All
+A step-by-step walkthrough of ERGent (Ithaca, NY) that anyone can follow and get the same numbers. All
 data is synthetic (see [`data/README.md`](../data/README.md)). Every number below comes from
 `app/qc.py`. The "How to read it" lines are what to say to a judge.
 
@@ -53,7 +53,7 @@ percentile is 10.2 min, and the delay is the crew getting out the door, not the 
 - **Delay by stage** (Sep 01 – Sep 28, priority 1): Zone D's bar is 92% turnout (amber), while every
   other zone is mostly travel (blue). Hover a bar for its share, the minutes over target and the
   median time.
-- **Zone comparison:** "Yes. Zone D is typically 6.0 min against 4.9 min in Zone A; a gap this big is
+- **Zone comparison** (click the Zone comparison button): "Yes. Zone D is typically 6.0 min against 4.9 min in Zone A; a gap this big is
   very unlikely to be chance." More info shows the one-way ANOVA (F = 9.31, p = 1e-08) and the normal
   probability plot.
 - **Capability:** A, B, C, E and F are **Reliable** (about 98, 96, 95, 96 and 96 calls in 100 within
@@ -166,7 +166,7 @@ source (the dispatcher's buttons) stops most of it from happening at all.
 ## 5. The dispatcher: live board and History
 
 Click **Switch role**, then **I'm a dispatcher**. The header shows **ERGent** with the subtitle "Team
-ERG · Ithaca, NY EMS dispatch · v2" (the last part names the version you run). The simulation controls sit in the header, to the left of **Switch
+ERG · Ithaca, NY EMS dispatch · v4". The simulation controls sit in the header, to the left of **Switch
 role**: **Day** (default Sep 20), **Speed** (30x, 60x, 120x), **Start** (00:00, 06:00, 14:00, 22:00), a
 coral **Simulate a shift** button and **Reset**. A chip shows the clock mode. Right now it says
 `LIVE 1x` (real time).
