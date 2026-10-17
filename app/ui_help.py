@@ -199,7 +199,8 @@ def about_page():
                       "Each response is split into dispatch, crew turnout and travel.",
                       "Daily control charts and capability show which zones are slow, and since when.",
                       "ERGent suggests a fix with its evidence, then checks whether it worked.")),
-            _drop("About us",
-                  ui.div(*[_member(*m) for m in TEAM], class_="rw-team")),
+            ui.tags.section(ui.h3("About us", class_="rw-panel-title"),
+                            ui.div(*[_member(*m) for m in TEAM], class_="rw-team"),
+                            class_="rw-panel"),
             class_="rw-drops"),
         class_="rw-about rw-info")
