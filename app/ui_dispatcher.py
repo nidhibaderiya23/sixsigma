@@ -20,10 +20,12 @@ from datetime import datetime  # noqa: E402
 
 import pandas as pd  # noqa: E402
 from shiny import module, reactive, render, req, ui  # noqa: E402
+from shiny.module import resolve_id  # noqa: E402
 
 import charts  # noqa: E402
 import qc  # noqa: E402
 import simulator as sim  # noqa: E402
+import zonemap  # noqa: E402
 
 #: How many cleared or on-scene calls the Resolved panel lists.
 RESOLVED_SHOWN = 60
@@ -34,7 +36,7 @@ HISTORY_REFRESH_S = 5
 SPEED_CHOICES = {str(s): f"{s}x" for s in sim.SPEEDS}
 MANUAL_SPEED_CHOICES = {str(s): f"{s}x" for s in sim.MANUAL_SPEEDS}
 START_CHOICES = {str(h): f"Start {h:02d}:00" for h in sim.START_HOURS}
-ZONE_CHOICES = {z: z for z in qc.ZONES}
+ZONE_CHOICES = {z: f"{z} \u00b7 {qc.ZONE_NAMES[z]}" for z in qc.ZONES}
 PRIORITY_CHOICES = {str(p): f"{p}: {qc.PRIORITY_NAME[p]}" for p in qc.PRIORITIES}
 HISTORY_PRIORITY_CHOICES = {str(p): f"Priority {p}: {qc.PRIORITY_NAME[p]}" for p in qc.PRIORITIES}
 
@@ -234,6 +236,19 @@ def sim_controls_ui():
 
 # ---- the live board ----------------------------------------------------------------------------
 
+def _zone_map_card():
+    """The live Ithaca map: zones coloured by their worst open call; click a zone to log a call there."""
+    legend = ui.div(
+        ui.span(ui.span(class_="rw-dot", **{"data-tone": "green"}), "On track"),
+        ui.span(ui.span(class_="rw-dot", **{"data-tone": "amber"}), "Above 80% of a target"),
+        ui.span(ui.span(class_="rw-dot", **{"data-tone": "red"}), "Past a target"),
+        class_="rw-legend")
+    return ui.div(card_head("", "Zone map", right=ui.span(qc.CITY, class_="rw-muted")),
+                  zonemap.map_div(resolve_id("live_map"), click_input=resolve_id("map_click"),
+                                  height="300px"),
+                  legend, class_="rw-card")
+
+
 def _live_board_ui():
     log_call = ui.div(
         card_head("", "Log a call", step=1),
@@ -257,7 +272,7 @@ def _live_board_ui():
         # 2 x 2: log a call | incoming, dispatched | en route
         ui.div(log_call, ui.output_ui("incoming"), ui.output_ui("dispatched"), ui.output_ui("en_route"),
                class_="rw-two"),
-        ui.div(ui.output_ui("fleet"), ui.output_ui("zone_map"), class_="rw-two"),
+        ui.div(ui.output_ui("fleet"), _zone_map_card(), class_="rw-two"),
         ui.div(ui.output_ui("resolved"), style="margin-top:16px"),
     )
 
@@ -668,29 +683,24 @@ def dispatcher_server(input, output, session, active):
             card.children.append(ui.div(f"Latest {RESOLVED_SHOWN} of {len(done)} shown.", class_="rw-more"))
         return card
 
-    @render.ui
-    def zone_map():
+    @reactive.effect
+    async def _paint_live_map():
         version()
         timever()
-        tiles = board.zone_tiles(now())
         words = {"green": "On track", "amber": "Watch", "red": "Past target"}
-        cells = []
-        for tl in tiles:
+        zones = {}
+        for tl in board.zone_tiles(now()):
             n, free = tl["open"], tl["available"]
-            cells.append(ui.div(
-                ui.div(ui.span(tl["zone"], class_="rw-tile-letter"), ui.span("Zone", class_="rw-tile-cap"),
-                       class_="rw-tile-top"),
-                ui.div(ui.div(f"{n} open call{'s' if n != 1 else ''}", class_="rw-tile-line"),
-                       ui.div(f"{free} unit{'s' if free != 1 else ''} available", class_="rw-tile-line"),
-                       ui.div(words[tl["severity"]], class_="rw-tile-status")),
-                class_="rw-tile", **{"data-sev": tl["severity"]}))
-        legend = ui.div(
-            ui.span(ui.span(class_="rw-dot", **{"data-tone": "green"}), "On track"),
-            ui.span(ui.span(class_="rw-dot", **{"data-tone": "amber"}), "Above 80% of a target"),
-            ui.span(ui.span(class_="rw-dot", **{"data-tone": "red"}), "Past a target"),
-            class_="rw-legend")
-        return ui.div(card_head("", "Zone map"), ui.div(*cells, class_="rw-map"), legend,
-                      class_="rw-card")
+            zones[tl["zone"]] = {"sev": tl["severity"], "status": words[tl["severity"]],
+                                 "lines": [f"{n} open call{'s' if n != 1 else ''}",
+                                           f"{free} unit{'s' if free != 1 else ''} available"]}
+        await zonemap.update(session, session.ns("live_map"), zones)
+
+    @reactive.effect
+    @reactive.event(input.map_click)
+    def _map_pick():
+        """Clicking a zone on the map picks it in Log a call."""
+        ui.update_select("new_zone", selected=input.map_click())
 
     @render.ui
     def fleet():

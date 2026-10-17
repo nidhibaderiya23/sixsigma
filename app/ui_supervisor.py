@@ -23,16 +23,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from shiny import module, reactive, render, ui  # noqa: E402
+from shiny.module import resolve_id  # noqa: E402
 
 import charts  # noqa: E402
 import qc  # noqa: E402
+import zonemap  # noqa: E402
 from ui_dispatcher import card_head, chip, get_calls, icon, tag  # noqa: E402
 
-DATASETS = {"demo": "Demo city (42 days)", "baseline": "Baseline city (28 days)",
+DATASETS = {"demo": "Ithaca demo (42 days)", "baseline": "Ithaca baseline (28 days)",
             "messy": "Messy file (3 days)"}
 PRIORITY_CHOICES = {str(p): f"Priority {p}: {name}" for p, name in qc.PRIORITY_NAME.items()}
 PERIODS = {"14": "Last 14 days", "28": "Last 28 days", "42": "Last 42 days"}
-ZONE_CHOICES = {z: f"Zone {z}" for z in qc.ZONES}
+ZONE_CHOICES = {z: f"Zone {z} · {qc.ZONE_NAMES[z]}" for z in qc.ZONES}
 VIEWS = {"xbar": "Daily chart", "ind": "Every call"}
 STATUS_WORD = {"green": "On track", "amber": "Worth a look", "red": "Act now",
                "unknown": "Not enough data"}
@@ -137,7 +139,7 @@ def _control_bar():
     """The shared controls (supervisor namespace), shown at the top of the Charts tab."""
     return ui.div(ui.div(
         ui.input_radio_buttons("view", "Chart", VIEWS, selected="xbar", inline=True),
-        ui.input_select("zone", "Zone", ZONE_CHOICES, selected="D", width="120px"),
+        ui.input_select("zone", "Zone", ZONE_CHOICES, selected="D", width="240px"),
         ui.input_select("priority", "Priority", PRIORITY_CHOICES, selected="1", width="230px"),
         ui.input_select("dataset", "Dataset", DATASETS, selected="demo", width="210px"),
         ui.input_date("as_of", "As of", value="2026-10-12", width="140px"),
@@ -154,7 +156,10 @@ def charts_ui():
         ui.div(
             _card("Control chart", ui.output_ui("chart_area"), ui.output_ui("chart_more")),
             ui.div(_card("Statistics", ui.output_ui("stats")),
-                   _card("Zone map", ui.output_ui("zone_map")),
+                   _card("Zone map", zonemap.map_div(resolve_id("ithaca_map"),
+                                                     click_input=resolve_id("map_click"),
+                                                     height="300px"),
+                         ui.output_ui("zone_map_more")),
                    ui.output_ui("issues"), class_="rw-sup-side"),
             class_="rw-sup-grid"),
         ui.div(
@@ -277,24 +282,30 @@ def charts_server(input, output, session, ctx):
                      f"{ctx.priority()} calls in the chart period. On time = share of calls within "
                      f"{ctx.target_min():.0f} min; the goal is at least 90%.")))
 
-    @render.ui
-    def zone_map():
+    @reactive.effect
+    async def _paint_map():
         h = ctx.health()
         if h is None:
-            return _empty(ctx.why())
-        cells = []
+            return
+        zones = {}
         for r in h.itertuples():
-            sev = r.status if r.status in ("green", "amber", "red") else "green"
-            cells.append(ui.div(
-                ui.div(ui.span(r.zone, class_="rw-tile-letter"), class_="rw-tile-top"),
-                ui.div(ui.div(STAGE_WORD.get(r.top_stage, "") if r.top_stage else "",
-                              class_="rw-tile-line"),
-                       ui.div(STATUS_WORD[r.status], class_="rw-tile-status")),
-                class_="rw-tile", title="; ".join(r.reasons), **{"data-sev": sev}))
-        return ui.div(ui.div(*cells, class_="rw-map"),
-                      _more(_p("Last 7 days. Red means a real change on the chart and a 90th "
-                               "percentile over the target; amber means one of the two. Hover a "
-                               "tile for the reason.")))
+            sev = r.status if r.status in ("green", "amber", "red") else "grey"
+            lines = list(r.reasons)
+            if isinstance(r.top_stage, str) and r.top_stage in STAGE_WORD:
+                lines.insert(0, f"Main delay: {STAGE_WORD[r.top_stage].lower()}")
+            zones[r.zone] = {"sev": sev, "status": STATUS_WORD[r.status], "lines": lines}
+        await zonemap.update(session, session.ns("ithaca_map"), zones)
+
+    @reactive.effect
+    @reactive.event(input.map_click)
+    def _pick_zone():
+        ctx.set_zone(input.map_click())
+
+    @render.ui
+    def zone_map_more():
+        return _more(_p("Ithaca, NY, in six illustrative zones, coloured over the last 7 days. Red means "
+                        "a real change on the chart and a 90th percentile over the target; amber means one "
+                        "of the two. Hover a zone for the reason; click it to chart it."))
 
     @render.ui
     def issues():
@@ -412,7 +423,7 @@ def actions_server(input, output, session, ctx):
 
     @render.ui
     def context():
-        return ui.div(f"{DATASETS[ctx.dataset()]} · {PRIORITY_CHOICES[str(ctx.priority())]} · as of "
+        return ui.div(f"{qc.CITY} · {DATASETS[ctx.dataset()]} · {PRIORITY_CHOICES[str(ctx.priority())]} · as of "
                       f"{ctx.as_of():%b %d} (change these on the Charts tab)", class_="rw-ctxline")
 
     @reactive.calc
@@ -707,7 +718,12 @@ def supervisor_server(input, output, session):
         first, last = days.min().date(), days.max().date()
         ui.update_date("as_of", value=last, min=first, max=last)
 
+    def set_zone(z):
+        if z in qc.ZONES:
+            ui.update_select("zone", selected=z, session=session)
+
     ctx = SimpleNamespace(targets=targets, stages=stages, upto=upto, why=why, priority=priority,
+                          set_zone=set_zone,
                           target_min=target_min, as_of=as_of, period_days=period_days,
                           dataset=input.dataset, zone=input.zone, view=input.view,
                           actions=actions, actions_upto=actions_upto, health=health)

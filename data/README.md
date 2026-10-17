@@ -181,6 +181,20 @@ Also in the file, and **not** defects (the tool must handle them without crashin
 ## Limits of the simulation
 
 - The tool is meant to be tested on this data, not to describe a real city.
+- **Ithaca, NY.** From version 2 the app places the six zones on a map of Ithaca. The zone
+  outlines (in `app/zonemap.py`) are illustrative, not official EMS districts, and keep the
+  same 3 x 2 layout the simulator uses (A B C north of State Street, D E F south of it):
+
+  | Zone | Area |
+  |---|---|
+  | A | West Hill |
+  | B | Northside & Fall Creek |
+  | C | Cornell & Collegetown |
+  | D | West End & Southwest |
+  | E | Downtown & South Hill |
+  | F | East Hill & Belle Sherman |
+
+  The call times themselves are still synthetic.
 - Dispatcher IDs are random inside a shift. No dispatcher is slower than another.
 - Hospital times, on-scene care and pre-arrival instructions are not modelled (out of scope).
 - The numbers in this file are what you get with seed 42. Another seed gives different chance

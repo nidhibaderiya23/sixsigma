@@ -20,6 +20,18 @@ import pandas as pd
 # ---- constants ---------------------------------------------------------------
 
 ZONES = ("A", "B", "C", "D", "E", "F")
+
+#: The city ERGent models, and the plain names of its six zones (illustrative areas of
+#: Ithaca, NY, not official EMS districts). The grid order A B C / D E F matches NEIGHBORS.
+CITY = "Ithaca, NY"
+ZONE_NAMES = {
+    "A": "West Hill",
+    "B": "Northside & Fall Creek",
+    "C": "Cornell & Collegetown",
+    "D": "West End & Southwest",
+    "E": "Downtown & South Hill",
+    "F": "East Hill & Belle Sherman",
+}
 PRIORITIES = (1, 2, 3)
 STAGES = ("processing", "turnout", "travel")
 TIMESTAMPS = ("call_received", "dispatched", "en_route", "on_scene", "cleared")

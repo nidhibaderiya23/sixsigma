@@ -1,6 +1,6 @@
 # ERGent
 
-**A control-chart dashboard for a city 911 EMS dispatch center. Version 1.**
+**A control-chart dashboard for the 911 EMS dispatch center of Ithaca, NY.** See [VERSIONS.md](VERSIONS.md) for what each saved version contains.
 Team ERG (Nidhi Baderiya, Zeba Haq, Dhruv Bhandari) | Prompt: Health Systems, Emergency Response
 
 > **About the hackathon:** this is our entry in the Cornell Six Sigma Hackathon. The event pages are in [`docs/README.md`](docs/README.md), and the submission is on [Devpost](https://six-sigma-hackathon.devpost.com).
@@ -194,7 +194,7 @@ Each target should be met by **at least 90% of calls**. Response (dispatched to 
 | Chart | Daily chart, Every call | Daily chart | Which control chart to show |
 | Zone | A to F | D | The zone the control chart shows |
 | Priority | 1: Life-threatening, 2: Urgent, 3: Non-urgent | 1 | Which calls to analyze. Each priority has its own target. |
-| Dataset | Demo city (42 days), Baseline city (28 days), Messy file (3 days) | Demo | Which file to analyze |
+| Dataset | Ithaca demo (42 days), Ithaca baseline (28 days), Messy file (3 days) | Ithaca demo | Which file to analyze |
 | As of | a date in the file | 2026-10-12 (the last day of the demo file) | The "today" for every card. Later calls are ignored. It moves to the file's last day when you change the dataset. |
 | Chart period | Last 14, 28 or 42 days | 28 | How much history every card uses. It is also the window that sets the control limits. |
 | Targets (button) | Priority 1, 2 and 3 targets in minutes; processing and turnout targets in seconds | 9, 15, 20 min; 64 s; 60 s | The targets. Defaults: NFPA 1710 for priority 1; priorities 2 and 3 are our assumptions. |

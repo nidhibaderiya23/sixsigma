@@ -14,12 +14,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from shiny import App, reactive, render, ui  # noqa: E402
 
-import qc  # noqa: E402,F401  (all numbers on screen come from qc.py)
+import qc  # noqa: E402  (all numbers on screen come from qc.py)
 from ui_dispatcher import (chip, dispatcher_server, dispatcher_ui, icon,  # noqa: E402
                            sim_controls_ui)
 from ui_supervisor import supervisor_server, supervisor_ui  # noqa: E402
+import zonemap  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
+
+#: Shown in the header; each saved version of the app sets its own.
+VERSION = "Ithaca base"
 WWW = HERE / "www"
 
 FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
@@ -42,7 +46,7 @@ def role_button(input_id: str, icon_name: str, name: str, description: str):
 start_page = ui.div(
     ui.div(
         ui.h1("ERGent"),
-        ui.div("Team ERG", class_="rw-hero-sub"),
+        ui.div(f"Team ERG \u00b7 {qc.CITY} EMS", class_="rw-hero-sub"),
         ui.div(
             role_button("pick_dispatcher", "headset", "I'm a dispatcher", "Work the live board."),
             role_button("pick_supervisor", "chart", "I'm a supervisor", "See which zone needs attention."),
@@ -52,7 +56,7 @@ start_page = ui.div(
 header = ui.div(
     ui.div(icon("pulse"), class_="rw-logo"),
     ui.div(ui.div("ERGent", class_="rw-brand-name"),
-           ui.div("Team ERG \u00b7 City EMS dispatch \u00b7 v1", class_="rw-brand-sub")),
+           ui.div(f"Team ERG \u00b7 {qc.CITY} EMS dispatch \u00b7 {VERSION}", class_="rw-brand-sub")),
     ui.output_ui("header_chips"),
     ui.div(
         # the simulation controls live in the dispatcher module's namespace ("dispatcher")
@@ -70,7 +74,8 @@ app_ui = ui.page_fluid(
         ui.tags.link(rel="stylesheet", href=FONTS),
         ui.tags.link(rel="icon", href=FAVICON),
         ui.include_css(WWW / "rw.css", method="inline"),
-        ui.include_js(WWW / "rw.js", method="inline")),
+        ui.include_js(WWW / "rw.js", method="inline"),
+        zonemap.head()),
     ui.div(
         header,
         ui.navset_hidden(

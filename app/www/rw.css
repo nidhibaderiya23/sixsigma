@@ -358,3 +358,9 @@ label, .control-label { color: var(--muted); font-size: 12px; font-weight: 500; 
   .rw-header-end { margin-left: 0; width: 100%; justify-content: flex-start; }
   .rw-simbar { justify-content: flex-start; }
 }
+
+/* ---- Ithaca zone map (Leaflet) ---- */
+:root { --map-tiles: dark; --map-line: #ffffff; }
+.rw-leaflet { width: 100%; border-radius: 12px; overflow: hidden; background: #0b0d10; }
+.rw-zone-label { color: #0e1014; background: rgba(255,255,255,0.85); border-radius: 50%; font: 700 13px/26px Inter, system-ui, sans-serif; text-align: center; }
+.rw-map-tip { font: 12.5px/1.45 Inter, system-ui, sans-serif; max-width: 280px; white-space: normal; }

@@ -219,3 +219,74 @@ tasks:
       pytest tests passes; every item checked in the browser; docs updated;
       committed and tagged v1 locally.
     result: "77 pytest tests pass; every dispatcher and supervisor item browser-checked (hover reasons, bold priority titles, mean/SD, merged Charts tab, period limits, Actions table); docs renamed to ERGent and re-measured; committed and tagged v1 locally."
+
+  - id: H-12
+    title: Ithaca, NY - interactive zone map and zone names (Oct 17, overnight)
+    points: "protects H-04/H-05: a real place makes the demo concrete for the class"
+    status: done
+    owner: "Claude (agent)"
+    started_at: "2026-10-17 01:20"
+    owns: ["app/zonemap.py", "app/www/zonemap.js", "app/qc.py", "app/ui_supervisor.py", "app/ui_dispatcher.py", "app/app.py", "app/www/rw.css", "data/README.md"]
+    notes: >
+      Version 1 stays frozen on main (tag v1). This work is on the ithaca-base
+      branch. qc.CITY and qc.ZONE_NAMES name six illustrative Ithaca areas;
+      zonemap.py draws them on a Leaflet map (Esri grey tiles, no key). The
+      supervisor map colours zones by health, shows reasons on hover and picks
+      the zone on click; the dispatcher map colours zones by live clocks and
+      picks the zone for Log a call on click.
+    definition_of_done: >
+      pytest passes; both maps render with 6 zones, hover text and click
+      selection checked in the browser.
+    result: "77 pytest tests pass; both maps browser-checked (6 zones, tiles, hover text, click selects Zone C / sets Log a call zone)."
+
+  - id: H-13
+    title: ERGent User Manual (About us template first)
+    points: "protects H-07: users and graders can learn the tool and its statistics without us"
+    status: in_progress
+    owner: "Claude helper (docs) + Team ERG (About us content)"
+    started_at: "2026-10-17 01:45"
+    owns: ["docs/manual/"]
+    notes: >
+      Six chapters (About us template, getting started, dispatcher guide,
+      supervisor guide, statistics explained, glossary/FAQ) built into one
+      HTML and PDF by docs/manual/build_manual.py. The team fills in About us.
+    definition_of_done: >
+      The manual builds; every statistic matches app/qc.py; the team has
+      filled in About us.
+
+  - id: H-14
+    title: Versions 2-7 - six UI designs with impeccable
+    points: "protects H-04: a clear, professional interface for the showcase"
+    status: in_progress
+    owner: "Claude (agent) + six Claude helpers (design)"
+    started_at: "2026-10-17 02:10"
+    owns: ["VERSIONS.md"]
+    notes: >
+      Each version is a branch (version-2 ... version-7) and a local tag
+      (v2 ... v7) built from ithaca-base, with its own design direction. The
+      statistics and features are identical; only the look changes.
+    definition_of_done: >
+      Each version runs, passes pytest, has its map styled, and is described
+      in VERSIONS.md.
+
+  - id: H-15
+    title: Hackathon deliverables ready (Devpost text, screenshots, demo, deploy notes)
+    points: "protects H-08: nothing is missing at 1 PM"
+    status: in_progress
+    owner: "Claude (agent) + Nidhi Baderiya (submits)"
+    started_at: "2026-10-17 02:10"
+    owns: ["docs/deliverables/"]
+    definition_of_done: >
+      docs/deliverables holds the Devpost write-up, screenshots, demo script
+      and deploy/submit checklist; the team submits on Devpost.
+
+  - id: H-16
+    title: Class presentation (two decks and a live-demo cue card)
+    points: "protects H-04/H-05: the showcase pitch"
+    status: in_progress
+    owner: "Claude (agent) + Team ERG (presents)"
+    started_at: "2026-10-17 02:10"
+    owns: ["docs/presentation/"]
+    definition_of_done: >
+      Two decks (patient story; DMAIC walkthrough) and a cue card are ready;
+      the team rehearses once.
