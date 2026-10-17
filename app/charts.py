@@ -19,13 +19,36 @@ import re  # noqa: E402
 
 import numpy as np  # noqa: E402
 
-BG = "#16191f"
-FG = "#f2f2f0"
-MUTED = "#9aa0a6"
-GRID = "#2a2e36"
-GREEN, AMBER, RED = "#6fd39a", "#f2c14e", "#ef6461"
-LINE = "#7aa7ff"
-STAGE_COLORS = {"processing": "#b39ddb", "turnout": AMBER, "travel": LINE}
+# v2 "Refined command center": the chart sits on the card's own surface (--surface in rw.css).
+BG = "#11161e"
+FG = "#e7ebf1"
+MUTED = "#a3adbc"
+GRID = "#1f2632"
+GREEN, AMBER, RED = "#4fcf8e", "#f0b43c", "#f26b61"
+LINE = "#9dbcf5"          # the data series: a light steel blue, never a status colour
+LIMIT = "#7d889a"         # center line and control limits, quieter than the data
+BOX_FACE, BOX_EDGE = "#1a212c", "#7d889a"
+# the three stages, in call order, as one blue-slate ramp from light to deep (no status hues)
+STAGE_COLORS = {"processing": "#d6e0f2", "turnout": "#8ea9db", "travel": "#4a6aa8"}
+
+
+def _first_installed(*names):
+    """The first of these font families that matplotlib can find (DejaVu Sans ships with it)."""
+    from matplotlib import font_manager
+    have = {f.name for f in font_manager.fontManager.ttflist}
+    return [n for n in names if n in have] or ["DejaVu Sans"]
+
+
+# PNG charts use a clean installed sans. SVG charts keep their text as text
+# (svg.fonttype "none"), so the browser draws it in the page font (rw.css).
+matplotlib.rcParams.update({
+    "font.family": "sans-serif",
+    "font.sans-serif": _first_installed("Helvetica Neue", "Helvetica", "Arial", "Liberation Sans",
+                                        "DejaVu Sans"),
+    "svg.fonttype": "none",
+    "axes.titleweight": "semibold",
+    "lines.solid_capstyle": "round",
+})
 
 
 def _style(ax, title=None, ylabel=None):
@@ -34,11 +57,11 @@ def _style(ax, title=None, ylabel=None):
         ax.spines[side].set_visible(False)
     for side in ("left", "bottom"):
         ax.spines[side].set_color(GRID)
-    ax.tick_params(colors=MUTED, labelsize=9)
-    ax.grid(True, color=GRID, linewidth=0.6, alpha=0.8)
+    ax.tick_params(colors=MUTED, labelsize=9, length=3, width=0.6)
+    ax.grid(True, color=GRID, linewidth=0.7)
     ax.set_axisbelow(True)
     if title:
-        ax.set_title(title, color=FG, fontsize=11, loc="left", pad=22)
+        ax.set_title(title, color=FG, fontsize=11, loc="left", pad=22, fontweight="semibold")
     if ylabel:
         ax.set_ylabel(ylabel, color=MUTED, fontsize=9)
 
@@ -80,12 +103,12 @@ def daily_chart(chart, zone: str, action_dates=(), target_min: float | None = No
     base = chart[chart["baseline"]]
     if 0 < len(base) < len(chart):          # shade only a separate baseline, not the whole chart
         for ax in (ax1, ax2):
-            ax.axvspan(base["date"].min(), base["date"].max(), color="#ffffff", alpha=0.04,
+            ax.axvspan(base["date"].min(), base["date"].max(), color=LINE, alpha=0.05,
                        label="baseline" if ax is ax1 else None)
-    ax1.plot(d, chart["x_center_min"], color=MUTED, linewidth=1, label="center")
-    ax1.step(d, chart["x_ucl_min"], where="mid", color=MUTED, linestyle="--", linewidth=1,
+    ax1.plot(d, chart["x_center_min"], color=LIMIT, linewidth=1, label="center")
+    ax1.step(d, chart["x_ucl_min"], where="mid", color=LIMIT, linestyle="--", linewidth=1,
              label="control limits (3σ)")
-    ax1.step(d, chart["x_lcl_min"], where="mid", color=MUTED, linestyle="--", linewidth=1)
+    ax1.step(d, chart["x_lcl_min"], where="mid", color=LIMIT, linestyle="--", linewidth=1)
     ax1.plot(d, np.exp(chart["mean_log"]), color=LINE, linewidth=1.4, marker="o",
              markersize=3.5, label="daily average")
     alarm = chart[chart["alarm"]]
@@ -101,11 +124,12 @@ def daily_chart(chart, zone: str, action_dates=(), target_min: float | None = No
             ax.axvline(when, color=GREEN, linewidth=1.2)
         ax1.text(when, ax1.get_ylim()[1], " action", color=GREEN, fontsize=8, va="top")
     _style(ax1, f"Zone {zone}: daily average response", "minutes")
-    _legend(ax1, ncol=4)
-    ax1.set_title(ax1.get_title(loc="left"), color=FG, fontsize=11, loc="left", pad=36)
+    _legend(ax1, ncol=3)
+    ax1.set_title(ax1.get_title(loc="left"), color=FG, fontsize=11, loc="left", pad=36,
+                  fontweight="semibold")
     s = chart.dropna(subset=["sd_log"])
-    ax2.step(s["date"], s["s_ucl"], where="mid", color=MUTED, linestyle="--", linewidth=1)
-    ax2.plot(s["date"], s["s_center"], color=MUTED, linewidth=1)
+    ax2.step(s["date"], s["s_ucl"], where="mid", color=LIMIT, linestyle="--", linewidth=1)
+    ax2.plot(s["date"], s["s_center"], color=LIMIT, linewidth=1)
     ax2.plot(s["date"], s["sd_log"], color=LINE, linewidth=1.2, marker="o", markersize=3)
     sf = s[s["s_flag"]]
     ax2.scatter(sf["date"], sf["sd_log"], color=RED, s=30, zorder=5)
@@ -127,9 +151,9 @@ def individuals_chart(imr, zone: str, target_min: float):
     x = np.arange(len(imr))
     ax1.plot(x, imr["response_min"], color=LINE, linewidth=0.8, marker="o", markersize=2,
              label="each call")
-    ax1.axhline(imr["center_min"].iloc[0], color=MUTED, linewidth=1, label="center")
-    ax1.axhline(imr["ucl_min"].iloc[0], color=MUTED, linestyle="--", linewidth=1, label="UCL / LCL (3σ)")
-    ax1.axhline(imr["lcl_min"].iloc[0], color=MUTED, linestyle="--", linewidth=1)
+    ax1.axhline(imr["center_min"].iloc[0], color=LIMIT, linewidth=1, label="center")
+    ax1.axhline(imr["ucl_min"].iloc[0], color=LIMIT, linestyle="--", linewidth=1, label="UCL / LCL (3σ)")
+    ax1.axhline(imr["lcl_min"].iloc[0], color=LIMIT, linestyle="--", linewidth=1)
     ax1.axhline(target_min, color=AMBER, linewidth=1.4, label=f"{target_min:.0f}-min target (spec)")
     bad = imr[imr["beyond"]]
     ax1.scatter(np.flatnonzero(imr["beyond"]), bad["response_min"], color=RED, s=30,
@@ -143,7 +167,8 @@ def individuals_chart(imr, zone: str, target_min: float):
     _style(ax1, f"Zone {zone}: every call", "minutes (log scale)")
     ax1.set_xlabel("call number, in order", color=MUTED, fontsize=9)
     _legend(ax1, ncol=3)
-    ax1.set_title(ax1.get_title(loc="left"), color=FG, fontsize=11, loc="left", pad=36)
+    ax1.set_title(ax1.get_title(loc="left"), color=FG, fontsize=11, loc="left", pad=36,
+                  fontweight="semibold")
     return fig
 
 
@@ -156,7 +181,8 @@ def stage_breakdown(bd):
     left = np.zeros(len(zones))
     for stage in ("processing", "turnout", "travel"):
         vals = bd[f"{stage}_median_s"].fillna(0).to_numpy() / 60.0
-        ax.barh(zones, vals, left=left, color=STAGE_COLORS[stage], label=stage, height=0.6)
+        ax.barh(zones, vals, left=left, color=STAGE_COLORS[stage], label=stage, height=0.6,
+                edgecolor=BG, linewidth=0.8)
         left += vals
     ax.invert_yaxis()
     _style(ax, "Median minutes in each stage, by zone", None)
@@ -177,13 +203,15 @@ def _secs(s) -> str:
 
 def _stage_share_fig(bd):
     fig, (ax,) = _fig(height=3.4)
+    fig.set_size_inches(6.0, 3.1)     # drawn in a half-width card: a smaller canvas keeps the text legible
     zones = list(bd["zone"])
     labels = ["City" if z == "All" else z for z in zones]
     left = np.zeros(len(zones))
     tips = {}
     for stage in ("processing", "turnout", "travel"):
         vals = bd[f"{stage}_share"].fillna(0).to_numpy() * 100
-        bars = ax.barh(labels, vals, left=left, color=STAGE_COLORS[stage], label=stage, height=0.6)
+        bars = ax.barh(labels, vals, left=left, color=STAGE_COLORS[stage], label=stage, height=0.6,
+                       edgecolor=BG, linewidth=0.8)
         for z, bar, v, over, med in zip(zones, bars, vals, bd[f"{stage}_excess_min"],
                                         bd[f"{stage}_median_s"]):
             gid = f"bar-{z}-{stage}"
@@ -240,7 +268,7 @@ def normal_plot(norm: dict, zone: str):
     t, o = np.asarray(norm["theoretical"]), np.asarray(norm["ordered"])
     ax.scatter(t, o, color=LINE, s=8)
     slope, intercept = np.polyfit(t, o, 1)
-    ax.plot(t, slope * t + intercept, color=MUTED, linewidth=1)
+    ax.plot(t, slope * t + intercept, color=LIMIT, linewidth=1)
     _style(ax, f"Zone {zone}: normal probability plot of ln(minutes)  "
                f"(Shapiro-Wilk p = {norm['p']:.3f})", "ln(minutes)")
     ax.set_xlabel("normal quantile", color=MUTED, fontsize=9)
@@ -276,17 +304,17 @@ def zone_box_chart(sub, priority: int, target_min: float, reasons: dict | None =
     ax.boxplot([sub["values_log"].iloc[i] for i in have], positions=have, widths=0.5,
                patch_artist=True, showfliers=True, manage_ticks=False,
                medianprops={"color": FG, "linewidth": 1.2},
-               boxprops={"facecolor": "#232833", "edgecolor": MUTED},
-               whiskerprops={"color": MUTED}, capprops={"color": MUTED},
-               flierprops={"marker": "o", "markersize": 3, "markerfacecolor": MUTED,
+               boxprops={"facecolor": BOX_FACE, "edgecolor": BOX_EDGE},
+               whiskerprops={"color": BOX_EDGE}, capprops={"color": BOX_EDGE},
+               flierprops={"marker": "o", "markersize": 3, "markerfacecolor": BOX_EDGE,
                            "markeredgecolor": "none"})
     xbbar = sub.attrs.get("xbbar")
     if sub.attrs.get("center_min") is not None:
-        ax.axhline(xbbar, color=MUTED, linewidth=1, label="city center")
+        ax.axhline(xbbar, color=LIMIT, linewidth=1, label="city center")
     first = True
     for i, r in enumerate(sub.itertuples()):
         if r.x_ucl is not None and not (isinstance(r.x_ucl, float) and np.isnan(r.x_ucl)):
-            ax.hlines([r.x_ucl, r.x_lcl], i - 0.38, i + 0.38, colors=MUTED, linestyles="--",
+            ax.hlines([r.x_ucl, r.x_lcl], i - 0.38, i + 0.38, colors=LIMIT, linestyles="--",
                       linewidth=1, label="city limits (3σ)" if first else None)
             first = False
         if r.mean_log is not None and not (isinstance(r.mean_log, float) and np.isnan(r.mean_log)):
@@ -320,7 +348,7 @@ def zone_box_chart(sub, priority: int, target_min: float, reasons: dict | None =
     ax.set_xlim(-0.6, len(zones) - 0.4)
     _style(ax, _priority_title(priority), "minutes (log scale)")
     ax.set_title(_priority_title(priority), color=FG, fontsize=12, loc="left", pad=36,
-                 fontweight="bold")
+                 fontweight="semibold")
     leg = ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), fontsize=8, frameon=False, ncol=3,
                     borderaxespad=0.2, handlelength=1.6, columnspacing=1.2)
     for text in leg.get_texts():

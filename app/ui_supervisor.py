@@ -42,40 +42,7 @@ STAGE_WORD = {"processing": "Dispatch processing", "turnout": "Crew turnout", "t
 RULE_NAME = {"S1": "Crew readiness", "S2": "Coverage", "S3": "Routes", "S4": "Dispatcher cover",
              "S5": "Maintenance", "S6": "Address checks"}
 
-STYLE = """
-.rw-moreinfo { margin-top: 12px; }
-.rw-moreinfo > summary { cursor: pointer; color: var(--muted, #9aa0a6); font-size: 13px;
-  list-style: none; display: inline-flex; align-items: center; gap: 6px; }
-.rw-moreinfo > summary::-webkit-details-marker { display: none; }
-.rw-moreinfo > summary::before { content: "+"; display: inline-grid; place-items: center;
-  width: 18px; height: 18px; border: 1px solid rgba(255,255,255,0.18); border-radius: 50%; font-size: 12px; }
-.rw-moreinfo[open] > summary::before { content: "–"; }
-.rw-moreinfo-body { margin-top: 10px; padding: 12px 14px; border-radius: 10px;
-  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
-  font-size: 13.5px; line-height: 1.6; }
-.rw-moreinfo-body p { margin: 0 0 6px; }
-.rw-chartbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
-.rw-chartbar .shiny-input-container { width: auto; margin-bottom: 0; }
-.rw-chartbar .shiny-input-radiogroup .shiny-options-group { display: flex; gap: 6px; }
-.rw-sup-grid { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 16px;
-  align-items: start; margin-top: 16px; }
-.rw-sup-side { display: grid; gap: 16px; }
-.rw-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.rw-stats .rw-kpi-num { font-size: 24px; }
-.rw-verdict { display: grid; grid-template-columns: 80px 190px minmax(0, 1fr); gap: 10px;
-  align-items: center; padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.06); }
-.rw-verdict:first-child { border-top: 0; }
-.rw-answer { font-size: 15px; line-height: 1.55; }
-.rw-subtitle { color: var(--muted, #9aa0a6); font-size: 13px; margin: -6px 0 8px; }
-.rw-svg { width: 100%; }
-.rw-tip { cursor: help; } .rw-tip:hover { opacity: .8; }
-.rw-ctxline { color: var(--muted, #9aa0a6); font-size: 13px; margin: 4px 0 12px; }
-.rw-ba-table td, .rw-ba-table th { text-align: right; }
-.rw-ba-table td:first-child, .rw-ba-table th:first-child { text-align: left; }
-@media (max-width: 992px) { .rw-sup-grid { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 640px) { .rw-verdict { grid-template-columns: 70px minmax(0, 1fr); }
-  .rw-verdict > :last-child { grid-column: 1 / -1; } }
-"""
+STYLE = ""  # the supervisor styles live in www/rw.css with the rest of the design system
 
 
 # ---- small formatting helpers (formatting only, no statistics) ------------------------------------
@@ -396,7 +363,7 @@ def charts_server(input, output, session, ctx):
         table = ui.div(ui.tags.table(
             ui.tags.thead(ui.tags.tr(*[ui.tags.th(h) for h in ("Zone", "Ppk", "Cpk", "Expected on time")])),
             ui.tags.tbody(*nums), class_="rw-table"), class_="rw-table-wrap")
-        return ui.div(ui.div(*rows), _more(
+        return ui.div(ui.div(*rows, class_="rw-verdicts"), _more(
             _p("How reliably each zone's calls arrive within the target. Ppk uses the spread of all "
                "calls and Cpk the spread within each day; Ppk 0.43 means about 90% on time."),
             table))
@@ -470,7 +437,7 @@ def actions_server(input, output, session, ctx):
                        ui.div(s["evidence"], class_="rw-row-sub"),
                        ui.div(impact, class_="rw-row-sub") if impact else None, class_="rw-row-main"),
                 ui.div(button, class_="rw-row-actions"),
-                class_="rw-row", **{"data-sev": "green" if logged else "amber"}))
+                class_="rw-row rw-row-sug", **{"data-sev": "green" if logged else "amber"}))
         return ui.div(ui.div(*rows, class_="rw-rows"), _more(_p(
             "Each suggestion comes from a fixed rule on the data, with its evidence. The estimate is a "
             "best case if that stage were typical; qualified staff decide.")))

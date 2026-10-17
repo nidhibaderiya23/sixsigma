@@ -6,7 +6,7 @@
   "use strict";
   var maps = {};
   var waiting = {};
-  var FALLBACK = { green: "#6fd39a", amber: "#f2c14e", red: "#ef6461", grey: "#6b7280" };
+  var FALLBACK = { green: "#4fcf8e", amber: "#f0b43c", red: "#f26b61", grey: "#6b7688" };
 
   function cssVar(name) {
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim().replace(/["']/g, "");
@@ -36,15 +36,15 @@
     map.getPane("rwLabels").style.pointerEvents = "none";
     L.tileLayer(esri + "Reference/MapServer/tile/{z}/{y}/{x}", { maxZoom: 16, pane: "rwLabels" }).addTo(map);
     var layers = {};
-    var line = cssVar("--map-line") || "#ffffff";
+    var line = cssVar("--map-line") || "#c3cddc";
     L.geoJSON(geo, {
-      style: function () { return { color: line, weight: 1.5, fillColor: FALLBACK.grey, fillOpacity: 0.35 }; },
+      style: function () { return { color: line, weight: 1.25, opacity: 0.9, fillColor: FALLBACK.grey, fillOpacity: 0.3 }; },
       onEachFeature: function (f, layer) {
         var z = f.properties.zone;
         layers[z] = layer;
         layer.bindTooltip("<b>Zone " + z + " &middot; " + esc(f.properties.name) + "</b>", { sticky: true, className: "rw-map-tip" });
-        layer.on("mouseover", function () { layer.setStyle({ weight: 3 }); });
-        layer.on("mouseout", function () { layer.setStyle({ weight: 1.5 }); });
+        layer.on("mouseover", function () { layer.setStyle({ weight: 2.5, opacity: 1 }); });
+        layer.on("mouseout", function () { layer.setStyle({ weight: 1.25, opacity: 0.9 }); });
         layer.on("click", function () {
           var id = el.dataset.clickInput;
           if (id && window.Shiny && Shiny.setInputValue) Shiny.setInputValue(id, z, { priority: "event" });
@@ -54,7 +54,7 @@
     geo.features.forEach(function (f) {
       L.marker(f.properties.center, {
         interactive: false,
-        icon: L.divIcon({ className: "rw-zone-label", html: f.properties.zone, iconSize: [26, 26] })
+        icon: L.divIcon({ className: "rw-zone-label", html: f.properties.zone, iconSize: [24, 24] })
       }).addTo(map);
     });
     var bounds = L.geoJSON(geo).getBounds();
@@ -71,7 +71,7 @@
       var layer = entry.layers[z];
       if (!layer) return;
       var info = zones[z];
-      layer.setStyle({ fillColor: colour(info.sev), fillOpacity: info.sev === "grey" ? 0.2 : 0.38 });
+      layer.setStyle({ fillColor: colour(info.sev), fillOpacity: info.sev === "grey" ? 0.18 : 0.42 });
       var lines = (info.lines || []).map(esc).join("<br>");
       layer.setTooltipContent("<b>Zone " + z + " &middot; " + esc(info.name) + "</b><br>" +
         esc(info.status || "") + (lines ? "<br>" + lines : ""));
