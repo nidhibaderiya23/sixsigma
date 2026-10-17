@@ -6,7 +6,7 @@
   "use strict";
   var maps = {};
   var waiting = {};
-  var FALLBACK = { green: "#6fd39a", amber: "#f2c14e", red: "#ef6461", grey: "#6b7280" };
+  var FALLBACK = { green: "#3f8a57", amber: "#c9952f", red: "#c0443c", grey: "#8c877e" };
 
   function cssVar(name) {
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim().replace(/["']/g, "");
@@ -36,7 +36,7 @@
     map.getPane("rwLabels").style.pointerEvents = "none";
     L.tileLayer(esri + "Reference/MapServer/tile/{z}/{y}/{x}", { maxZoom: 16, pane: "rwLabels" }).addTo(map);
     var layers = {};
-    var line = cssVar("--map-line") || "#ffffff";
+    var line = cssVar("--map-line") || "#1b1a17";
     L.geoJSON(geo, {
       style: function () { return { color: line, weight: 1.5, fillColor: FALLBACK.grey, fillOpacity: 0.35 }; },
       onEachFeature: function (f, layer) {
